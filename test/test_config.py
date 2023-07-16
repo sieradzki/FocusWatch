@@ -5,7 +5,7 @@ import unittest
 from focuswatch.config import CONFIG_FILE_PATH, initialize_config
 
 
-class  TestConfig(unittest.TestCase):
+class TestConfig(unittest.TestCase):
   def test_initialize_config_file_exists(self):
     initialize_config()
     self.assertTrue(os.path.exists(CONFIG_FILE_PATH))
@@ -26,5 +26,3 @@ class  TestConfig(unittest.TestCase):
 
 if __name__ == '__main__':
   unittest.main()
-    
-  
