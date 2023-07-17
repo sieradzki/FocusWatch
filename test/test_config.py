@@ -29,6 +29,14 @@ class TestConfig(unittest.TestCase):
       mock_print.assert_called_with(
         "Configuration file initialized successfully.")
 
+  def test_initialize_config_exception_handling(self):
+    with mock.patch('builtins.print') as mock_print:
+      with mock.patch('configparser.ConfigParser.write', side_effect=Exception("Mocked exception")):
+        initialize_config()
+
+        mock_print.assert_called_with(
+          "An error occured while initializing the configuration file. Mocked exception.")
+
   def test_initialize_config_file_content(self):
     with mock.patch('builtins.print'):
       initialize_config(self.config_path)
