@@ -73,6 +73,7 @@ class DatabaseManager:
 
 if __name__ == "__main__":
   db_object = DatabaseManager()
-  db_object.insert_activity('vscodium', 'VSCodium', '19:11', '19:12', 1, 'programming')
+  db_object.insert_activity('vscodium', 'VSCodium',
+                            '19:11', '19:12', 1, 'programming')
   entries = db_object.get_all_entries()
   print(entries)
