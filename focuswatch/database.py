@@ -27,14 +27,33 @@ class DatabaseManager:
     self._cur = self._conn.cursor()
 
     self._cur.execute('''
-      CREATE TABLE "activity_log" (
-          "time_start"	TEXT NOT NULL,
-          "time_stop" 	TEXT NOT NULL,
-          "duration"      REAL NOT NULL,
-          "window_class"  TEXT NOT NULL,
-          "window_name"	TEXT NOT NULL,
-          "tags"          TEXT
+      CREATE TABLE "categories" (
+        "id"	INTEGER NOT NULL UNIQUE,
+        "name"	TEXT NOT NULL UNIQUE,
+        "parent_category"	INTEGER,
+        FOREIGN KEY("parent_category") REFERENCES "categories"("id"),
+        PRIMARY KEY("id" AUTOINCREMENT)
       );''')
+
+    self._cur.execute('''
+    CREATE TABLE "activity_log" (
+        "time_start"	TEXT NOT NULL,
+        "time_stop" 	TEXT NOT NULL,
+        "duration"      REAL NOT NULL,
+        "window_class"  TEXT NOT NULL,
+        "window_name"	TEXT NOT NULL,
+        "category_id"         INTEGER,
+        FOREIGN KEY("category_id") REFERENCES "categories"("id") 
+    );''')
+
+    self._cur.execute('''
+      CREATE TABLE "keywords" (
+        "category_id"	INTEGER,
+        "name"	TEXT NOT NULL UNIQUE,
+        FOREIGN KEY("category_id") REFERENCES "categories"("id")
+        ON DELETE CASCADE ON UPDATE CASCADE
+      );''')
+
     self._conn.commit()
 
     print("Database created successfully")
@@ -67,13 +86,13 @@ class DatabaseManager:
   def get_weeks_entries(self):
     if self._conn is not None:
       res = self._cur.execute(
-          f"SELECT * FROM 'activity_log' WHERE DATETIME(time_start) >= DATETIME('now', 'weekday 0', '-7 days')")
+          "SELECT * FROM 'activity_log' WHERE DATETIME(time_start) >= DATETIME('now', 'weekday 0', '-7 days')")
       return res.fetchall()
 
 
 if __name__ == "__main__":
   db_object = DatabaseManager()
   db_object.insert_activity('vscodium', 'VSCodium',
-                            '19:11', '19:12', 1, 'programming')
+                            '19:11', '19:12', 1, 1)
   entries = db_object.get_all_entries()
   print(entries)

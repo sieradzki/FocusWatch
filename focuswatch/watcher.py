@@ -1,9 +1,9 @@
 import subprocess
 import time
 from sys import platform
-from database import DatabaseManager
 
 from config import load_config
+from database import DatabaseManager
 
 
 class Watcher():
