@@ -21,7 +21,7 @@ def initialize_config(config_file_path=CONFIG_FILE_PATH):
     print("Configuration file initialized successfully.")  # TODO Logging?
 
   except Exception as e:
-    print(f" An error occured while initializing the configuration file: {e}.")
+    print(f"An error occured while initializing the configuration file. {e}.")
 
 
 def load_config(config_file_path=CONFIG_FILE_PATH):
