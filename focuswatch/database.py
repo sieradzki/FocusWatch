@@ -5,9 +5,9 @@ from config import load_config
 
 class DatabaseManager:
   def __init__(self):
+    self._conn = None
     self._config = load_config()
     self._db_name = self._config['Database']['name']
-    self._conn = None
 
     try:
       dburi = f"file:{self._db_name}?mode=rw"
@@ -20,20 +20,12 @@ class DatabaseManager:
     self._cur = self._conn.cursor()
 
   def __del__(self):
-    self._conn.close()
+    if self._conn is not None:
+      self._conn.close()
 
   def _create_db(self):
     self._conn = sqlite3.connect(self._db_name)
     self._cur = self._conn.cursor()
-
-    self._cur.execute('''
-      CREATE TABLE "categories" (
-        "id"	INTEGER NOT NULL UNIQUE,
-        "name"	TEXT NOT NULL UNIQUE,
-        "parent_category"	INTEGER,
-        FOREIGN KEY("parent_category") REFERENCES "categories"("id"),
-        PRIMARY KEY("id" AUTOINCREMENT)
-      );''')
 
     self._cur.execute('''
     CREATE TABLE "activity_log" (
@@ -45,6 +37,15 @@ class DatabaseManager:
         "category_id"         INTEGER,
         FOREIGN KEY("category_id") REFERENCES "categories"("id") 
     );''')
+
+    self._cur.execute('''
+      CREATE TABLE "categories" (
+        "id"	INTEGER NOT NULL UNIQUE,
+        "name"	TEXT NOT NULL UNIQUE,
+        "parent_category"	INTEGER,
+        FOREIGN KEY("parent_category") REFERENCES "categories"("id"),
+        PRIMARY KEY("id" AUTOINCREMENT)
+      );''')
 
     self._cur.execute('''
       CREATE TABLE "keywords" (
@@ -67,6 +68,24 @@ class DatabaseManager:
         return True
       return False
 
+  def create_category(self, category_name, parent_category=None):
+    if self._conn is not None:
+      t = (category_name, parent_category)
+      self._cur.execute(
+        'INSERT INTO categories (name, parent_category) VALUES (?, ?)', t)
+      if self._conn.commit():
+        return True
+      return False
+
+  def add_keyword(self, keyword_name, category_id=None, ):
+    if self._conn is not None:
+      t = (category_id, keyword_name)
+      self._cur.execute(
+        'INSERT INTO keywords (category_id, name) VALUES (?, ?)', t)
+      if self._conn.commit():
+        return True
+      return False
+
   def get_all_entries(self):
     if self._conn is not None:
       res = self._cur.execute("SELECT * FROM activity_log")
@@ -74,6 +93,8 @@ class DatabaseManager:
         return res.fetchall()
       else:
         return ""
+
+  """ Get entries from-to (?)"""
 
   def get_todays_entries(self):
     if self._conn is not None:
@@ -92,7 +113,11 @@ class DatabaseManager:
 
 if __name__ == "__main__":
   db_object = DatabaseManager()
+  db_object.create_category("work")
+  db_object.create_category("programming", 1)
   db_object.insert_activity('vscodium', 'VSCodium',
                             '19:11', '19:12', 1, 1)
+  db_object.add_keyword("vscodium", 1)
+  db_object.add_keyword("alacritty")
   entries = db_object.get_all_entries()
   print(entries)
