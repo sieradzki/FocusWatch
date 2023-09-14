@@ -31,7 +31,6 @@ class DatabaseManager:
     CREATE TABLE "activity_log" (
         "time_start"	TEXT NOT NULL,
         "time_stop" 	TEXT NOT NULL,
-        "duration"      REAL NOT NULL,
         "window_class"  TEXT NOT NULL,
         "window_name"	TEXT NOT NULL,
         "category_id"         INTEGER,
@@ -63,11 +62,11 @@ class DatabaseManager:
 
   """ Activities """
 
-  def insert_activity(self, window_class, window_name, time_start, time_stop, duration, tags=""):
+  def insert_activity(self, window_class, window_name, time_start, time_stop, category):
     if self._conn is not None:
-      t = (time_start, time_stop, duration, window_class, window_name, tags)
+      t = (time_start, time_stop, window_class, window_name, category)
       self._cur.execute(
-          'INSERT INTO activity_log VALUES (?, ?, ?, ?, ?, ?)', t)
+          'INSERT INTO activity_log VALUES (?, ?, ?, ?, ?)', t)
       if self._conn.commit():
         return True
       return False
@@ -136,7 +135,7 @@ class DatabaseManager:
         return ""
 
   def get_categories_from_keyword(self, keyword):
-    """ Returns innermost category for given keywords"""
+    """ Returns categories for given keyword sorted by depth """
     if self._conn is not None:
       t = (f'%{keyword}%',)
       res = self._cur.execute(
@@ -148,7 +147,7 @@ class DatabaseManager:
             FROM categories c
             JOIN CategoryHierarchy ch ON c.parent_category = ch.id
           )
-          SELECT ch.name AS innermost_category
+          SELECT ch.id AS innermost_category
           FROM CategoryHierarchy ch
           JOIN keywords k ON ch.id = k.category_id
           WHERE LOWER(k.name) LIKE LOWER(?)
@@ -156,21 +155,21 @@ class DatabaseManager:
           """,
           t)
       if res:
-        return res.fetchall()
+        return [row[0] for row in res.fetchall()]
       else:
         return ""
 
 
 if __name__ == "__main__":
   db_object = DatabaseManager()
-  # db_object.create_category("work")
-  # db_object.create_category("programming", 1)
-  # db_object.create_category("hobby")
-  # db_object.create_category("programming", 3)
-  # db_object.create_category("python", 4)
-  # db_object.add_keyword("vscodium", 1)
-  # db_object.add_keyword("vscodium", 5)
-  # db_object.add_keyword("alacritty", 1)
+  db_object.create_category("work")
+  db_object.create_category("programming", 1)
+  db_object.create_category("hobby")
+  db_object.create_category("programming", 3)
+  db_object.create_category("python", 4)
+  db_object.add_keyword("code", 1)
+  db_object.add_keyword("code", 5)
+  db_object.add_keyword("alacritty", 1)
   # entries = db_object.get_all_entries()
   entries = db_object.get_all_keywords()
   print(entries)
