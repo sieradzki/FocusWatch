@@ -41,7 +41,7 @@ class DatabaseManager:
     self._cur.execute('''
       CREATE TABLE "categories" (
         "id"	INTEGER NOT NULL UNIQUE,
-        "name"	TEXT NOT NULL UNIQUE,
+        "name"	TEXT NOT NULL,
         "parent_category"	INTEGER,
         FOREIGN KEY("parent_category") REFERENCES "categories"("id"),
         PRIMARY KEY("id" AUTOINCREMENT)
@@ -49,15 +49,19 @@ class DatabaseManager:
 
     self._cur.execute('''
       CREATE TABLE "keywords" (
+        "id" INTEGER NOT NULL UNIQUE,
         "category_id"	INTEGER,
-        "name"	TEXT NOT NULL UNIQUE,
+        "name"	TEXT NOT NULL,
         FOREIGN KEY("category_id") REFERENCES "categories"("id")
         ON DELETE CASCADE ON UPDATE CASCADE
+        PRIMARY KEY("id" AUTOINCREMENT)
       );''')
 
     self._conn.commit()
 
     print("Database created successfully")
+
+  """ Activities """
 
   def insert_activity(self, window_class, window_name, time_start, time_stop, duration, tags=""):
     if self._conn is not None:
@@ -68,25 +72,7 @@ class DatabaseManager:
         return True
       return False
 
-  def create_category(self, category_name, parent_category=None):
-    if self._conn is not None:
-      t = (category_name, parent_category)
-      self._cur.execute(
-        'INSERT INTO categories (name, parent_category) VALUES (?, ?)', t)
-      if self._conn.commit():
-        return True
-      return False
-
-  def add_keyword(self, keyword_name, category_id=None, ):
-    if self._conn is not None:
-      t = (category_id, keyword_name)
-      self._cur.execute(
-        'INSERT INTO keywords (category_id, name) VALUES (?, ?)', t)
-      if self._conn.commit():
-        return True
-      return False
-
-  def get_all_entries(self):
+  def get_all_activities(self):
     if self._conn is not None:
       res = self._cur.execute("SELECT * FROM activity_log")
       if res:
@@ -94,7 +80,7 @@ class DatabaseManager:
       else:
         return ""
 
-  """ Get entries from-to (?)"""
+  # Get entries from-to (?)
 
   def get_todays_entries(self):
     if self._conn is not None:
@@ -110,14 +96,83 @@ class DatabaseManager:
           "SELECT * FROM 'activity_log' WHERE DATETIME(time_start) >= DATETIME('now', 'weekday 0', '-7 days')")
       return res.fetchall()
 
+  """ Categories """
+
+  def create_category(self, category_name, parent_category=None):
+    if self._conn is not None:
+      t = (category_name, parent_category)
+      self._cur.execute(
+        'INSERT INTO categories (name, parent_category) VALUES (?, ?)', t)
+      if self._conn.commit():
+        return True
+      return False
+
+  def get_all_categories(self):
+    if self._conn is not None:
+      res = self._cur.execute("SELECT * FROM categories")
+      if res:
+        return res.fetchall()
+      else:
+        return ""
+
+  """ Keywords """
+
+  def add_keyword(self, keyword_name, category_id=None, ):
+    if self._conn is not None:
+      t = (category_id, keyword_name)
+      self._cur.execute(
+        'INSERT INTO keywords (category_id, name) VALUES (?, ?)', t)
+      if self._conn.commit():
+        return True
+      return False
+
+  def get_all_keywords(self):
+    """ Returns all keyword entries in the database """
+    if self._conn is not None:
+      res = self._cur.execute("SELECT * FROM keywords")
+      if res:
+        return res.fetchall()
+      else:
+        return ""
+
+  def get_categories_from_keyword(self, keyword):
+    """ Returns innermost category for given keywords"""
+    if self._conn is not None:
+      t = (f'%{keyword}%',)
+      res = self._cur.execute(
+          """
+          WITH RECURSIVE CategoryHierarchy(id, name, parent_category, depth) AS (
+            SELECT id, name, parent_category, 0 AS depth FROM categories WHERE parent_category IS NULL
+            UNION ALL
+            SELECT c.id, c.name, c.parent_category, ch.depth + 1
+            FROM categories c
+            JOIN CategoryHierarchy ch ON c.parent_category = ch.id
+          )
+          SELECT ch.name AS innermost_category
+          FROM CategoryHierarchy ch
+          JOIN keywords k ON ch.id = k.category_id
+          WHERE LOWER(k.name) LIKE LOWER(?)
+          ORDER BY ch.depth DESC; 
+          """,
+          t)
+      if res:
+        return res.fetchall()
+      else:
+        return ""
+
 
 if __name__ == "__main__":
   db_object = DatabaseManager()
-  db_object.create_category("work")
-  db_object.create_category("programming", 1)
-  db_object.insert_activity('vscodium', 'VSCodium',
-                            '19:11', '19:12', 1, 1)
-  db_object.add_keyword("vscodium", 1)
-  db_object.add_keyword("alacritty")
-  entries = db_object.get_all_entries()
+  # db_object.create_category("work")
+  # db_object.create_category("programming", 1)
+  # db_object.create_category("hobby")
+  # db_object.create_category("programming", 3)
+  # db_object.create_category("python", 4)
+  # db_object.add_keyword("vscodium", 1)
+  # db_object.add_keyword("vscodium", 5)
+  # db_object.add_keyword("alacritty", 1)
+  # entries = db_object.get_all_entries()
+  entries = db_object.get_all_keywords()
+  print(entries)
+  entries = db_object.get_categories_from_keyword('VSCodium')
   print(entries)
