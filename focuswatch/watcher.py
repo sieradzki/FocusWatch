@@ -2,13 +2,12 @@ import subprocess
 import time
 from sys import platform
 
-from config import load_config
-from database import DatabaseManager
-from classifier import Classifier
+from focuswatch.database import DatabaseManager
+from focuswatch.classifier import Classifier
 
 
 class Watcher():
-  def __init__(self):
+  def __init__(self, verbose=False, watch_interval=1.0):
     self._window_name = self.get_active_window_name()
     self._window_class = self.get_active_window_class()
     self._time_start = time.time()
@@ -16,6 +15,9 @@ class Watcher():
     self._category = None
     self._database = DatabaseManager()
     self._classifier = Classifier()
+
+    self._watch_interval = watch_interval
+    self._verbose = verbose
 
   def get_active_window_name(self):
     if platform in ['linux', 'linux2']:
@@ -46,8 +48,9 @@ class Watcher():
       exit()
 
   def save_entry(self):
-    print(
-        f"[{self._time_stop - self._time_start :.3f}] [{self._window_class}] {self._window_name[:32]} {self._category}")
+    if self._verbose:
+      print(
+          f"[{self._time_stop - self._time_start :.3f}] [{self._window_class}] {self._window_name[:32]} {self._category}")
     self._database.insert_activity(
       self._window_class,
       self._window_name,
@@ -58,20 +61,18 @@ class Watcher():
     )
 
   def monitor(self):
-    config = load_config()
-    watch_interval = int(config['General']['watch_interval'])
     while (True):
-      # if self._window_name != self.get_active_window_name():
-      self._time_stop = time.time()
-      self._category = self._classifier.classify_entry(
-        window_class=self._window_class, window_name=self._window_name)
-      self.save_entry()
+      if self._window_name != self.get_active_window_name():  # log only on activity change
+        self._time_stop = time.time()
+        self._category = self._classifier.classify_entry(
+          window_class=self._window_class, window_name=self._window_name)
+        self.save_entry()
 
-      self._time_start = time.time()
-      self._window_name = self.get_active_window_name()
-      self._window_class = self.get_active_window_class()
+        self._time_start = time.time()
+        self._window_name = self.get_active_window_name()
+        self._window_class = self.get_active_window_class()
 
-      time.sleep(watch_interval)
+      time.sleep(self._watch_interval)
 
 
 if __name__ == '__main__':

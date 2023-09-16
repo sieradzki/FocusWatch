@@ -6,11 +6,11 @@ CONFIG_FILE_PATH = os.path.join(CONFIG_DIR_PATH, "config.ini")
 
 
 def initialize_config(config_file_path=CONFIG_FILE_PATH):
-  config = configparser.ConfigParser()
+  config = configparser.ConfigParser(default_section=None)
 
   try:
     # Set default values
-    config['General'] = {'watch_interval': 1}
+    config['General'] = {'watch_interval': 1, 'verbose': 0}
     # TODO allow changing default location
     config['Database'] = {'location': '../', 'name': 'focuswatch.sqlite'}
 
