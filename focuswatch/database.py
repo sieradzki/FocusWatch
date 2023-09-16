@@ -1,6 +1,6 @@
 import sqlite3
 import time
-from config import load_config
+from focuswatch.config import load_config
 
 
 class DatabaseManager:
@@ -49,8 +49,8 @@ class DatabaseManager:
     self._cur.execute('''
       CREATE TABLE "keywords" (
         "id" INTEGER NOT NULL UNIQUE,
-        "category_id"	INTEGER,
         "name"	TEXT NOT NULL,
+        "category_id"	INTEGER,
         FOREIGN KEY("category_id") REFERENCES "categories"("id")
         ON DELETE CASCADE ON UPDATE CASCADE
         PRIMARY KEY("id" AUTOINCREMENT)
@@ -67,9 +67,10 @@ class DatabaseManager:
       t = (time_start, time_stop, window_class, window_name, category)
       self._cur.execute(
           'INSERT INTO activity_log VALUES (?, ?, ?, ?, ?)', t)
-      if self._conn.commit():
+      self._conn.commit()
+      if self._conn.total_changes > 0:
         return True
-      return False
+    return False
 
   def get_all_activities(self):
     if self._conn is not None:
@@ -102,9 +103,10 @@ class DatabaseManager:
       t = (category_name, parent_category)
       self._cur.execute(
         'INSERT INTO categories (name, parent_category) VALUES (?, ?)', t)
-      if self._conn.commit():
+      self._conn.commit()
+      if self._conn.total_changes > 0:
         return True
-      return False
+    return False
 
   def get_all_categories(self):
     if self._conn is not None:
@@ -116,14 +118,15 @@ class DatabaseManager:
 
   """ Keywords """
 
-  def add_keyword(self, keyword_name, category_id=None, ):
+  def add_keyword(self, keyword_name, category_id):
     if self._conn is not None:
       t = (category_id, keyword_name)
       self._cur.execute(
         'INSERT INTO keywords (category_id, name) VALUES (?, ?)', t)
-      if self._conn.commit():
+      self._conn.commit()
+      if self._conn.total_changes > 0:
         return True
-      return False
+    return False
 
   def get_all_keywords(self):
     """ Returns all keyword entries in the database """
