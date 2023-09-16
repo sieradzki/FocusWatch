@@ -1,9 +1,10 @@
 import subprocess
 import time
 from sys import platform
-from database import DatabaseManager
 
 from config import load_config
+from database import DatabaseManager
+from classifier import Classifier
 
 
 class Watcher():
@@ -12,8 +13,9 @@ class Watcher():
     self._window_class = self.get_active_window_class()
     self._time_start = time.time()
     self._time_stop = None
-    self._duration = 0
+    self._category = None
     self._database = DatabaseManager()
+    self._classifier = Classifier()
 
   def get_active_window_name(self):
     if platform in ['linux', 'linux2']:
@@ -45,13 +47,13 @@ class Watcher():
 
   def save_entry(self):
     print(
-        f"[{self._duration :.3f}] [{self._window_class}] {self._window_name[:32]}")
+        f"[{self._time_stop - self._time_start :.3f}] [{self._window_class}] {self._window_name[:32]} {self._category}")
     self._database.insert_activity(
       self._window_class,
       self._window_name,
       time.strftime("%d-%m-%Y %H:%M:%S", time.localtime(self._time_start)),
       time.strftime("%d-%m-%Y %H:%M:%S", time.localtime(self._time_stop)),
-      self._duration
+      self._category
       # TODO tags
     )
 
@@ -59,13 +61,15 @@ class Watcher():
     config = load_config()
     watch_interval = int(config['General']['watch_interval'])
     while (True):
-      if self._window_name != self.get_active_window_name():
-        self._time_stop = time.time()
-        self._duration = round(self._time_stop - self._time_start, 3)
-        self.save_entry()
-        self._time_start = time.time()
-        self._window_name = self.get_active_window_name()
-        self._window_class = self.get_active_window_class()
+      # if self._window_name != self.get_active_window_name():
+      self._time_stop = time.time()
+      self._category = self._classifier.classify_entry(
+        window_class=self._window_class, window_name=self._window_name)
+      self.save_entry()
+
+      self._time_start = time.time()
+      self._window_name = self.get_active_window_name()
+      self._window_class = self.get_active_window_class()
 
       time.sleep(watch_interval)
 
