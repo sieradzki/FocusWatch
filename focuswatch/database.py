@@ -1,13 +1,13 @@
 import sqlite3
 import time
-from focuswatch.config import load_config
+from focuswatch.config import Config
 
 
 class DatabaseManager:
   def __init__(self):
     self._conn = None
-    self._config = load_config()
-    self._db_name = self._config['Database']['name']
+    self._config = Config()
+    self._db_name = self._config.get_config('Database', 'location')
 
     try:
       dburi = f"file:{self._db_name}?mode=rw"

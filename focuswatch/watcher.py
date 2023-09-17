@@ -4,10 +4,11 @@ from sys import platform
 
 from focuswatch.database import DatabaseManager
 from focuswatch.classifier import Classifier
+from focuswatch.config import Config
 
 
 class Watcher():
-  def __init__(self, verbose=False, watch_interval=1.0):
+  def __init__(self, watch_interval=None, verbose=None):
     self._window_name = self.get_active_window_name()
     self._window_class = self.get_active_window_class()
     self._time_start = time.time()
@@ -16,8 +17,11 @@ class Watcher():
     self._database = DatabaseManager()
     self._classifier = Classifier()
 
-    self._watch_interval = watch_interval
-    self._verbose = verbose
+    self._config = Config()
+    self._watch_interval = float(
+      self._config.get_config('General', 'watch_interval')) if not watch_interval else watch_interval
+    self._verbose = int(self._config.get_config(
+      'General', 'verbose')) if not verbose else verbose
 
   def get_active_window_name(self):
     if platform in ['linux', 'linux2']:
