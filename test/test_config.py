@@ -3,7 +3,7 @@ import unittest
 from unittest import mock
 import tempfile
 
-from focuswatch.config import initialize_config, load_config
+from focuswatch.config import Config
 
 
 class TestConfig(unittest.TestCase):
@@ -22,32 +22,33 @@ class TestConfig(unittest.TestCase):
 
   def test_initialize_config_file_created(self):
     with mock.patch('builtins.print') as mock_print:
-      initialize_config(self.config_path)
+      config = Config(self.config_path)
+      config.initialize_config()
 
       self.assertTrue(os.path.exists(self.config_path))
       mock_print.assert_called_with(
-        "Configuration file initialized successfully.")
+          "Configuration file written successfully.")
 
   def test_initialize_config_exception_handling(self):
     with mock.patch('builtins.print') as mock_print:
       with mock.patch('configparser.ConfigParser.write', side_effect=Exception("Mocked exception")):
-        initialize_config()
+        config = Config(self.config_path)
 
         mock_print.assert_called_with(
-          "An error occured while initializing the configuration file. Mocked exception.")
+          "An error occured while writing the configuration file. Mocked exception.")
 
   def test_initialize_config_file_content(self):
-    with mock.patch('builtins.print'):
-      initialize_config(self.config_path)
-      config = load_config(self.config_path)
+    config = Config(self.config_path)
+    config.initialize_config()
+    config_contents = config.get_all_config()
 
-      self.assertIn('General', config)
-      self.assertIn('Database', config)
+    self.assertIn('General', config_contents)
+    self.assertIn('Database', config_contents)
 
-      self.assertIn('watch_interval', config['General'])
+    self.assertIn('watch_interval', config_contents['General'])
+    self.assertIn('verbose', config_contents['General'])
 
-      self.assertIn('location', config['Database'])
-      self.assertIn('name', config['Database'])
+    self.assertIn('location', config_contents['Database'])
 
 
 if __name__ == '__main__':

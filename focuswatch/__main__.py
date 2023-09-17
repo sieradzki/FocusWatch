@@ -1,18 +1,19 @@
 import argparse
 import sys
 
-from focuswatch.config import load_config
+from focuswatch.config import Config
 from focuswatch.database import DatabaseManager
 from focuswatch.watcher import Watcher
 
 
 def display_config():
-  config = load_config()
-  for section in config:
-    if section != 'DEFAULT':  # TODO remove default config section
-      print(f"[{section}]")
-      for key, value in config.items(section):
-        print(f"{key} = {value}")
+  config = Config()
+  config_contents = config.get_all_config()
+  for section in config_contents:
+    print(f"[{section}]")
+    for option, value in config_contents[section].items():
+      print(f"{option} = {value}")
+    print()
 
 
 def display_categories():
@@ -64,6 +65,7 @@ def main():
   general_parser = parser.add_argument_group("General")
   categories_parser = parser.add_argument_group("Categories")
   keywords_parser = parser.add_argument_group("Keywords")
+  config_parser = parser.add_argument_group("Config")
 
   # General arguments
   general_parser.add_argument('--show-config', action='store_true',
@@ -85,10 +87,16 @@ def main():
   keywords_parser.add_argument(
     '--add-keyword', nargs=2, help="Add a keyword", metavar=('KEYWORD', 'CATEGORY'))
 
-  # TODO config refactor
-  """ Not implemented yet """
-  # parser.add_argument('-db', '--db-location',
-  #                     dest='db-location', help='Specify database location', type=str)
+  # Config arguments
+  config_parser.add_argument(
+    '--config-wi', help="Change default watch interval", type=float, metavar='WATCH_INTERVAL')
+  config_parser.add_argument(
+    '--config-verbose', help="Change default verbose to 'on'", action='store_true')
+  config_parser.add_argument(
+    '--config-no-verbose', help="Change default verbose to 'off'", action='store_true')
+  config_parser.add_argument(
+    '--config-db', help="Change database location", metavar='DB_LOCATION', type=str
+  )
 
   # TODO system tray icon
   # parser.add_argument('-t', '--tray', action='store_true',
@@ -99,10 +107,12 @@ def main():
 
   args = parser.parse_args()
 
+  # General
   if args.show_config:
     display_config()
     sys.exit()
 
+  # Categories
   if args.categories:
     display_categories()
     sys.exit()
@@ -111,6 +121,7 @@ def main():
     add_category(args.add_category)
     sys.exit()
 
+  # Keywords
   if args.keywords:
     display_keywords()
     sys.exit()
@@ -119,13 +130,29 @@ def main():
     add_keyword(args.add_keyword)
     sys.exit()
 
-  if args.watch_interval:
-    watch_interval = args.poll_time
-  else:
-    config = load_config()
-    watch_interval = int(config['General']['watch_interval'])
+  # Config
+  if args.config_wi:
+    config = Config()
+    config.update_config('General', 'watch_interval', args.config_wi)
+    sys.exit()
 
-  watcher = Watcher(args.verbose, watch_interval)
+  if args.config_verbose:
+    config = Config()
+    config.update_config('General', 'verbose', True)
+    sys.exit()
+
+  if args.config_no_verbose:
+    config = Config()
+    config.update_config('General', 'verbose', False)
+    sys.exit()
+
+  if args.config_db:
+    config = Config()
+    config.update_config('Database', 'location', args.config_db)
+    sys.exit()
+
+  watcher = Watcher(args.watch_interval if args.watch_interval else None,
+                    args.verbose if args.verbose else None)
   print("Monitoring...")
   watcher.monitor()
 
