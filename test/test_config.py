@@ -23,10 +23,11 @@ class TestConfig(unittest.TestCase):
   def test_initialize_config_file_created(self):
     with mock.patch('builtins.print') as mock_print:
       config = Config(self.config_path)
+      config.initialize_config()
 
       self.assertTrue(os.path.exists(self.config_path))
       mock_print.assert_called_with(
-        "Configuration file written successfully.")
+          "Configuration file written successfully.")
 
   def test_initialize_config_exception_handling(self):
     with mock.patch('builtins.print') as mock_print:
@@ -37,17 +38,17 @@ class TestConfig(unittest.TestCase):
           "An error occured while writing the configuration file. Mocked exception.")
 
   def test_initialize_config_file_content(self):
-    with mock.patch('builtins.print'):
-      config = Config(self.config_path)
-      config_contents = config.get_all_config()
+    config = Config(self.config_path)
+    config.initialize_config()
+    config_contents = config.get_all_config()
 
-      self.assertIn('General', config_contents)
-      self.assertIn('Database', config_contents)
+    self.assertIn('General', config_contents)
+    self.assertIn('Database', config_contents)
 
-      self.assertIn('watch_interval', config_contents['General'])
-      self.assertIn('verbose', config_contents['General'])
+    self.assertIn('watch_interval', config_contents['General'])
+    self.assertIn('verbose', config_contents['General'])
 
-      self.assertIn('location', config_contents['Database'])
+    self.assertIn('location', config_contents['Database'])
 
 
 if __name__ == '__main__':
