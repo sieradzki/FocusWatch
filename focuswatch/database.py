@@ -11,7 +11,7 @@ class DatabaseManager:
 
     try:
       dburi = f"file:{self._db_name}?mode=rw"
-      self._conn = sqlite3.connect(dburi, uri=True)
+      self._conn = sqlite3.connect(dburi, uri=True, check_same_thread=False)
     except sqlite3.OperationalError:
       print("Error connecting to database")
       print("Creating new database")

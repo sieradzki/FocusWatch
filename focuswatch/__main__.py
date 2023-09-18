@@ -1,6 +1,10 @@
-import argparse
 import sys
+import threading
 
+from PySide6.QtGui import QAction, QIcon
+from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QSystemTrayIcon
+
+from focuswatch.arguments import parse_arguments
 from focuswatch.config import Config
 from focuswatch.database import DatabaseManager
 from focuswatch.watcher import Watcher
@@ -56,56 +60,13 @@ def add_keyword(keyword):
     print("Error adding a keyword")
 
 
+def start_watcher(watcher):
+  print("Monitoring...")
+  watcher.monitor()
+
+
 def main():
-  parser = argparse.ArgumentParser(
-    prog="focuswatch",
-    description="Activity logging with categorization"
-  )
-
-  general_parser = parser.add_argument_group("General")
-  categories_parser = parser.add_argument_group("Categories")
-  keywords_parser = parser.add_argument_group("Keywords")
-  config_parser = parser.add_argument_group("Config")
-
-  # General arguments
-  general_parser.add_argument('--show-config', action='store_true',
-                              help='Display current configuraton an exit')
-  general_parser.add_argument('-w', '--watch-interval', default=None,
-                              help='Watcher interval', type=float)
-  general_parser.add_argument('-v', '--verbose', action='store_true',
-                              help='Verbose output', default=False)
-
-  # Categories arguments
-  categories_parser.add_argument('-c', '--categories', action='store_true',
-                                 help='Display existing categories and exit')
-  categories_parser.add_argument('--add-category', nargs='+', help="Add a category, PARENT_CATEGORY is optional",
-                                 metavar=('CATEGORY', 'PARENT_CATEGORY'))
-
-  # Keywords arguments
-  keywords_parser.add_argument(
-    '-k', '--keywords', action='store_true', help='Display keywords')
-  keywords_parser.add_argument(
-    '--add-keyword', nargs=2, help="Add a keyword", metavar=('KEYWORD', 'CATEGORY'))
-
-  # Config arguments
-  config_parser.add_argument(
-    '--config-wi', help="Change default watch interval", type=float, metavar='WATCH_INTERVAL')
-  config_parser.add_argument(
-    '--config-verbose', help="Change default verbose to 'on'", action='store_true')
-  config_parser.add_argument(
-    '--config-no-verbose', help="Change default verbose to 'off'", action='store_true')
-  config_parser.add_argument(
-    '--config-db', help="Change database location", metavar='DB_LOCATION', type=str
-  )
-
-  # TODO system tray icon
-  # parser.add_argument('-t', '--tray', action='store_true',
-  # help='Display tray icon')
-
-  # TODO web gui
-  # parser.add_argument('-g', '--gui', action='store_true', help='Run with GUI')
-
-  args = parser.parse_args()
+  args = parse_arguments()
 
   # General
   if args.show_config:
@@ -151,10 +112,53 @@ def main():
     config.update_config('Database', 'location', args.config_db)
     sys.exit()
 
+  """ System tray """
+  app = QApplication([])
+
+  if not QSystemTrayIcon.isSystemTrayAvailable():
+    QMessageBox.critical(
+      None, "Systray", "I couldn't detect any system tray on this system.")
+    sys.exit(1)
+
+  app.setQuitOnLastWindowClosed(False)
+
+  # Create the icon
+  icon = QIcon("icon.png")
+
+  # Create the system tray
+  tray = QSystemTrayIcon()
+  tray.setIcon(icon)
+  tray.setVisible(True)
+
+  # Create the menu
+  menu = QMenu()
+
+  # Add actions to the menu
+  # settings = QAction("Settings")
+  # menu.addAction(settings)
+
+  webgui = QAction("Open WebGUI")
+  menu.addAction(webgui)
+
+  logs = QAction("Open log")
+  menu.addAction(logs)
+
+  quit = QAction("Quit")
+  quit.triggered.connect(app.quit)
+  menu.addAction(quit)
+
+  # Add menu to the system tray
+  tray.setContextMenu(menu)
+
   watcher = Watcher(args.watch_interval if args.watch_interval else None,
                     args.verbose if args.verbose else None)
-  print("Monitoring...")
-  watcher.monitor()
+
+  # Create separate thread for the watcher
+  watcher_thread = threading.Thread(target=start_watcher, args=(watcher,))
+  watcher_thread.daemon = True  # This makes the thread exit when the main program exits
+  watcher_thread.start()
+
+  sys.exit(app.exec())
 
 
 if __name__ == '__main__':

@@ -23,6 +23,9 @@ class Watcher():
     self._verbose = int(self._config.get_config(
       'General', 'verbose')) if not verbose else verbose
 
+  def __del__(self):
+    self.save_entry()
+
   def get_active_window_name(self):
     if platform in ['linux', 'linux2']:
       cmd = ['xdotool', 'getactivewindow', 'getwindowname']
@@ -61,11 +64,11 @@ class Watcher():
       time.strftime("%d-%m-%Y %H:%M:%S", time.localtime(self._time_start)),
       time.strftime("%d-%m-%Y %H:%M:%S", time.localtime(self._time_stop)),
       self._category
-      # TODO tags
     )
 
   def monitor(self):
     while (True):
+      # TODO watch afk
       if self._window_name != self.get_active_window_name():  # log only on activity change
         self._time_stop = time.time()
         self._category = self._classifier.classify_entry(
