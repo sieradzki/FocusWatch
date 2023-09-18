@@ -10,11 +10,6 @@ from focuswatch.database import DatabaseManager
 from focuswatch.watcher import Watcher
 
 
-def start_monitoring(watcher):
-  print("Monitoring...")
-  watcher.monitor()
-
-
 def display_config():
   config = Config()
   config_contents = config.get_all_config()
@@ -63,6 +58,11 @@ def add_keyword(keyword):
     display_keywords()
   else:
     print("Error adding a keyword")
+
+
+def start_watcher(watcher):
+  print("Monitoring...")
+  watcher.monitor()
 
 
 def main():
@@ -134,6 +134,15 @@ def main():
   menu = QMenu()
 
   # Add actions to the menu
+  # settings = QAction("Settings")
+  # menu.addAction(settings)
+
+  webgui = QAction("Open WebGUI")
+  menu.addAction(webgui)
+
+  logs = QAction("Open log")
+  menu.addAction(logs)
+
   quit = QAction("Quit")
   quit.triggered.connect(app.quit)
   menu.addAction(quit)
@@ -145,9 +154,9 @@ def main():
                     args.verbose if args.verbose else None)
 
   # Create separate thread for the watcher
-  monitor_thread = threading.Thread(target=start_monitoring, args=(watcher,))
-  monitor_thread.daemon = True  # This makes the thread exit when the main program exits
-  monitor_thread.start()
+  watcher_thread = threading.Thread(target=start_watcher, args=(watcher,))
+  watcher_thread.daemon = True  # This makes the thread exit when the main program exits
+  watcher_thread.start()
 
   sys.exit(app.exec())
 

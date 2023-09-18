@@ -43,10 +43,6 @@ def parse_arguments():
     '--config-db', help="Change database location", metavar='DB_LOCATION', type=str
   )
 
-  # TODO system tray icon
-  # parser.add_argument('-t', '--tray', action='store_true',
-  # help='Display tray icon')
-
   # TODO web gui
   # parser.add_argument('-g', '--gui', action='store_true', help='Run with GUI')
 
