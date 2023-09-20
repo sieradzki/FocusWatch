@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QSystemTrayIcon
 
 from focuswatch.arguments import parse_arguments
 from focuswatch.gui.tray_settings import TraySettings
+from focuswatch.gui.dashboard import Dashboard
 from focuswatch.watcher import Watcher
 
 
@@ -39,14 +40,16 @@ def main():
   menu = QMenu()
 
   # Add actions to the menu
-  webgui = QAction("Open dashboard")
-  menu.addAction(webgui)
+  dashboard_window = Dashboard()
+  open_dashboard = QAction("Open dashboard")
+  open_dashboard.triggered.connect(dashboard_window.show)
+  menu.addAction(open_dashboard)
 
   tray_settings = TraySettings()
 
-  settings = QAction("Settings")
-  settings.triggered.connect(tray_settings.show)
-  menu.addAction(settings)
+  open_settings = QAction("Settings")
+  open_settings.triggered.connect(tray_settings.show)
+  menu.addAction(open_settings)
 
   logs = QAction("Log")
   menu.addAction(logs)
