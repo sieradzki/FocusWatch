@@ -34,6 +34,7 @@ class DatabaseManager:
         "window_class"  TEXT NOT NULL,
         "window_name"	TEXT NOT NULL,
         "category_id"         INTEGER,
+        "project_id" INTEGER,
         FOREIGN KEY("category_id") REFERENCES "categories"("id") 
     );''')
 
@@ -42,6 +43,7 @@ class DatabaseManager:
         "id"	INTEGER NOT NULL UNIQUE,
         "name"	TEXT NOT NULL,
         "parent_category"	INTEGER,
+        "color" TEXT NOT NULL,
         FOREIGN KEY("parent_category") REFERENCES "categories"("id"),
         PRIMARY KEY("id" AUTOINCREMENT)
       );''')
@@ -52,6 +54,25 @@ class DatabaseManager:
         "name"	TEXT NOT NULL,
         "category_id"	INTEGER,
         FOREIGN KEY("category_id") REFERENCES "categories"("id")
+        ON DELETE CASCADE ON UPDATE CASCADE
+        PRIMARY KEY("id" AUTOINCREMENT)
+      );''')
+
+    self._cur.execute('''
+      CREATE TABLE "projects" (
+        "id" INTEGER NOT NULL UNIQUE,
+        "name" TEXT NOT NULL,
+        "color" TEXT NOT NULL,
+        PRIMARY KEY("id" AUTOINCREMENT)
+      );''')
+
+    self._cur.execute('''
+      CREATE TABLE "tasks" (
+        "id" INTEGER NOT NULL UNIQUE,
+        "name" TEXT NOT NULL,
+        "project_id" INTEGER,
+        "completed" INTEGER,
+        FOREIGN KEY("project_id") REFERENCES "projects"("id")
         ON DELETE CASCADE ON UPDATE CASCADE
         PRIMARY KEY("id" AUTOINCREMENT)
       );''')
@@ -80,8 +101,6 @@ class DatabaseManager:
       else:
         return ""
 
-  # Get entries from-to (?)
-
   def get_todays_entries(self):
     if self._conn is not None:
       today = time.strftime("%d-%m",
@@ -95,6 +114,10 @@ class DatabaseManager:
       res = self._cur.execute(
           "SELECT * FROM 'activity_log' WHERE DATETIME(time_start) >= DATETIME('now', 'weekday 0', '-7 days')")
       return res.fetchall()
+
+  # def get_months_entries(self):
+    # if self._conn is not None:
+      # res = self._cur.execute("SELECT * FROM 'activity_log' WHERE DATETIME(time_start) >= DATETIME('now', 'weekday 0', '-7 days')")
 
   """ Categories """
 
@@ -165,16 +188,23 @@ class DatabaseManager:
 
 if __name__ == "__main__":
   db_object = DatabaseManager()
-  db_object.create_category("work")
-  db_object.create_category("programming", 1)
-  db_object.create_category("hobby")
-  db_object.create_category("programming", 3)
-  db_object.create_category("python", 4)
-  db_object.add_keyword("code", 1)
-  db_object.add_keyword("code", 5)
-  db_object.add_keyword("alacritty", 1)
+  # db_object.create_category("work")
+  # db_object.create_category("programming", 1)
+  # db_object.create_category("hobby")
+  # db_object.create_category("programming", 3)
+  # db_object.create_category("python", 4)
+  # db_object.add_keyword("code", 1)
+  # db_object.add_keyword("code", 5)
+  # db_object.add_keyword("alacritty", 1)
   # entries = db_object.get_all_entries()
-  entries = db_object.get_all_keywords()
+  # entries = db_object.get_all_keywords()
+  # print(entries)
+  # entries = db_object.get_categories_from_keyword('VSCodium')
+  # print(entries)
+  today = time.strftime("%Y-%m-%d", time.localtime(time.time()))
+  time_from = f"{today} 00:00:00"
+  time_to = f"{today} 23:59:59"
+  entries = db_object.get_entries_from_to(time_from, time_to)
   print(entries)
-  entries = db_object.get_categories_from_keyword('VSCodium')
+  entries = db_object.get_todays_entries()
   print(entries)
