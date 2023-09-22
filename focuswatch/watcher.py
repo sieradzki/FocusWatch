@@ -63,7 +63,8 @@ class Watcher():
       self._window_name,
       time.strftime("%d-%m-%Y %H:%M:%S", time.localtime(self._time_start)),
       time.strftime("%d-%m-%Y %H:%M:%S", time.localtime(self._time_stop)),
-      self._category
+      self._category,
+      None  # TODO add project id when the feature is implemented
     )
 
   def monitor(self):

@@ -1,36 +1,76 @@
+from collections import defaultdict
+from datetime import datetime
+
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-                            QMetaObject, QObject, QPoint, QRect,
-                            QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-                           QFont, QFontDatabase, QGradient, QIcon,
-                           QImage, QKeySequence, QLinearGradient, QPainter,
-                           QPalette, QPixmap, QRadialGradient, QTransform)
+                            QMetaObject, QObject, QPoint, QRect, QSize, Qt,
+                            QTime, QUrl)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
+                           QFontDatabase, QGradient, QIcon, QImage,
+                           QKeySequence, QLinearGradient, QPainter, QPalette,
+                           QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QDial, QFrame, QGridLayout,
                                QHBoxLayout, QLabel, QLayout, QMainWindow,
                                QMenuBar, QPushButton, QScrollArea, QSizePolicy,
-                               QSpacerItem, QStatusBar, QTabWidget, QVBoxLayout,
-                               QWidget)
+                               QSpacerItem, QStatusBar, QTabWidget,
+                               QVBoxLayout, QWidget)
+
+from focuswatch.database import DatabaseManager
 
 
 class Dashboard(QMainWindow):
   def __init__(self, parent=None):
     super().__init__(parent)
     self.setupUi(self)
+    self._database = DatabaseManager()
     self.timeline_setup()
     # self.hourSetup()
 
   def timeline_setup(self):
-    # label_sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-    # label_sizePolicy.setHorizontalStretch(0)
-    # label_sizePolicy.setVerticalStretch(0)
+    # TODO get items based on selected time period
+    period_entries = self._database.get_todays_entries()
+    quarter_hour_entries = defaultdict(list)
+    hour_entries = defaultdict(list)
 
     for i in range(24):
+      hour_entries[i] = [0, 0, 0, 0]
+
+    for entry in period_entries:
+      timestamp_start = datetime.strptime(entry[0], "%d-%m-%Y %H:%M:%S")
+      timestamp_stop = datetime.strptime(entry[1], "%d-%m-%Y %H:%M:%S")
+      category_id = entry[-2]
+
+      hour_start = timestamp_start.hour
+      minute_start = timestamp_start.minute // 15
+      quarter_hour_start = f"{hour_start:02d}:{minute_start}"
+
+      duration = (timestamp_stop - timestamp_start).total_seconds() / 60
+
+      if quarter_hour_start not in quarter_hour_entries:
+        quarter_hour_entries[quarter_hour_start] = {}
+
+      if category_id in quarter_hour_entries[quarter_hour_start]:
+        quarter_hour_entries[quarter_hour_start][category_id] += duration
+      else:
+        quarter_hour_entries[quarter_hour_start][category_id] = duration
+
+    for quarter, entries in quarter_hour_entries.items():
+      max_category = max(entries, key=lambda category_id: entries[category_id])
+      quarter_hour_entries[quarter] = max_category
+
+    for quarter, max_category in quarter_hour_entries.items():
+      hour, index = quarter.split(sep=":")
+      hour_entries[int(hour)][int(index)] = max_category
+
+    for hour, entries in hour_entries.items():
+      """ Hour label setup """
       hour_horizontalLayout = QHBoxLayout()
       hour_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
 
       hour_label = QLabel(self.scrollAreaWidgetContents)
       hour_label.setMaximumSize(QSize(30, 90))
-      hour_label.setText(f"{'0' if i < 10 else ''}{i}:00")
+      hour_label.setMinimumSize(QSize(30, 60))
+      hour_label.setText(f"{'0' if hour < 10 else ''}{hour}:00")
+      hour_label.setAlignment(Qt.AlignTop)
 
       hour_horizontalLayout.addWidget(hour_label)
 
@@ -41,16 +81,42 @@ class Dashboard(QMainWindow):
 
       hour_horizontalLayout.addWidget(line)
 
-      hour_text_label = QLabel(self.scrollAreaWidgetContents)
-      # hour_text_label.setMaximumSize(QSize(500, 90))
-      hour_text_label.setText(f" Programming")  # TODO fill with data
-      hour_text_label.setStyleSheet(u"background-color: green;")
+      """ Hour entries setup """
+      hour_verticalLayout = QVBoxLayout()
+      hour_verticalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
+      for i, entry in enumerate(entries):
+        entry_text_label = QLabel(self.scrollAreaWidgetContents)
+        style = []
+        if entry != 0:
+          category = self._database.get_category_by_id(entry)
+          name = category[1]
+          color = category[-1]
+          while color == None:
+            parent_category_id = category[-2]
+            if parent_category_id:
+              parent_category = self._database.get_category_by_id(
+                parent_category_id)
+              color = parent_category[-1]
+            else:
+              color = "#FFFFFF"  # TODO check if this is ever the case
 
-      # label_sizePolicy.setHeightForWidth(
-      #   hour_text_label.sizePolicy().hasHeightForWidth())
+          if i > 0:
+            if entry != entries[i - 1]:
+              entry_text_label.setText(name)
+          else:
+            if entry != hour_entries[hour - 1][-1]:
+              entry_text_label.setText(name)
+          style.append(f"background-color: {color};")
+        else:
+          style.append(f"background-color: rgba(0,0,0,0);")
+        if i == 3:
+          style.append("border-bottom: 1px dashed #141414;")
+        entry_text_label.setStyleSheet(''.join(style))
+        entry_text_label.setAlignment(Qt.AlignCenter)
 
-      hour_horizontalLayout.addWidget(hour_text_label)
+        hour_verticalLayout.addWidget(entry_text_label)
 
+      hour_horizontalLayout.addLayout(hour_verticalLayout)
       self.timeline_main_layout.addLayout(hour_horizontalLayout)
 
   def setupUi(self, Dashboard):
@@ -92,6 +158,7 @@ class Dashboard(QMainWindow):
     self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
     self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 296, 723))
     self.verticalLayout_6 = QVBoxLayout(self.scrollAreaWidgetContents)
+    self.verticalLayout_6.setSpacing(0)
     self.verticalLayout_6.setObjectName(u"verticalLayout_6")
     self.timeline_main_layout = QVBoxLayout()
     self.timeline_main_layout.setObjectName(u"timeline_main_layout")

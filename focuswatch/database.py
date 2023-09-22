@@ -214,6 +214,15 @@ class DatabaseManager:
       else:
         return ""
 
+  def get_category_by_id(self, id):
+    if self._conn is not None:
+      t = (id,)
+      res = self._cur.execute("SELECT * FROM categories where id=?", t)
+      if res:
+        return res.fetchall()[0]
+      else:
+        return ""
+
   """ Keywords """
 
   def add_keyword(self, keyword_name, category_id):
@@ -280,7 +289,11 @@ class DatabaseManager:
         """, t
       )
       if res:
-        return res.fetchall()[0][0]
+        result = res.fetchall()
+        if len(result) > 0:
+          return result[0][0]
+        else:
+          return ""
       else:
         return ""
 
