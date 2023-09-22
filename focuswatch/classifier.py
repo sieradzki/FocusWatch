@@ -18,7 +18,7 @@ class Classifier():
     for keyword in keywords:
       id, name, category_id = keyword
       if name in entry:
-        keyword_depths[category_id] = self._database.get_category_depth(id)
+        keyword_depths[category_id] = self._database.get_category_depth(category_id)
 
     if len(keyword_depths) > 0:
       max_depth = max(keyword_depths, key=keyword_depths.get)
@@ -32,9 +32,9 @@ class Classifier():
 if __name__ == '__main__':
   classifier = Classifier()
   category = classifier.classify_entry(
-    window_class="code", window_name="code in python - tutorial - Mozilla Firefox")
+    window_class="code", window_name="classifier.py - FocusWatch - Visual Studio Code")
   print(category)
 
-  category = classifier.classify_entry(
-    window_class="test", window_name="nothing at all")
+  # category = classifier.classify_entry(
+  # window_class="test", window_name="nothing at all")
   print(category)

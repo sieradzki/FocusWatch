@@ -219,7 +219,11 @@ class DatabaseManager:
       t = (id,)
       res = self._cur.execute("SELECT * FROM categories where id=?", t)
       if res:
-        return res.fetchall()[0]
+        result = res.fetchall()
+        if len(result) > 0:
+          return result[0]
+        else:
+          return ""
       else:
         return ""
 
@@ -246,6 +250,7 @@ class DatabaseManager:
 
   def get_categories_from_keyword(self, keyword):
     """ Returns categories for given keyword sorted by depth """
+    # TODO no longer used
     if self._conn is not None:
       t = (f'%{keyword}%',)
       res = self._cur.execute(
@@ -289,11 +294,7 @@ class DatabaseManager:
         """, t
       )
       if res:
-        result = res.fetchall()
-        if len(result) > 0:
-          return result[0][0]
-        else:
-          return ""
+        return res.fetchall()[0][0]
       else:
         return ""
 

@@ -87,7 +87,7 @@ class Dashboard(QMainWindow):
       for i, entry in enumerate(entries):
         entry_text_label = QLabel(self.scrollAreaWidgetContents)
         style = []
-        if entry != 0:
+        if entry != 0 and entry != None:  # TODO disallow deleting 'Uncategorized' category or change how it works
           category = self._database.get_category_by_id(entry)
           name = category[1]
           color = category[-1]
