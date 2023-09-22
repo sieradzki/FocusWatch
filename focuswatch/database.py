@@ -260,6 +260,39 @@ class DatabaseManager:
       else:
         return ""
 
+  def get_category_depth(self, category_id):
+    if self._conn is not None:
+      t = (category_id,)
+      res = self._cur.execute(
+        """
+          WITH RECURSIVE CategoryHierarchy(id, depth) AS (
+            SELECT id, 0 as depth
+            FROM categories
+            WHERE parent_category IS NULL
+            UNION ALL
+            SELECT c.id, ch.depth + 1
+            FROM categories c
+            JOIN CategoryHierarchy ch ON c.parent_category = ch.id
+          )
+          SELECT depth
+          FROM CategoryHierarchy
+          WHERE id = ?;
+        """, t
+      )
+      if res:
+        return res.fetchall()[0][0]
+      else:
+        return ""
+
+  def get_category_id_from_name(self, category_name):
+    if self._conn is not None:
+      t = (category_name,)
+      res = self._cur.execute('SELECT id FROM categories where name=?', t)
+      if res:
+        return res.fetchall()[0][0]
+      else:
+        return ""
+
 
 if __name__ == "__main__":
   db_object = DatabaseManager()

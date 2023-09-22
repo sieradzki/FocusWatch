@@ -6,24 +6,35 @@ class Classifier():
     self._database = DatabaseManager()
 
   def classify_entry(self, window_class=None, window_name=None):
-    """ Simple temporary classification based on keywords """
-    # TODO smarter classification
+    """ Simple classification based on keywords """
 
-    """ For now the method returns most common class from keywords in window name and class - this can cause issues for example when count is the same for multiple categories """
+    """ Returns category with max depth from keywords in window name and class or Uncategorized """
 
-    categories = []
-    categories.extend(self._database.get_categories_from_keyword(window_class))
-    for word in window_name.split():
-      categories.extend(self._database.get_categories_from_keyword(word))
+    entry = window_class + ' ' + window_name
+    keywords = self._database.get_all_keywords()
 
-    if categories:
-      return max(set(categories), key=categories.count)
+    keyword_depths = {}
+
+    for keyword in keywords:
+      id, name, category_id = keyword
+      if name in entry:
+        keyword_depths[category_id] = self._database.get_category_depth(id)
+
+    if len(keyword_depths) > 0:
+      max_depth = max(keyword_depths, key=keyword_depths.get)
+      return max_depth
     else:
-      return None
+      uncategorized_id = self._database.get_category_id_from_name(
+        "Uncategorized")
+      return uncategorized_id if uncategorized_id else None
 
 
 if __name__ == '__main__':
   classifier = Classifier()
   category = classifier.classify_entry(
     window_class="code", window_name="code in python - tutorial - Mozilla Firefox")
+  print(category)
+
+  category = classifier.classify_entry(
+    window_class="test", window_name="nothing at all")
   print(category)
