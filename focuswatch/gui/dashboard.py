@@ -26,6 +26,12 @@ class Dashboard(QMainWindow):
     self.timeline_setup()
     self.time_breakdown_setup()
 
+  def get_contrasting_text_color(self, background_color):
+    background_rgb = QColor(background_color).toRgb()
+    brightness = (background_rgb.red() * 299 + background_rgb.green()
+                  * 587 + background_rgb.blue() * 114) / 1000
+    return "black" if brightness > 90 else "white"
+
   def timeline_setup(self):
     # TODO get items based on selected time period
     period_entries = self._database.get_todays_entries()
@@ -114,8 +120,11 @@ class Dashboard(QMainWindow):
             if entry != hour_entries[hour - 1][-1]:
               entry_text_label.setText(name)
           style.append(f"background-color: {color};")
+          text_color = self.get_contrasting_text_color(color)
+          style.append(f"color: {text_color};")
         else:
           style.append(f"background-color: rgba(0,0,0,0);")
+
         if i == len(hour_entries[0]) - 1:
           style.append("border-bottom: 1px dashed #141414;")
         entry_text_label.setStyleSheet(''.join(style))
@@ -202,9 +211,14 @@ class Dashboard(QMainWindow):
     self.time_breakdown_main_layout.addLayout(breakdown_verticalLayout)
     self.time_breakdown_main_layout.addWidget(pie_chart)
 
+  def top_application_setup(self):
+    # Get entries for the period grouped by class name summed by duration
+
+    pass
+
   def setupUi(self, Dashboard):
     if not Dashboard.objectName():
-        Dashboard.setObjectName(u"Dashboard")
+      Dashboard.setObjectName(u"Dashboard")
     Dashboard.resize(1600, 900)
     Dashboard.setTabShape(QTabWidget.Rounded)
     self.centralwidget = QWidget(Dashboard)
@@ -236,33 +250,40 @@ class Dashboard(QMainWindow):
     font.setBold(False)
     self.time_breakdown_label_2.setFont(font)
     self.time_breakdown_label_2.setAutoFillBackground(False)
-    self.time_breakdown_label_2.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+    self.time_breakdown_label_2.setAlignment(
+      Qt.AlignLeading | Qt.AlignLeft | Qt.AlignVCenter)
     self.time_breakdown_label_2.setMargin(4)
 
     self.verticalLayout_8.addWidget(self.time_breakdown_label_2)
 
     self.time_breakdown_scrollArea_2 = QScrollArea(self.top_apps_frame)
-    self.time_breakdown_scrollArea_2.setObjectName(u"time_breakdown_scrollArea_2")
+    self.time_breakdown_scrollArea_2.setObjectName(
+      u"time_breakdown_scrollArea_2")
     self.time_breakdown_scrollArea_2.setWidgetResizable(True)
     self.time_breakdown_scrollAreaWidgetContents_2 = QWidget()
-    self.time_breakdown_scrollAreaWidgetContents_2.setObjectName(u"time_breakdown_scrollAreaWidgetContents_2")
-    self.time_breakdown_scrollAreaWidgetContents_2.setGeometry(QRect(0, 0, 610, 693))
-    self.verticalLayout_7 = QVBoxLayout(self.time_breakdown_scrollAreaWidgetContents_2)
+    self.time_breakdown_scrollAreaWidgetContents_2.setObjectName(
+      u"time_breakdown_scrollAreaWidgetContents_2")
+    self.time_breakdown_scrollAreaWidgetContents_2.setGeometry(
+      QRect(0, 0, 610, 693))
+    self.verticalLayout_7 = QVBoxLayout(
+      self.time_breakdown_scrollAreaWidgetContents_2)
     self.verticalLayout_7.setObjectName(u"verticalLayout_7")
     self.time_breakdown_main_layout_2 = QVBoxLayout()
     self.time_breakdown_main_layout_2.setSpacing(0)
-    self.time_breakdown_main_layout_2.setObjectName(u"time_breakdown_main_layout_2")
+    self.time_breakdown_main_layout_2.setObjectName(
+      u"time_breakdown_main_layout_2")
 
     self.verticalLayout_7.addLayout(self.time_breakdown_main_layout_2)
 
-    self.time_breakdown_scrollArea_2.setWidget(self.time_breakdown_scrollAreaWidgetContents_2)
+    self.time_breakdown_scrollArea_2.setWidget(
+      self.time_breakdown_scrollAreaWidgetContents_2)
 
     self.verticalLayout_8.addWidget(self.time_breakdown_scrollArea_2)
 
-
     self.gridLayout.addWidget(self.top_apps_frame, 2, 4, 1, 1)
 
-    self.horizontalSpacer_2 = QSpacerItem(5, 20, QSizePolicy.Minimum, QSizePolicy.Minimum)
+    self.horizontalSpacer_2 = QSpacerItem(
+      5, 20, QSizePolicy.Minimum, QSizePolicy.Minimum)
 
     self.gridLayout.addItem(self.horizontalSpacer_2, 2, 1, 1, 1)
 
@@ -278,7 +299,8 @@ class Dashboard(QMainWindow):
     self.time_breakdown_label.setObjectName(u"time_breakdown_label")
     self.time_breakdown_label.setFont(font)
     self.time_breakdown_label.setAutoFillBackground(False)
-    self.time_breakdown_label.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+    self.time_breakdown_label.setAlignment(
+      Qt.AlignLeading | Qt.AlignLeft | Qt.AlignVCenter)
     self.time_breakdown_label.setMargin(4)
 
     self.verticalLayout_4.addWidget(self.time_breakdown_label)
@@ -287,23 +309,28 @@ class Dashboard(QMainWindow):
     self.time_breakdown_scrollArea.setObjectName(u"time_breakdown_scrollArea")
     self.time_breakdown_scrollArea.setWidgetResizable(True)
     self.time_breakdown_scrollAreaWidgetContents = QWidget()
-    self.time_breakdown_scrollAreaWidgetContents.setObjectName(u"time_breakdown_scrollAreaWidgetContents")
-    self.time_breakdown_scrollAreaWidgetContents.setGeometry(QRect(0, 0, 611, 693))
-    self.verticalLayout_3 = QVBoxLayout(self.time_breakdown_scrollAreaWidgetContents)
+    self.time_breakdown_scrollAreaWidgetContents.setObjectName(
+      u"time_breakdown_scrollAreaWidgetContents")
+    self.time_breakdown_scrollAreaWidgetContents.setGeometry(
+      QRect(0, 0, 611, 693))
+    self.verticalLayout_3 = QVBoxLayout(
+      self.time_breakdown_scrollAreaWidgetContents)
     self.verticalLayout_3.setObjectName(u"verticalLayout_3")
     self.time_breakdown_main_layout = QVBoxLayout()
-    self.time_breakdown_main_layout.setObjectName(u"time_breakdown_main_layout")
+    self.time_breakdown_main_layout.setObjectName(
+      u"time_breakdown_main_layout")
 
     self.verticalLayout_3.addLayout(self.time_breakdown_main_layout)
 
-    self.time_breakdown_scrollArea.setWidget(self.time_breakdown_scrollAreaWidgetContents)
+    self.time_breakdown_scrollArea.setWidget(
+      self.time_breakdown_scrollAreaWidgetContents)
 
     self.verticalLayout_4.addWidget(self.time_breakdown_scrollArea)
 
-
     self.gridLayout.addWidget(self.time_breakdown_frame, 2, 2, 1, 1)
 
-    self.verticalSpacer = QSpacerItem(20, 5, QSizePolicy.Minimum, QSizePolicy.Minimum)
+    self.verticalSpacer = QSpacerItem(
+      20, 5, QSizePolicy.Minimum, QSizePolicy.Minimum)
 
     self.gridLayout.addItem(self.verticalSpacer, 1, 0, 1, 1)
 
@@ -312,7 +339,8 @@ class Dashboard(QMainWindow):
     sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
     sizePolicy.setHorizontalStretch(0)
     sizePolicy.setVerticalStretch(0)
-    sizePolicy.setHeightForWidth(self.timeline_frame.sizePolicy().hasHeightForWidth())
+    sizePolicy.setHeightForWidth(
+      self.timeline_frame.sizePolicy().hasHeightForWidth())
     self.timeline_frame.setSizePolicy(sizePolicy)
     self.timeline_frame.setMinimumSize(QSize(300, 0))
     self.timeline_frame.setFrameShape(QFrame.StyledPanel)
@@ -338,7 +366,6 @@ class Dashboard(QMainWindow):
 
     self.horizontalLayout_2.addWidget(self.timeline_scrollArea)
 
-
     self.gridLayout.addWidget(self.timeline_frame, 2, 0, 1, 1)
 
     self.date_nav_frame = QFrame(self.dashboard_tab)
@@ -346,7 +373,8 @@ class Dashboard(QMainWindow):
     sizePolicy1 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
     sizePolicy1.setHorizontalStretch(0)
     sizePolicy1.setVerticalStretch(0)
-    sizePolicy1.setHeightForWidth(self.date_nav_frame.sizePolicy().hasHeightForWidth())
+    sizePolicy1.setHeightForWidth(
+      self.date_nav_frame.sizePolicy().hasHeightForWidth())
     self.date_nav_frame.setSizePolicy(sizePolicy1)
     self.date_nav_frame.setMaximumSize(QSize(250, 16777215))
     self.date_nav_frame.setAutoFillBackground(False)
@@ -357,7 +385,8 @@ class Dashboard(QMainWindow):
     self.horizontalLayout.setObjectName(u"horizontalLayout")
     self.date_prev_button = QPushButton(self.date_nav_frame)
     self.date_prev_button.setObjectName(u"date_prev_button")
-    sizePolicy1.setHeightForWidth(self.date_prev_button.sizePolicy().hasHeightForWidth())
+    sizePolicy1.setHeightForWidth(
+      self.date_prev_button.sizePolicy().hasHeightForWidth())
     self.date_prev_button.setSizePolicy(sizePolicy1)
     self.date_prev_button.setMaximumSize(QSize(20, 16777215))
 
@@ -368,7 +397,8 @@ class Dashboard(QMainWindow):
     sizePolicy2 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
     sizePolicy2.setHorizontalStretch(0)
     sizePolicy2.setVerticalStretch(0)
-    sizePolicy2.setHeightForWidth(self.date_button.sizePolicy().hasHeightForWidth())
+    sizePolicy2.setHeightForWidth(
+      self.date_button.sizePolicy().hasHeightForWidth())
     self.date_button.setSizePolicy(sizePolicy2)
     self.date_button.setMaximumSize(QSize(600, 16777215))
 
@@ -380,7 +410,8 @@ class Dashboard(QMainWindow):
 
     self.horizontalLayout.addWidget(self.date_next_button)
 
-    self.horizontalSpacer_3 = QSpacerItem(15, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
+    self.horizontalSpacer_3 = QSpacerItem(
+      15, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
 
     self.horizontalLayout.addItem(self.horizontalSpacer_3)
 
@@ -388,7 +419,6 @@ class Dashboard(QMainWindow):
     self.time_period_button.setObjectName(u"time_period_button")
 
     self.horizontalLayout.addWidget(self.time_period_button)
-
 
     self.gridLayout.addWidget(self.date_nav_frame, 0, 0, 1, 4)
 
@@ -398,7 +428,6 @@ class Dashboard(QMainWindow):
     self.tabWidget.addTab(self.tab_2, "")
 
     self.verticalLayout.addWidget(self.tabWidget)
-
 
     self.verticalLayout_2.addLayout(self.verticalLayout)
 
@@ -414,7 +443,6 @@ class Dashboard(QMainWindow):
     self.retranslateUi(Dashboard)
 
     self.tabWidget.setCurrentIndex(0)
-
 
     QMetaObject.connectSlotsByName(Dashboard)
 
