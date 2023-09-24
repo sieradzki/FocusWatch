@@ -161,6 +161,7 @@ class DatabaseManager:
     self.add_keyword("obsidian", 15)
 
   """ Activities """
+
   def insert_activity(self, window_class, window_name, time_start, time_stop, category, project_id):
     if self._conn is not None:
       t = (time_start, time_stop, window_class,
@@ -192,6 +193,23 @@ class DatabaseManager:
     if self._conn is not None:
       res = self._cur.execute(
           "SELECT * FROM 'activity_log' WHERE DATETIME(time_start) >= DATETIME('now', 'weekday 0', '-7 days')")
+      return res.fetchall()
+
+  def get_daily_entries_class_time_total(self):
+    if self._conn is not None:
+      res = self._cur.execute("""
+        SELECT window_class, category_id,
+        SUM(
+          strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')
+        ) AS total_time_seconds
+        FROM activity_log
+        WHERE
+          strftime('%d-%m-%Y', time_start) = strftime('%d-%m-%Y', 'now', 'utc')
+        GROUP BY
+          window_class
+        ORDER BY
+          total_time_seconds DESC;
+        """)
       return res.fetchall()
 
   # def get_months_entries(self):

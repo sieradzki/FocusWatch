@@ -25,6 +25,7 @@ class Dashboard(QMainWindow):
     self._database = DatabaseManager()
     self.timeline_setup()
     self.time_breakdown_setup()
+    self.top_application_setup()
 
   def get_contrasting_text_color(self, background_color):
     background_rgb = QColor(background_color).toRgb()
@@ -191,13 +192,18 @@ class Dashboard(QMainWindow):
 
       slice.setColor(QColor(color))
 
+      slice.hovered.connect(slice.setExploded)
+      slice.hovered.connect(slice.setLabelVisible)
+
       series.append(slice)
 
       category_horizontalLayout.addWidget(category_label)
 
       breakdown_verticalLayout.addLayout(category_horizontalLayout)
 
-    series.setHoleSize(0.4)
+    series.setHoleSize(0.35)
+    # series.setLabelsVisible(True)
+    # series.setLabelsPosition(QtCharts.QPieSlice.LabelInsideNormal)
     pie_chart.chart().addSeries(series)
 
     legend = pie_chart.chart().legend()
@@ -213,8 +219,82 @@ class Dashboard(QMainWindow):
 
   def top_application_setup(self):
     # Get entries for the period grouped by class name summed by duration
+    window_class_by_total_time = self._database.get_daily_entries_class_time_total()
+    total_time = 0
 
-    pass
+    for vals in window_class_by_total_time:
+      total_time += vals[-1]
+
+    breakdown_verticalLayout = QVBoxLayout()
+    breakdown_verticalLayout.setSizeConstraint(
+        QLayout.SetDefaultConstraint)
+
+    pie_chart = QtCharts.QChartView()
+    pie_chart.setRenderHint(QPainter.Antialiasing)
+    pie_chart.setMinimumSize(400, 400)
+
+    series = QtCharts.QPieSeries()
+
+    for vals in window_class_by_total_time:
+      class_horizontalLayout = QHBoxLayout()
+      class_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
+
+      window_class, category_id, time = vals
+      if time / 60 < 1:
+        continue
+      category = self._database.get_category_by_id(category_id)
+      id, name, parent_category_id, color = category
+
+      text = ""
+      while color == None:
+        if parent_category_id:
+          parent_category = self._database.get_category_by_id(
+            parent_category_id)
+          color = parent_category[-1]
+          # text += parent_category[1] + " > "
+        else:
+          color = "#FFFFFF"  # TODO check if this is ever the case
+
+      text += window_class
+      class_label = QLabel(self.top_apps_scrollAreaWidgetContents)
+      class_label.setText(f"{text} {time/60 :.1f} m")  # TODO if > 60
+      class_label.setStyleSheet(f"color: {color};")
+      class_label.setMaximumHeight(20)
+
+      font = QFont()
+      font.setPointSize(10)
+
+      class_label.setFont(font)
+
+      slice = QtCharts.QPieSlice(text, time / 60)
+
+      slice.setColor(QColor(color))
+
+      slice.hovered.connect(slice.setExploded)
+      slice.hovered.connect(slice.setLabelVisible)
+
+      series.append(slice)
+
+      class_horizontalLayout.addWidget(class_label)
+
+      breakdown_verticalLayout.addLayout(class_horizontalLayout)
+
+    series.setHoleSize(0.35)
+    # series.setLabelsVisible(True)
+    # series.setLabelsPosition(QtCharts.QPieSlice.LabelInsideNormal)
+    pie_chart.chart().addSeries(series)
+
+    legend = pie_chart.chart().legend()
+    legend.setAlignment(Qt.AlignBottom)
+    legend.setFont(QFont("Helvetica", 9))
+
+    verticalSpacer = QSpacerItem(
+      20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+    breakdown_verticalLayout.addItem(verticalSpacer)
+
+    self.top_apps_main_layout.addLayout(breakdown_verticalLayout)
+    self.top_apps_main_layout.addWidget(pie_chart)
 
   def setupUi(self, Dashboard):
     if not Dashboard.objectName():
@@ -234,59 +314,6 @@ class Dashboard(QMainWindow):
     self.dashboard_tab.setObjectName(u"dashboard_tab")
     self.gridLayout = QGridLayout(self.dashboard_tab)
     self.gridLayout.setObjectName(u"gridLayout")
-    self.top_apps_frame = QFrame(self.dashboard_tab)
-    self.top_apps_frame.setObjectName(u"top_apps_frame")
-    self.top_apps_frame.setMinimumSize(QSize(50, 0))
-    self.top_apps_frame.setFrameShape(QFrame.StyledPanel)
-    self.top_apps_frame.setFrameShadow(QFrame.Raised)
-    self.verticalLayout_8 = QVBoxLayout(self.top_apps_frame)
-    self.verticalLayout_8.setSpacing(0)
-    self.verticalLayout_8.setObjectName(u"verticalLayout_8")
-    self.verticalLayout_8.setContentsMargins(0, 0, 0, 0)
-    self.time_breakdown_label_2 = QLabel(self.top_apps_frame)
-    self.time_breakdown_label_2.setObjectName(u"time_breakdown_label_2")
-    font = QFont()
-    font.setPointSize(12)
-    font.setBold(False)
-    self.time_breakdown_label_2.setFont(font)
-    self.time_breakdown_label_2.setAutoFillBackground(False)
-    self.time_breakdown_label_2.setAlignment(
-      Qt.AlignLeading | Qt.AlignLeft | Qt.AlignVCenter)
-    self.time_breakdown_label_2.setMargin(4)
-
-    self.verticalLayout_8.addWidget(self.time_breakdown_label_2)
-
-    self.time_breakdown_scrollArea_2 = QScrollArea(self.top_apps_frame)
-    self.time_breakdown_scrollArea_2.setObjectName(
-      u"time_breakdown_scrollArea_2")
-    self.time_breakdown_scrollArea_2.setWidgetResizable(True)
-    self.time_breakdown_scrollAreaWidgetContents_2 = QWidget()
-    self.time_breakdown_scrollAreaWidgetContents_2.setObjectName(
-      u"time_breakdown_scrollAreaWidgetContents_2")
-    self.time_breakdown_scrollAreaWidgetContents_2.setGeometry(
-      QRect(0, 0, 610, 693))
-    self.verticalLayout_7 = QVBoxLayout(
-      self.time_breakdown_scrollAreaWidgetContents_2)
-    self.verticalLayout_7.setObjectName(u"verticalLayout_7")
-    self.time_breakdown_main_layout_2 = QVBoxLayout()
-    self.time_breakdown_main_layout_2.setSpacing(0)
-    self.time_breakdown_main_layout_2.setObjectName(
-      u"time_breakdown_main_layout_2")
-
-    self.verticalLayout_7.addLayout(self.time_breakdown_main_layout_2)
-
-    self.time_breakdown_scrollArea_2.setWidget(
-      self.time_breakdown_scrollAreaWidgetContents_2)
-
-    self.verticalLayout_8.addWidget(self.time_breakdown_scrollArea_2)
-
-    self.gridLayout.addWidget(self.top_apps_frame, 2, 4, 1, 1)
-
-    self.horizontalSpacer_2 = QSpacerItem(
-      5, 20, QSizePolicy.Minimum, QSizePolicy.Minimum)
-
-    self.gridLayout.addItem(self.horizontalSpacer_2, 2, 1, 1, 1)
-
     self.time_breakdown_frame = QFrame(self.dashboard_tab)
     self.time_breakdown_frame.setObjectName(u"time_breakdown_frame")
     self.time_breakdown_frame.setFrameShape(QFrame.StyledPanel)
@@ -297,6 +324,9 @@ class Dashboard(QMainWindow):
     self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
     self.time_breakdown_label = QLabel(self.time_breakdown_frame)
     self.time_breakdown_label.setObjectName(u"time_breakdown_label")
+    font = QFont()
+    font.setPointSize(12)
+    font.setBold(False)
     self.time_breakdown_label.setFont(font)
     self.time_breakdown_label.setAutoFillBackground(False)
     self.time_breakdown_label.setAlignment(
@@ -328,11 +358,6 @@ class Dashboard(QMainWindow):
     self.verticalLayout_4.addWidget(self.time_breakdown_scrollArea)
 
     self.gridLayout.addWidget(self.time_breakdown_frame, 2, 2, 1, 1)
-
-    self.verticalSpacer = QSpacerItem(
-      20, 5, QSizePolicy.Minimum, QSizePolicy.Minimum)
-
-    self.gridLayout.addItem(self.verticalSpacer, 1, 0, 1, 1)
 
     self.timeline_frame = QFrame(self.dashboard_tab)
     self.timeline_frame.setObjectName(u"timeline_frame")
@@ -367,6 +392,51 @@ class Dashboard(QMainWindow):
     self.horizontalLayout_2.addWidget(self.timeline_scrollArea)
 
     self.gridLayout.addWidget(self.timeline_frame, 2, 0, 1, 1)
+
+    self.top_apps_frame = QFrame(self.dashboard_tab)
+    self.top_apps_frame.setObjectName(u"top_apps_frame")
+    self.top_apps_frame.setMinimumSize(QSize(50, 0))
+    self.top_apps_frame.setFrameShape(QFrame.StyledPanel)
+    self.top_apps_frame.setFrameShadow(QFrame.Raised)
+    self.verticalLayout_8 = QVBoxLayout(self.top_apps_frame)
+    self.verticalLayout_8.setSpacing(0)
+    self.verticalLayout_8.setObjectName(u"verticalLayout_8")
+    self.verticalLayout_8.setContentsMargins(0, 0, 0, 0)
+    self.top_apps_label = QLabel(self.top_apps_frame)
+    self.top_apps_label.setObjectName(u"top_apps_label")
+    self.top_apps_label.setFont(font)
+    self.top_apps_label.setAutoFillBackground(False)
+    self.top_apps_label.setAlignment(
+      Qt.AlignLeading | Qt.AlignLeft | Qt.AlignVCenter)
+    self.top_apps_label.setMargin(4)
+
+    self.verticalLayout_8.addWidget(self.top_apps_label)
+
+    self.top_apps_scrollArea = QScrollArea(self.top_apps_frame)
+    self.top_apps_scrollArea.setObjectName(u"top_apps_scrollArea")
+    self.top_apps_scrollArea.setWidgetResizable(True)
+    self.top_apps_scrollAreaWidgetContents = QWidget()
+    self.top_apps_scrollAreaWidgetContents.setObjectName(
+      u"top_apps_scrollAreaWidgetContents")
+    self.top_apps_scrollAreaWidgetContents.setGeometry(QRect(0, 0, 610, 693))
+    self.verticalLayout_7 = QVBoxLayout(self.top_apps_scrollAreaWidgetContents)
+    self.verticalLayout_7.setObjectName(u"verticalLayout_7")
+    self.top_apps_main_layout = QVBoxLayout()
+    self.top_apps_main_layout.setSpacing(0)
+    self.top_apps_main_layout.setObjectName(u"top_apps_main_layout")
+
+    self.verticalLayout_7.addLayout(self.top_apps_main_layout)
+
+    self.top_apps_scrollArea.setWidget(self.top_apps_scrollAreaWidgetContents)
+
+    self.verticalLayout_8.addWidget(self.top_apps_scrollArea)
+
+    self.gridLayout.addWidget(self.top_apps_frame, 2, 4, 1, 1)
+
+    self.verticalSpacer = QSpacerItem(
+      20, 5, QSizePolicy.Minimum, QSizePolicy.Minimum)
+
+    self.gridLayout.addItem(self.verticalSpacer, 1, 0, 1, 1)
 
     self.date_nav_frame = QFrame(self.dashboard_tab)
     self.date_nav_frame.setObjectName(u"date_nav_frame")
@@ -422,6 +492,32 @@ class Dashboard(QMainWindow):
 
     self.gridLayout.addWidget(self.date_nav_frame, 0, 0, 1, 4)
 
+    self.horizontalSpacer_2 = QSpacerItem(
+      5, 20, QSizePolicy.Minimum, QSizePolicy.Minimum)
+
+    self.gridLayout.addItem(self.horizontalSpacer_2, 2, 1, 1, 1)
+
+    self.frame = QFrame(self.dashboard_tab)
+    self.frame.setObjectName(u"frame")
+    self.frame.setLayoutDirection(Qt.RightToLeft)
+    self.frame.setStyleSheet(u"")
+    self.frame.setFrameShape(QFrame.NoFrame)
+    self.frame.setFrameShadow(QFrame.Raised)
+    self.horizontalLayout_3 = QHBoxLayout(self.frame)
+    self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+    self.refreshButton = QPushButton(self.frame)
+    self.refreshButton.setObjectName(u"refreshButton")
+    self.refreshButton.setMaximumSize(QSize(80, 16777215))
+
+    self.horizontalLayout_3.addWidget(self.refreshButton)
+
+    self.horizontalSpacer = QSpacerItem(
+      40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+    self.horizontalLayout_3.addItem(self.horizontalSpacer)
+
+    self.gridLayout.addWidget(self.frame, 0, 4, 1, 1)
+
     self.tabWidget.addTab(self.dashboard_tab, "")
     self.tab_2 = QWidget()
     self.tab_2.setObjectName(u"tab_2")
@@ -447,15 +543,16 @@ class Dashboard(QMainWindow):
     QMetaObject.connectSlotsByName(Dashboard)
 
     self.showEvent = self.onShow
+    self.refreshButton.clicked.connect(self.showEvent)
   # setupUi
 
   def retranslateUi(self, Dashboard):
     Dashboard.setWindowTitle(QCoreApplication.translate(
       "Dashboard", u"FocusWatch", None))
-    self.time_breakdown_label_2.setText(
-      QCoreApplication.translate("Dashboard", u"Top applications", None))
     self.time_breakdown_label.setText(
       QCoreApplication.translate("Dashboard", u"Top categories", None))
+    self.top_apps_label.setText(QCoreApplication.translate(
+      "Dashboard", u"Top applications", None))
     self.date_prev_button.setText(
       QCoreApplication.translate("Dashboard", u"<", None))
     self.date_button.setText(
@@ -464,6 +561,8 @@ class Dashboard(QMainWindow):
       QCoreApplication.translate("Dashboard", u">", None))
     self.time_period_button.setText(
       QCoreApplication.translate("Dashboard", u"Day view", None))
+    self.refreshButton.setText(
+      QCoreApplication.translate("Dashboard", u"Refresh", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
       self.dashboard_tab), QCoreApplication.translate("Dashboard", u"Dashboard", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
@@ -476,3 +575,4 @@ class Dashboard(QMainWindow):
     self.setupUi(self)
     self.timeline_setup()
     self.time_breakdown_setup()
+    self.top_application_setup()
