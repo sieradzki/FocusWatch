@@ -61,8 +61,9 @@ class Watcher():
     self._database.insert_activity(
       self._window_class,
       self._window_name,
-      time.strftime("%d-%m-%Y %H:%M:%S", time.localtime(self._time_start)),
-      time.strftime("%d-%m-%Y %H:%M:%S", time.localtime(self._time_stop)),
+      # YYYY-MM-DD HH:MM:SS.SSS
+      time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self._time_start)),
+      time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self._time_stop)),
       self._category,
       None  # TODO add project id when the feature is implemented
     )

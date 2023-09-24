@@ -102,6 +102,8 @@ class DatabaseManager:
     self.create_category("Social media", 10)
     self.create_category("Music", 10)
 
+    self.create_category("Productivity", None, "#332032")
+
     self.create_category("Uncategorized", None, "#8c8c8c")
 
     self.insert_default_keywords()
@@ -120,6 +122,7 @@ class DatabaseManager:
     self.add_keyword("kate", 2)
     self.add_keyword("Visual Studio", 2)
     self.add_keyword("code", 2)
+    self.add_keyword("QtCreator", 2)
 
     self.add_keyword("Gimp", 4)
     self.add_keyword("Inkscape", 4)
@@ -153,8 +156,11 @@ class DatabaseManager:
 
     self.add_keyword("Spotify", 14)
 
-  """ Activities """
+    self.add_keyword("FocusWatch", 15)
+    self.add_keyword("notion", 15)
+    self.add_keyword("obsidian", 15)
 
+  """ Activities """
   def insert_activity(self, window_class, window_name, time_start, time_stop, category, project_id):
     if self._conn is not None:
       t = (time_start, time_stop, window_class,
@@ -176,7 +182,7 @@ class DatabaseManager:
 
   def get_todays_entries(self):
     if self._conn is not None:
-      today = time.strftime("%d-%m",
+      today = time.strftime("%m-%d",
                             time.localtime(time.time()))
       res = self._cur.execute(
           f"SELECT * FROM 'activity_log' WHERE time_start LIKE '%{today}%'")
@@ -226,6 +232,24 @@ class DatabaseManager:
           return ""
       else:
         return ""
+
+  def get_daily_category_time_totals(self):
+    if self._conn is not None:
+      res = self._cur.execute("""
+        SELECT category_id,
+        SUM(
+            strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')
+        ) AS total_time_seconds
+        FROM
+            activity_log
+        WHERE
+            strftime('%d-%m-%Y', time_start) = strftime('%d-%m-%Y', 'now', 'utc')
+        GROUP BY
+            category_id
+        ORDER BY
+            total_time_seconds DESC;
+        """)
+      return res.fetchall()
 
   """ Keywords """
 

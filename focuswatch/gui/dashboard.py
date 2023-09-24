@@ -1,6 +1,7 @@
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 
+from PySide6 import QtCharts
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
                             QMetaObject, QObject, QPoint, QRect, QSize, Qt,
                             QTime, QUrl)
@@ -10,9 +11,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
                            QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QDial, QFrame, QGridLayout,
                                QHBoxLayout, QLabel, QLayout, QMainWindow,
-                               QMenuBar, QPushButton, QScrollArea, QSizePolicy,
-                               QSpacerItem, QStatusBar, QTabWidget,
-                               QVBoxLayout, QWidget)
+                               QMenuBar, QProgressBar, QPushButton,
+                               QScrollArea, QSizePolicy, QSpacerItem,
+                               QStatusBar, QTabWidget, QVBoxLayout, QWidget)
 
 from focuswatch.database import DatabaseManager
 
@@ -23,41 +24,47 @@ class Dashboard(QMainWindow):
     self.setupUi(self)
     self._database = DatabaseManager()
     self.timeline_setup()
-    # self.hourSetup()
+    self.time_breakdown_setup()
 
   def timeline_setup(self):
     # TODO get items based on selected time period
     period_entries = self._database.get_todays_entries()
-    quarter_hour_entries = defaultdict(list)
+    hour_chunk_entries = defaultdict(list)
     hour_entries = defaultdict(list)
 
     for i in range(24):
-      hour_entries[i] = [0, 0, 0, 0]
+      hour_entries[i] = [0, 0, 0, 0, 0, 0]
 
     for entry in period_entries:
-      timestamp_start = datetime.strptime(entry[0], "%d-%m-%Y %H:%M:%S")
-      timestamp_stop = datetime.strptime(entry[1], "%d-%m-%Y %H:%M:%S")
+      timestamp_start = datetime.strptime(entry[0], "%Y-%m-%d %H:%M:%S")
+      timestamp_stop = datetime.strptime(entry[1], "%Y-%m-%d %H:%M:%S")
       category_id = entry[-2]
 
-      hour_start = timestamp_start.hour
-      minute_start = timestamp_start.minute // 15
-      quarter_hour_start = f"{hour_start:02d}:{minute_start}"
+      while timestamp_start < timestamp_stop:
+        hour_start = timestamp_start.hour
+        minute_start = timestamp_start.minute // 10
+        quarter_hour_start = f"{hour_start:02d}:{minute_start}"
 
-      duration = (timestamp_stop - timestamp_start).total_seconds() / 60
+        duration_in_this_quarter = min(
+            10 - (timestamp_start.minute % 10), (timestamp_stop -
+                                                 timestamp_start).total_seconds() / 60
+        )
 
-      if quarter_hour_start not in quarter_hour_entries:
-        quarter_hour_entries[quarter_hour_start] = {}
+        if quarter_hour_start not in hour_chunk_entries:
+          hour_chunk_entries[quarter_hour_start] = {}
 
-      if category_id in quarter_hour_entries[quarter_hour_start]:
-        quarter_hour_entries[quarter_hour_start][category_id] += duration
-      else:
-        quarter_hour_entries[quarter_hour_start][category_id] = duration
+        if category_id in hour_chunk_entries[quarter_hour_start]:
+          hour_chunk_entries[quarter_hour_start][category_id] += duration_in_this_quarter
+        else:
+          hour_chunk_entries[quarter_hour_start][category_id] = duration_in_this_quarter
 
-    for quarter, entries in quarter_hour_entries.items():
+        timestamp_start += timedelta(minutes=duration_in_this_quarter)
+
+    for quarter, entries in hour_chunk_entries.items():
       max_category = max(entries, key=lambda category_id: entries[category_id])
-      quarter_hour_entries[quarter] = max_category
+      hour_chunk_entries[quarter] = max_category
 
-    for quarter, max_category in quarter_hour_entries.items():
+    for quarter, max_category in hour_chunk_entries.items():
       hour, index = quarter.split(sep=":")
       hour_entries[int(hour)][int(index)] = max_category
 
@@ -68,7 +75,7 @@ class Dashboard(QMainWindow):
 
       hour_label = QLabel(self.scrollAreaWidgetContents)
       hour_label.setMaximumSize(QSize(30, 90))
-      hour_label.setMinimumSize(QSize(30, 60))
+      hour_label.setMinimumSize(QSize(30, 90))
       hour_label.setText(f"{'0' if hour < 10 else ''}{hour}:00")
       hour_label.setAlignment(Qt.AlignTop)
 
@@ -109,19 +116,95 @@ class Dashboard(QMainWindow):
           style.append(f"background-color: {color};")
         else:
           style.append(f"background-color: rgba(0,0,0,0);")
-        if i == 3:
+        if i == len(hour_entries[0]) - 1:
           style.append("border-bottom: 1px dashed #141414;")
         entry_text_label.setStyleSheet(''.join(style))
         entry_text_label.setAlignment(Qt.AlignCenter)
+        entry_text_label.setMaximumHeight(90 // len(hour_entries[0]))
+        # font = QFont()
+        # font.setPointSize(6)
+
+        # entry_text_label.setFont(font)
 
         hour_verticalLayout.addWidget(entry_text_label)
 
       hour_horizontalLayout.addLayout(hour_verticalLayout)
       self.timeline_main_layout.addLayout(hour_horizontalLayout)
 
+  def time_breakdown_setup(self):
+    categories_by_total_time = self._database.get_daily_category_time_totals()
+    total_time = 0
+
+    for vals in categories_by_total_time:
+      total_time += vals[-1]
+
+    breakdown_verticalLayout = QVBoxLayout()
+    breakdown_verticalLayout.setSizeConstraint(
+        QLayout.SetDefaultConstraint)
+
+    pie_chart = QtCharts.QChartView()
+    pie_chart.setRenderHint(QPainter.Antialiasing)
+    pie_chart.setMinimumSize(400, 400)
+
+    series = QtCharts.QPieSeries()
+
+    for vals in categories_by_total_time:
+      category_horizontalLayout = QHBoxLayout()
+      category_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
+      cat_id, time = vals
+      if time / 60 < 1:  # Don't add really small entries
+        continue
+      category = self._database.get_category_by_id(cat_id)
+      id, name, parent_category_id, color = category
+
+      text = ""
+      while color == None:
+        if parent_category_id:
+          parent_category = self._database.get_category_by_id(
+            parent_category_id)
+          color = parent_category[-1]
+          text += parent_category[1] + " > "
+        else:
+          color = "#FFFFFF"  # TODO check if this is ever the case
+
+      text += name
+      category_label = QLabel(self.time_breakdown_scrollAreaWidgetContents)
+      category_label.setText(f"{text} {time/60 :.1f} m")  # TODO if > 60
+      category_label.setStyleSheet(f"color: {color};")
+      category_label.setMaximumHeight(20)
+
+      font = QFont()
+      font.setPointSize(10)
+
+      category_label.setFont(font)
+
+      slice = QtCharts.QPieSlice(text, time / 60)
+
+      slice.setColor(QColor(color))
+
+      series.append(slice)
+
+      category_horizontalLayout.addWidget(category_label)
+
+      breakdown_verticalLayout.addLayout(category_horizontalLayout)
+
+    series.setHoleSize(0.4)
+    pie_chart.chart().addSeries(series)
+
+    legend = pie_chart.chart().legend()
+    legend.setAlignment(Qt.AlignBottom)
+    legend.setFont(QFont("Helvetica", 9))
+
+    verticalSpacer = QSpacerItem(
+      20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+    breakdown_verticalLayout.addItem(verticalSpacer)
+    self.time_breakdown_main_layout.addLayout(breakdown_verticalLayout)
+    self.time_breakdown_main_layout.addWidget(pie_chart)
+
   def setupUi(self, Dashboard):
     if not Dashboard.objectName():
-      Dashboard.setObjectName(u"Dashboard")
+        Dashboard.setObjectName(u"Dashboard")
     Dashboard.resize(1600, 900)
     Dashboard.setTabShape(QTabWidget.Rounded)
     self.centralwidget = QWidget(Dashboard)
@@ -137,13 +220,99 @@ class Dashboard(QMainWindow):
     self.dashboard_tab.setObjectName(u"dashboard_tab")
     self.gridLayout = QGridLayout(self.dashboard_tab)
     self.gridLayout.setObjectName(u"gridLayout")
+    self.top_apps_frame = QFrame(self.dashboard_tab)
+    self.top_apps_frame.setObjectName(u"top_apps_frame")
+    self.top_apps_frame.setMinimumSize(QSize(50, 0))
+    self.top_apps_frame.setFrameShape(QFrame.StyledPanel)
+    self.top_apps_frame.setFrameShadow(QFrame.Raised)
+    self.verticalLayout_8 = QVBoxLayout(self.top_apps_frame)
+    self.verticalLayout_8.setSpacing(0)
+    self.verticalLayout_8.setObjectName(u"verticalLayout_8")
+    self.verticalLayout_8.setContentsMargins(0, 0, 0, 0)
+    self.time_breakdown_label_2 = QLabel(self.top_apps_frame)
+    self.time_breakdown_label_2.setObjectName(u"time_breakdown_label_2")
+    font = QFont()
+    font.setPointSize(12)
+    font.setBold(False)
+    self.time_breakdown_label_2.setFont(font)
+    self.time_breakdown_label_2.setAutoFillBackground(False)
+    self.time_breakdown_label_2.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+    self.time_breakdown_label_2.setMargin(4)
+
+    self.verticalLayout_8.addWidget(self.time_breakdown_label_2)
+
+    self.time_breakdown_scrollArea_2 = QScrollArea(self.top_apps_frame)
+    self.time_breakdown_scrollArea_2.setObjectName(u"time_breakdown_scrollArea_2")
+    self.time_breakdown_scrollArea_2.setWidgetResizable(True)
+    self.time_breakdown_scrollAreaWidgetContents_2 = QWidget()
+    self.time_breakdown_scrollAreaWidgetContents_2.setObjectName(u"time_breakdown_scrollAreaWidgetContents_2")
+    self.time_breakdown_scrollAreaWidgetContents_2.setGeometry(QRect(0, 0, 610, 693))
+    self.verticalLayout_7 = QVBoxLayout(self.time_breakdown_scrollAreaWidgetContents_2)
+    self.verticalLayout_7.setObjectName(u"verticalLayout_7")
+    self.time_breakdown_main_layout_2 = QVBoxLayout()
+    self.time_breakdown_main_layout_2.setSpacing(0)
+    self.time_breakdown_main_layout_2.setObjectName(u"time_breakdown_main_layout_2")
+
+    self.verticalLayout_7.addLayout(self.time_breakdown_main_layout_2)
+
+    self.time_breakdown_scrollArea_2.setWidget(self.time_breakdown_scrollAreaWidgetContents_2)
+
+    self.verticalLayout_8.addWidget(self.time_breakdown_scrollArea_2)
+
+
+    self.gridLayout.addWidget(self.top_apps_frame, 2, 4, 1, 1)
+
+    self.horizontalSpacer_2 = QSpacerItem(5, 20, QSizePolicy.Minimum, QSizePolicy.Minimum)
+
+    self.gridLayout.addItem(self.horizontalSpacer_2, 2, 1, 1, 1)
+
+    self.time_breakdown_frame = QFrame(self.dashboard_tab)
+    self.time_breakdown_frame.setObjectName(u"time_breakdown_frame")
+    self.time_breakdown_frame.setFrameShape(QFrame.StyledPanel)
+    self.time_breakdown_frame.setFrameShadow(QFrame.Raised)
+    self.verticalLayout_4 = QVBoxLayout(self.time_breakdown_frame)
+    self.verticalLayout_4.setSpacing(0)
+    self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+    self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
+    self.time_breakdown_label = QLabel(self.time_breakdown_frame)
+    self.time_breakdown_label.setObjectName(u"time_breakdown_label")
+    self.time_breakdown_label.setFont(font)
+    self.time_breakdown_label.setAutoFillBackground(False)
+    self.time_breakdown_label.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
+    self.time_breakdown_label.setMargin(4)
+
+    self.verticalLayout_4.addWidget(self.time_breakdown_label)
+
+    self.time_breakdown_scrollArea = QScrollArea(self.time_breakdown_frame)
+    self.time_breakdown_scrollArea.setObjectName(u"time_breakdown_scrollArea")
+    self.time_breakdown_scrollArea.setWidgetResizable(True)
+    self.time_breakdown_scrollAreaWidgetContents = QWidget()
+    self.time_breakdown_scrollAreaWidgetContents.setObjectName(u"time_breakdown_scrollAreaWidgetContents")
+    self.time_breakdown_scrollAreaWidgetContents.setGeometry(QRect(0, 0, 611, 693))
+    self.verticalLayout_3 = QVBoxLayout(self.time_breakdown_scrollAreaWidgetContents)
+    self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+    self.time_breakdown_main_layout = QVBoxLayout()
+    self.time_breakdown_main_layout.setObjectName(u"time_breakdown_main_layout")
+
+    self.verticalLayout_3.addLayout(self.time_breakdown_main_layout)
+
+    self.time_breakdown_scrollArea.setWidget(self.time_breakdown_scrollAreaWidgetContents)
+
+    self.verticalLayout_4.addWidget(self.time_breakdown_scrollArea)
+
+
+    self.gridLayout.addWidget(self.time_breakdown_frame, 2, 2, 1, 1)
+
+    self.verticalSpacer = QSpacerItem(20, 5, QSizePolicy.Minimum, QSizePolicy.Minimum)
+
+    self.gridLayout.addItem(self.verticalSpacer, 1, 0, 1, 1)
+
     self.timeline_frame = QFrame(self.dashboard_tab)
     self.timeline_frame.setObjectName(u"timeline_frame")
     sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
     sizePolicy.setHorizontalStretch(0)
     sizePolicy.setVerticalStretch(0)
-    sizePolicy.setHeightForWidth(
-      self.timeline_frame.sizePolicy().hasHeightForWidth())
+    sizePolicy.setHeightForWidth(self.timeline_frame.sizePolicy().hasHeightForWidth())
     self.timeline_frame.setSizePolicy(sizePolicy)
     self.timeline_frame.setMinimumSize(QSize(300, 0))
     self.timeline_frame.setFrameShape(QFrame.StyledPanel)
@@ -169,6 +338,7 @@ class Dashboard(QMainWindow):
 
     self.horizontalLayout_2.addWidget(self.timeline_scrollArea)
 
+
     self.gridLayout.addWidget(self.timeline_frame, 2, 0, 1, 1)
 
     self.date_nav_frame = QFrame(self.dashboard_tab)
@@ -176,8 +346,7 @@ class Dashboard(QMainWindow):
     sizePolicy1 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
     sizePolicy1.setHorizontalStretch(0)
     sizePolicy1.setVerticalStretch(0)
-    sizePolicy1.setHeightForWidth(
-      self.date_nav_frame.sizePolicy().hasHeightForWidth())
+    sizePolicy1.setHeightForWidth(self.date_nav_frame.sizePolicy().hasHeightForWidth())
     self.date_nav_frame.setSizePolicy(sizePolicy1)
     self.date_nav_frame.setMaximumSize(QSize(250, 16777215))
     self.date_nav_frame.setAutoFillBackground(False)
@@ -188,8 +357,7 @@ class Dashboard(QMainWindow):
     self.horizontalLayout.setObjectName(u"horizontalLayout")
     self.date_prev_button = QPushButton(self.date_nav_frame)
     self.date_prev_button.setObjectName(u"date_prev_button")
-    sizePolicy1.setHeightForWidth(
-      self.date_prev_button.sizePolicy().hasHeightForWidth())
+    sizePolicy1.setHeightForWidth(self.date_prev_button.sizePolicy().hasHeightForWidth())
     self.date_prev_button.setSizePolicy(sizePolicy1)
     self.date_prev_button.setMaximumSize(QSize(20, 16777215))
 
@@ -200,8 +368,7 @@ class Dashboard(QMainWindow):
     sizePolicy2 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
     sizePolicy2.setHorizontalStretch(0)
     sizePolicy2.setVerticalStretch(0)
-    sizePolicy2.setHeightForWidth(
-      self.date_button.sizePolicy().hasHeightForWidth())
+    sizePolicy2.setHeightForWidth(self.date_button.sizePolicy().hasHeightForWidth())
     self.date_button.setSizePolicy(sizePolicy2)
     self.date_button.setMaximumSize(QSize(600, 16777215))
 
@@ -213,8 +380,7 @@ class Dashboard(QMainWindow):
 
     self.horizontalLayout.addWidget(self.date_next_button)
 
-    self.horizontalSpacer_3 = QSpacerItem(
-      15, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
+    self.horizontalSpacer_3 = QSpacerItem(15, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
 
     self.horizontalLayout.addItem(self.horizontalSpacer_3)
 
@@ -223,88 +389,8 @@ class Dashboard(QMainWindow):
 
     self.horizontalLayout.addWidget(self.time_period_button)
 
+
     self.gridLayout.addWidget(self.date_nav_frame, 0, 0, 1, 4)
-
-    self.top_apps_frame = QFrame(self.dashboard_tab)
-    self.top_apps_frame.setObjectName(u"top_apps_frame")
-    self.top_apps_frame.setMinimumSize(QSize(50, 0))
-    self.top_apps_frame.setFrameShape(QFrame.StyledPanel)
-    self.top_apps_frame.setFrameShadow(QFrame.Raised)
-
-    self.gridLayout.addWidget(self.top_apps_frame, 2, 4, 1, 1)
-
-    self.verticalSpacer = QSpacerItem(
-      20, 5, QSizePolicy.Minimum, QSizePolicy.Minimum)
-
-    self.gridLayout.addItem(self.verticalSpacer, 1, 0, 1, 1)
-
-    self.horizontalSpacer_2 = QSpacerItem(
-      5, 20, QSizePolicy.Minimum, QSizePolicy.Minimum)
-
-    self.gridLayout.addItem(self.horizontalSpacer_2, 2, 1, 1, 1)
-
-    self.time_breakdown_frame = QFrame(self.dashboard_tab)
-    self.time_breakdown_frame.setObjectName(u"time_breakdown_frame")
-    self.time_breakdown_frame.setFrameShape(QFrame.StyledPanel)
-    self.time_breakdown_frame.setFrameShadow(QFrame.Raised)
-    self.verticalLayout_4 = QVBoxLayout(self.time_breakdown_frame)
-    self.verticalLayout_4.setSpacing(0)
-    self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-    self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
-    self.label = QLabel(self.time_breakdown_frame)
-    self.label.setObjectName(u"label")
-    font = QFont()
-    font.setPointSize(12)
-    font.setBold(False)
-    self.label.setFont(font)
-    self.label.setAutoFillBackground(False)
-    self.label.setMargin(4)
-
-    self.verticalLayout_4.addWidget(self.label)
-
-    self.time_breakdown_scrollArea = QScrollArea(self.time_breakdown_frame)
-    self.time_breakdown_scrollArea.setObjectName(u"time_breakdown_scrollArea")
-    self.time_breakdown_scrollArea.setWidgetResizable(True)
-    self.scrollAreaWidgetContents_2 = QWidget()
-    self.scrollAreaWidgetContents_2.setObjectName(
-      u"scrollAreaWidgetContents_2")
-    self.scrollAreaWidgetContents_2.setGeometry(QRect(0, 0, 1175, 563))
-    self.verticalLayout_3 = QVBoxLayout(self.scrollAreaWidgetContents_2)
-    self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-    self.label_2 = QLabel(self.scrollAreaWidgetContents_2)
-    self.label_2.setObjectName(u"label_2")
-
-    self.verticalLayout_3.addWidget(self.label_2)
-
-    self.time_breakdown_scrollArea.setWidget(self.scrollAreaWidgetContents_2)
-
-    self.verticalLayout_4.addWidget(self.time_breakdown_scrollArea)
-
-    self.verticalSpacer_2 = QSpacerItem(
-      20, 40, QSizePolicy.Minimum, QSizePolicy.Minimum)
-
-    self.verticalLayout_4.addItem(self.verticalSpacer_2)
-
-    self.time_chart_frame = QFrame(self.time_breakdown_frame)
-    self.time_chart_frame.setObjectName(u"time_chart_frame")
-    self.time_chart_frame.setMinimumSize(QSize(0, 50))
-    self.time_chart_frame.setFrameShape(QFrame.StyledPanel)
-    self.time_chart_frame.setFrameShadow(QFrame.Raised)
-    self.dial = QDial(self.time_chart_frame)
-    self.dial.setObjectName(u"dial")
-    self.dial.setGeometry(QRect(60, -10, 50, 64))
-    self.label_3 = QLabel(self.time_chart_frame)
-    self.label_3.setObjectName(u"label_3")
-    self.label_3.setGeometry(QRect(180, 10, 54, 17))
-
-    self.verticalLayout_4.addWidget(self.time_chart_frame)
-
-    self.verticalSpacer_3 = QSpacerItem(
-      20, 40, QSizePolicy.Minimum, QSizePolicy.Minimum)
-
-    self.verticalLayout_4.addItem(self.verticalSpacer_3)
-
-    self.gridLayout.addWidget(self.time_breakdown_frame, 2, 2, 1, 1)
 
     self.tabWidget.addTab(self.dashboard_tab, "")
     self.tab_2 = QWidget()
@@ -312,6 +398,7 @@ class Dashboard(QMainWindow):
     self.tabWidget.addTab(self.tab_2, "")
 
     self.verticalLayout.addWidget(self.tabWidget)
+
 
     self.verticalLayout_2.addLayout(self.verticalLayout)
 
@@ -328,12 +415,19 @@ class Dashboard(QMainWindow):
 
     self.tabWidget.setCurrentIndex(0)
 
+
     QMetaObject.connectSlotsByName(Dashboard)
+
+    self.showEvent = self.onShow
   # setupUi
 
   def retranslateUi(self, Dashboard):
-    Dashboard.setWindowTitle(
-      QCoreApplication.translate("Dashboard", u"Dashboard", None))
+    Dashboard.setWindowTitle(QCoreApplication.translate(
+      "Dashboard", u"FocusWatch", None))
+    self.time_breakdown_label_2.setText(
+      QCoreApplication.translate("Dashboard", u"Top applications", None))
+    self.time_breakdown_label.setText(
+      QCoreApplication.translate("Dashboard", u"Top categories", None))
     self.date_prev_button.setText(
       QCoreApplication.translate("Dashboard", u"<", None))
     self.date_button.setText(
@@ -342,14 +436,15 @@ class Dashboard(QMainWindow):
       QCoreApplication.translate("Dashboard", u">", None))
     self.time_period_button.setText(
       QCoreApplication.translate("Dashboard", u"Day view", None))
-    self.label.setText(QCoreApplication.translate(
-      "Dashboard", u"Time breakdown (categories)", None))
-    self.label_2.setText(QCoreApplication.translate(
-      "Dashboard", u"Category - progress bar - time spent ", None))
-    self.label_3.setText(QCoreApplication.translate(
-      "Dashboard", u"Pie-chart", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
       self.dashboard_tab), QCoreApplication.translate("Dashboard", u"Dashboard", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
       self.tab_2), QCoreApplication.translate("Dashboard", u"Categorization", None))
-# retranslateUi
+  # retranslateUi
+
+  def onShow(self, event):
+    """ This is probably a bad practice """
+    # TODO
+    self.setupUi(self)
+    self.timeline_setup()
+    self.time_breakdown_setup()
