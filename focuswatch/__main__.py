@@ -9,6 +9,8 @@ from focuswatch.gui.tray_settings import TraySettings
 from focuswatch.gui.dashboard import Dashboard
 from focuswatch.watcher import Watcher
 
+from qt_material import apply_stylesheet
+
 
 def start_watcher(watcher):
   # print("Monitoring...")
@@ -41,6 +43,7 @@ def main():
 
   # Add actions to the menu
   dashboard_window = Dashboard()
+  # apply_stylesheet(app, theme='dark_blue.xml')
   open_dashboard = QAction("Open dashboard")
   open_dashboard.triggered.connect(dashboard_window.show)
   menu.addAction(open_dashboard)

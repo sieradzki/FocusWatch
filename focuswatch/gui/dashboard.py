@@ -143,14 +143,29 @@ class Dashboard(QMainWindow):
 
   def time_breakdown_setup(self):
     categories_by_total_time = self._database.get_daily_category_time_totals()
-    total_time = 0
-
-    for vals in categories_by_total_time:
-      total_time += vals[-1]
 
     breakdown_verticalLayout = QVBoxLayout()
     breakdown_verticalLayout.setSizeConstraint(
         QLayout.SetDefaultConstraint)
+
+    if not categories_by_total_time:
+      info_label = QLabel(self.time_breakdown_scrollAreaWidgetContents)
+      info_label.setText("No entries for the selected period")
+
+      font = QFont()
+      font.setPointSize(16)
+
+      info_label.setFont(font)
+      info_label.setAlignment(Qt.AlignCenter)
+
+      breakdown_verticalLayout.addWidget(info_label)
+      self.time_breakdown_main_layout.addLayout(breakdown_verticalLayout)
+      return
+
+    total_time = 0
+
+    for vals in categories_by_total_time:
+      total_time += vals[-1]
 
     pie_chart = QtCharts.QChartView()
     pie_chart.setRenderHint(QPainter.Antialiasing)
@@ -218,16 +233,30 @@ class Dashboard(QMainWindow):
     self.time_breakdown_main_layout.addWidget(pie_chart)
 
   def top_application_setup(self):
-    # Get entries for the period grouped by class name summed by duration
     window_class_by_total_time = self._database.get_daily_entries_class_time_total()
-    total_time = 0
-
-    for vals in window_class_by_total_time:
-      total_time += vals[-1]
 
     breakdown_verticalLayout = QVBoxLayout()
     breakdown_verticalLayout.setSizeConstraint(
         QLayout.SetDefaultConstraint)
+
+    if not window_class_by_total_time:
+      info_label = QLabel(self.top_apps_scrollAreaWidgetContents)
+      info_label.setText("No entries for the selected period")
+
+      font = QFont()
+      font.setPointSize(16)
+
+      info_label.setFont(font)
+      info_label.setAlignment(Qt.AlignCenter)
+
+      breakdown_verticalLayout.addWidget(info_label)
+      self.top_apps_main_layout.addLayout(breakdown_verticalLayout)
+      return
+
+    total_time = 0
+
+    for vals in window_class_by_total_time:
+      total_time += vals[-1]
 
     pie_chart = QtCharts.QChartView()
     pie_chart.setRenderHint(QPainter.Antialiasing)
@@ -258,7 +287,7 @@ class Dashboard(QMainWindow):
       text += window_class
       class_label = QLabel(self.top_apps_scrollAreaWidgetContents)
       class_label.setText(f"{text} {time/60 :.1f} m")  # TODO if > 60
-      class_label.setStyleSheet(f"color: {color};")
+      # class_label.setStyleSheet(f"color: {color};")
       class_label.setMaximumHeight(20)
 
       font = QFont()
@@ -268,7 +297,7 @@ class Dashboard(QMainWindow):
 
       slice = QtCharts.QPieSlice(text, time / 60)
 
-      slice.setColor(QColor(color))
+      # slice.setColor(QColor(color))
 
       slice.hovered.connect(slice.setExploded)
       slice.hovered.connect(slice.setLabelVisible)
