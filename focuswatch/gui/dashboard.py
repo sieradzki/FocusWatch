@@ -169,7 +169,7 @@ class Dashboard(QMainWindow):
 
     pie_chart = QtCharts.QChartView()
     pie_chart.setRenderHint(QPainter.Antialiasing)
-    pie_chart.setMinimumSize(400, 400)
+    pie_chart.setMinimumSize(300, 300)
 
     series = QtCharts.QPieSeries()
 
@@ -220,10 +220,11 @@ class Dashboard(QMainWindow):
     # series.setLabelsVisible(True)
     # series.setLabelsPosition(QtCharts.QPieSlice.LabelInsideNormal)
     pie_chart.chart().addSeries(series)
+    pie_chart.chart().legend().hide()
 
-    legend = pie_chart.chart().legend()
-    legend.setAlignment(Qt.AlignBottom)
-    legend.setFont(QFont("Helvetica", 9))
+    # legend = pie_chart.chart().legend()
+    # legend.setAlignment(Qt.AlignBottom)
+    # legend.setFont(QFont("Helvetica", 9))
 
     verticalSpacer = QSpacerItem(
       20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
@@ -260,7 +261,7 @@ class Dashboard(QMainWindow):
 
     pie_chart = QtCharts.QChartView()
     pie_chart.setRenderHint(QPainter.Antialiasing)
-    pie_chart.setMinimumSize(400, 400)
+    pie_chart.setMinimumSize(300, 300)
 
     series = QtCharts.QPieSeries()
 
@@ -312,10 +313,11 @@ class Dashboard(QMainWindow):
     # series.setLabelsVisible(True)
     # series.setLabelsPosition(QtCharts.QPieSlice.LabelInsideNormal)
     pie_chart.chart().addSeries(series)
+    pie_chart.chart().legend().hide()
 
-    legend = pie_chart.chart().legend()
-    legend.setAlignment(Qt.AlignBottom)
-    legend.setFont(QFont("Helvetica", 9))
+    # legend = pie_chart.chart().legend()
+    # legend.setAlignment(Qt.AlignBottom)
+    # legend.setFont(QFont("Helvetica", 9))
 
     verticalSpacer = QSpacerItem(
       20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
@@ -324,6 +326,139 @@ class Dashboard(QMainWindow):
 
     self.top_apps_main_layout.addLayout(breakdown_verticalLayout)
     self.top_apps_main_layout.addWidget(pie_chart)
+
+  def categories_setup(self):
+    # Get all categories and keywords
+    categories = self._database.get_all_categories()
+    keywords = self._database.get_all_keywords()
+
+    # Make a dict category: keywords
+    cat_key = defaultdict(list)
+    for keyword in keywords:
+      cat_key[keyword[-1]].append(keyword[1])
+
+    # for key, value in cat_key.items():
+    # print(f"{key} {value}")
+
+    # Organize into parent-cildren
+    cat_dict = defaultdict(list)
+
+    for cat_id, name, parent_cat_id, color in categories:
+      category = {
+        'name': name,
+        'color': color,
+        'keywords': cat_key[cat_id],
+        'children': []
+      }
+
+      if parent_cat_id is None:
+        cat_dict[cat_id] = category
+      else:
+        parent_category = cat_dict[parent_cat_id]
+        parent_category['children'].append(cat_id)
+        cat_dict[cat_id] = category
+
+    # Create layouts
+    category_name_verticalLayout = QVBoxLayout()
+    category_name_verticalLayout.setObjectName(
+      u"category_name_verticalLayout")
+    category_name_verticalLayout.setSizeConstraint(
+      QLayout.SetDefaultConstraint)
+    category_name_verticalLayout.setContentsMargins(-1, 0, 0, -1)
+
+    category_keywords_verticalLayout = QVBoxLayout()
+    category_keywords_verticalLayout.setObjectName(
+      u"category_keywords_verticalLayout")
+    category_keywords_verticalLayout.setSizeConstraint(
+      QLayout.SetDefaultConstraint)
+
+    category_actions_verticalLayout = QVBoxLayout()
+    category_actions_verticalLayout.setObjectName(
+      u"category_actions_verticalLayout")
+
+    # Size policies
+    cat_label_sizePolicy = QSizePolicy(
+      QSizePolicy.Maximum, QSizePolicy.Preferred)
+    cat_label_sizePolicy.setHorizontalStretch(0)
+    cat_label_sizePolicy.setVerticalStretch(0)
+
+    action_sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+    action_sizePolicy.setHorizontalStretch(0)
+    action_sizePolicy.setVerticalStretch(0)
+
+    for key, vals in cat_dict.items():
+      # Name label
+      category_label = QLabel(self.categorization_scrollAreaWidgetContents)
+      cat_label_sizePolicy.setHeightForWidth(
+        category_label.sizePolicy().hasHeightForWidth())
+      category_label.setSizePolicy(cat_label_sizePolicy)
+      depth = self._database.get_category_depth(key)
+      indent = '\t' * depth
+      category_label.setText(f"{indent} {key}. {vals['name']}")
+      font = QFont()
+      font.setPointSize(12)
+      category_label.setFont(font)
+
+      category_name_verticalLayout.addWidget(category_label)
+
+      # Keywords label
+      keywords_label = QLabel(self.categorization_scrollAreaWidgetContents)
+      keywords_label.setText("Keywords: " + '| '.join(vals['keywords']))
+      keywords_label.setMinimumSize(QSize(600, 0))
+      keywords_label.setWordWrap(True)
+
+      category_keywords_verticalLayout.addWidget(keywords_label)
+
+      # Actions
+      # TODO Replace text with icons
+      category_action_horizontalLayout = QHBoxLayout()
+      category_action_horizontalLayout.setSizeConstraint(
+        QLayout.SetMinimumSize)
+
+      edit_button = QPushButton(self.categorization_scrollAreaWidgetContents)
+      action_sizePolicy.setHeightForWidth(
+        edit_button.sizePolicy().hasHeightForWidth())
+      edit_button.setSizePolicy(action_sizePolicy)
+      edit_button.setText(
+        f"Edit category {key}{' ' if key < 10 else ''}")  # TODO xd
+
+      category_action_horizontalLayout.addWidget(edit_button)
+
+      add_child_button = QPushButton(
+        self.categorization_scrollAreaWidgetContents)
+      action_sizePolicy.setHeightForWidth(
+        add_child_button.sizePolicy().hasHeightForWidth())
+      add_child_button.setSizePolicy(action_sizePolicy)
+      add_child_button.setText("Add child category")
+
+      category_action_horizontalLayout.addWidget(add_child_button)
+
+      category_actions_verticalLayout.addLayout(
+        category_action_horizontalLayout)
+
+    horizontalSpacer_1 = QSpacerItem(
+      60, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
+    horizontalSpacer_2 = QSpacerItem(
+      200, 20, QSizePolicy.Maximum, QSizePolicy.Minimum)
+
+    self.categorization_content_horizontalLayout.addLayout(
+      category_name_verticalLayout)
+    self.categorization_content_horizontalLayout.addItem(
+      horizontalSpacer_1)
+    self.categorization_content_horizontalLayout.addLayout(
+      category_keywords_verticalLayout)
+    self.categorization_content_horizontalLayout.addItem(
+      horizontalSpacer_2)
+    self.categorization_content_horizontalLayout.addLayout(
+      category_actions_verticalLayout)
+
+  def dashboard_tab_setup(self):
+    self.timeline_setup()
+    self.time_breakdown_setup()
+    self.top_application_setup()
+
+  def categorization_tab_setup(self):
+    self.categories_setup()
 
   def setupUi(self, Dashboard):
     if not Dashboard.objectName():
@@ -338,7 +473,9 @@ class Dashboard(QMainWindow):
     self.verticalLayout.setObjectName(u"verticalLayout")
     self.tabWidget = QTabWidget(self.centralwidget)
     self.tabWidget.setObjectName(u"tabWidget")
+    self.tabWidget.setTabShape(QTabWidget.Rounded)
     self.tabWidget.setDocumentMode(False)
+    self.tabWidget.setTabBarAutoHide(False)
     self.dashboard_tab = QWidget()
     self.dashboard_tab.setObjectName(u"dashboard_tab")
     self.gridLayout = QGridLayout(self.dashboard_tab)
@@ -548,9 +685,113 @@ class Dashboard(QMainWindow):
     self.gridLayout.addWidget(self.frame, 0, 4, 1, 1)
 
     self.tabWidget.addTab(self.dashboard_tab, "")
-    self.tab_2 = QWidget()
-    self.tab_2.setObjectName(u"tab_2")
-    self.tabWidget.addTab(self.tab_2, "")
+    self.categorization_tab = QWidget()
+    self.categorization_tab.setObjectName(u"categorization_tab")
+    self.verticalLayout_5 = QVBoxLayout(self.categorization_tab)
+    self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+    self.categorization_main_frame = QFrame(self.categorization_tab)
+    self.categorization_main_frame.setObjectName(u"categorization_main_frame")
+    self.categorization_main_frame.setFrameShape(QFrame.StyledPanel)
+    self.categorization_main_frame.setFrameShadow(QFrame.Raised)
+    self.verticalLayout_12 = QVBoxLayout(self.categorization_main_frame)
+    self.verticalLayout_12.setObjectName(u"verticalLayout_12")
+    self.categorization_info_label = QLabel(self.categorization_main_frame)
+    self.categorization_info_label.setObjectName(u"categorization_info_label")
+    font1 = QFont()
+    font1.setPointSize(12)
+    self.categorization_info_label.setFont(font1)
+    self.categorization_info_label.setScaledContents(False)
+    self.categorization_info_label.setWordWrap(True)
+
+    self.verticalLayout_12.addWidget(self.categorization_info_label)
+
+    self.categorization_scrollArea = QScrollArea(
+      self.categorization_main_frame)
+    self.categorization_scrollArea.setObjectName(u"categorization_scrollArea")
+    sizePolicy3 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+    sizePolicy3.setHorizontalStretch(0)
+    sizePolicy3.setVerticalStretch(0)
+    sizePolicy3.setHeightForWidth(
+      self.categorization_scrollArea.sizePolicy().hasHeightForWidth())
+    self.categorization_scrollArea.setSizePolicy(sizePolicy3)
+    self.categorization_scrollArea.setWidgetResizable(True)
+    self.categorization_scrollAreaWidgetContents = QWidget()
+    self.categorization_scrollAreaWidgetContents.setObjectName(
+      u"categorization_scrollAreaWidgetContents")
+    self.categorization_scrollAreaWidgetContents.setGeometry(
+      QRect(0, 0, 1536, 737))
+    self.verticalLayout_13 = QVBoxLayout(
+      self.categorization_scrollAreaWidgetContents)
+    self.verticalLayout_13.setObjectName(u"verticalLayout_13")
+    self.categorization_verticalLayout = QVBoxLayout()
+    self.categorization_verticalLayout.setObjectName(
+      u"categorization_verticalLayout")
+    self.categorization_content_horizontalLayout = QHBoxLayout()
+    self.categorization_content_horizontalLayout.setObjectName(
+      u"categorization_content_horizontalLayout")
+
+    self.categorization_verticalLayout.addLayout(
+      self.categorization_content_horizontalLayout)
+
+    self.verticalSpacer_2 = QSpacerItem(
+      20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+    self.categorization_verticalLayout.addItem(self.verticalSpacer_2)
+
+    self.categorization_button_horizontalLayout = QHBoxLayout()
+    self.categorization_button_horizontalLayout.setObjectName(
+      u"categorization_button_horizontalLayout")
+    self.categorization_addCategory = QPushButton(
+      self.categorization_scrollAreaWidgetContents)
+    self.categorization_addCategory.setObjectName(
+      u"categorization_addCategory")
+
+    self.categorization_button_horizontalLayout.addWidget(
+      self.categorization_addCategory)
+
+    self.horizontalSpacer_4 = QSpacerItem(
+      40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+    self.categorization_button_horizontalLayout.addItem(
+      self.horizontalSpacer_4)
+
+    self.pushButton_4 = QPushButton(
+      self.categorization_scrollAreaWidgetContents)
+    self.pushButton_4.setObjectName(u"pushButton_4")
+
+    self.categorization_button_horizontalLayout.addWidget(self.pushButton_4)
+
+    self.categorization_save = QPushButton(
+      self.categorization_scrollAreaWidgetContents)
+    self.categorization_save.setObjectName(u"categorization_save")
+
+    self.categorization_button_horizontalLayout.addWidget(
+      self.categorization_save)
+
+    self.categorization_restoreDefaults = QPushButton(
+      self.categorization_scrollAreaWidgetContents)
+    self.categorization_restoreDefaults.setObjectName(
+      u"categorization_restoreDefaults")
+
+    self.categorization_button_horizontalLayout.addWidget(
+      self.categorization_restoreDefaults)
+
+    self.categorization_verticalLayout.addLayout(
+      self.categorization_button_horizontalLayout)
+
+    self.verticalLayout_13.addLayout(self.categorization_verticalLayout)
+
+    self.categorization_scrollArea.setWidget(
+      self.categorization_scrollAreaWidgetContents)
+
+    self.verticalLayout_12.addWidget(self.categorization_scrollArea)
+
+    self.verticalLayout_5.addWidget(self.categorization_main_frame)
+
+    self.tabWidget.addTab(self.categorization_tab, "")
+    self.settings_tab = QWidget()
+    self.settings_tab.setObjectName(u"settings_tab")
+    self.tabWidget.addTab(self.settings_tab, "")
 
     self.verticalLayout.addWidget(self.tabWidget)
 
@@ -567,7 +808,7 @@ class Dashboard(QMainWindow):
 
     self.retranslateUi(Dashboard)
 
-    self.tabWidget.setCurrentIndex(0)
+    self.tabWidget.setCurrentIndex(1)
 
     QMetaObject.connectSlotsByName(Dashboard)
 
@@ -594,14 +835,25 @@ class Dashboard(QMainWindow):
       QCoreApplication.translate("Dashboard", u"Refresh", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
       self.dashboard_tab), QCoreApplication.translate("Dashboard", u"Dashboard", None))
+    self.categorization_info_label.setText(QCoreApplication.translate(
+      "Dashboard", u"Rules for categorizing events. An event can only have one category. If several categories match, the deepest one will be chosen.", None))
+    self.categorization_addCategory.setText(
+      QCoreApplication.translate("Dashboard", u"Add category", None))
+    self.pushButton_4.setText(QCoreApplication.translate(
+      "Dashboard", u"Retrospective categorization", None))
+    self.categorization_save.setText(
+      QCoreApplication.translate("Dashboard", u"Save", None))
+    self.categorization_restoreDefaults.setText(
+      QCoreApplication.translate("Dashboard", u"Restore defaults", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
-      self.tab_2), QCoreApplication.translate("Dashboard", u"Categorization", None))
+      self.categorization_tab), QCoreApplication.translate("Dashboard", u"Categorization", None))
+    self.tabWidget.setTabText(self.tabWidget.indexOf(
+      self.settings_tab), QCoreApplication.translate("Dashboard", u"Settings", None))
   # retranslateUi
 
   def onShow(self, event):
     """ This is probably a bad practice """
     # TODO
     self.setupUi(self)
-    self.timeline_setup()
-    self.time_breakdown_setup()
-    self.top_application_setup()
+    self.dashboard_tab_setup()
+    self.categorization_tab_setup()
