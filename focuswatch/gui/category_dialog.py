@@ -75,8 +75,9 @@ class CategoryDialog(QDialog):
         widget.deleteLater()
 
     # Add keywords to grid
-    for keyword in self._keywords:
-      self.add_keyword_to_grid(keyword)
+    if len(self._keywords) > 0:
+      for keyword in self._keywords:
+        self.add_keyword_to_grid(keyword)
 
     for keyword in self.new_keywords:
       self.add_keyword_to_grid(keyword)
@@ -152,7 +153,8 @@ class CategoryDialog(QDialog):
       self.name_textEdit.sizePolicy().hasHeightForWidth())
     self.name_textEdit.setSizePolicy(sizePolicy1)
     self.name_textEdit.setMaximumSize(QSize(16777215, 30))
-    self.name_textEdit.setText(self._category[1])
+    if self._category is not None:
+      self.name_textEdit.setText(self._category[1])
 
     self.horizontalLayout_2.addWidget(self.name_textEdit)
 
@@ -176,11 +178,17 @@ class CategoryDialog(QDialog):
     uncategorized_id = self._database.get_category_id_from_name(
       "Uncategorized")
     self.parent_comboBox.addItem(f"None")
+    if self._category is not None:
+      cat_id = self._category[0]
+    else:
+      cat_id = None
     for category in categories:
-      if category[0] != self._category[0] and category[0] != uncategorized_id:
+      if category[0] != cat_id and category[0] != uncategorized_id:
         self.parent_comboBox.addItem(f"{category[1]}")
+
     parent_category = self._database.get_category_by_id(
-        self._category[-2])
+        self._category[-2]) if self._category is not None else None
+
     if parent_category:
       index = self.parent_comboBox.findText(
         parent_category[1], Qt.MatchFixedString)
@@ -217,18 +225,19 @@ class CategoryDialog(QDialog):
     self.selectColor_pushButton.setBaseSize(QSize(40, 20))
 
     # Set button color from category or parent if empty
-    color = self._category[-1]
-    while color == None:
-      if self._category[-2]:  # parent_category
-        parent_category = self._database.get_category_by_id(
-          self._category[-2])
-        color = parent_category[-1]
-        # text += parent_category[1] + " > "
-      else:
-        color = "#FFFFFF"
+    if self._category is not None:
+      color = self._category[-1]
+      while color == None:
+        if self._category[-2]:  # parent_category
+          parent_category = self._database.get_category_by_id(
+            self._category[-2])
+          color = parent_category[-1]
+          # text += parent_category[1] + " > "
+        else:
+          color = "#FFFFFF"
 
-    self.selectColor_pushButton.setStyleSheet(
-        f"background-color: {color};")
+      self.selectColor_pushButton.setStyleSheet(
+          f"background-color: {color};")
     self.selectColor_pushButton.clicked.connect(self.show_color_picker)
 
     self.horizontalLayout.addWidget(self.selectColor_pushButton)

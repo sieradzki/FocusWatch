@@ -335,16 +335,23 @@ class Dashboard(QMainWindow):
   def show_category_dialog(self):
     """ This is show edit category, add new dialog for create new? """
     sender_name = self.sender().objectName()
-    category_id = sender_name.split(sep='_')[-1]
-    category = self._database.get_category_by_id(category_id)
-    keywords = self.get_keywords_for_category(category_id)
+    if sender_name != 'categorization_addCategory':
+      category_id = sender_name.split(sep='_')[-1]
+      category = self._database.get_category_by_id(category_id)
+      keywords = self.get_keywords_for_category(category_id)
+    else:
+      category = None
+      keywords = []
     dialog = CategoryDialog(self, category, keywords)
     result = dialog.exec_()
     if result:
       del_keywords = dialog.del_keywords
       new_keywords = dialog.new_keywords
       new_color = dialog.color
-      color = new_color if new_color != category[-1] else category[-1]
+      if category is not None:
+        color = new_color if new_color != category[-1] else category[-1]
+      else:
+        color = new_color
       new_name = dialog.name_textEdit.toPlainText()
       parent = dialog.parent_comboBox.currentText()
       if parent != 'None':
@@ -352,12 +359,16 @@ class Dashboard(QMainWindow):
       else:
         parent_id = None
 
+      if category is not None:
+        self._database.update_category(category_id, new_name, parent_id, color)
+      else:
+        self._database.create_category(new_name, parent_id, color)
+        category_id = self._database.get_category_id_from_name(new_name)
+
       for keyw in del_keywords:
         self._database.delete_keyword(keyw[0])
       for keyw in new_keywords:
         self._database.add_keyword(keyw[1], category_id)
-
-      self._database.update_category(category_id, new_name, parent_id, color)
 
       self.onShow(self.showEvent)
 
@@ -798,6 +809,7 @@ class Dashboard(QMainWindow):
       self.categorization_scrollAreaWidgetContents)
     self.categorization_addCategory.setObjectName(
       u"categorization_addCategory")
+    self.categorization_addCategory.clicked.connect(self.show_category_dialog)
 
     self.categorization_button_horizontalLayout.addWidget(
       self.categorization_addCategory)
@@ -811,15 +823,9 @@ class Dashboard(QMainWindow):
     self.pushButton_4 = QPushButton(
       self.categorization_scrollAreaWidgetContents)
     self.pushButton_4.setObjectName(u"pushButton_4")
+    self.pushButton_4.setEnabled(False)
 
     self.categorization_button_horizontalLayout.addWidget(self.pushButton_4)
-
-    self.categorization_save = QPushButton(
-      self.categorization_scrollAreaWidgetContents)
-    self.categorization_save.setObjectName(u"categorization_save")
-
-    self.categorization_button_horizontalLayout.addWidget(
-      self.categorization_save)
 
     self.categorization_restoreDefaults = QPushButton(
       self.categorization_scrollAreaWidgetContents)
@@ -888,14 +894,12 @@ class Dashboard(QMainWindow):
       QCoreApplication.translate("Dashboard", u"Refresh", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
       self.dashboard_tab), QCoreApplication.translate("Dashboard", u"Dashboard", None))
-    self.categorization_info_label.setText(QCoreApplication.translate(
-      "Dashboard", u"Rules for categorizing events. An event can only have one category. If several categories match, the deepest one will be chosen.", None))
+    self.categorization_info_label.setText(QCoreApplication.translate("Dashboard", u"Rules for categorizing events. An event can only have one category. If several categories match, the deepest one will be chosen.\n"
+                                                                      "To re-categorize previous entries after adding or updating category, click \"Retrospective categorization\" button. (not yet implemented)", None))
     self.categorization_addCategory.setText(
       QCoreApplication.translate("Dashboard", u"Add category", None))
     self.pushButton_4.setText(QCoreApplication.translate(
       "Dashboard", u"Retrospective categorization", None))
-    self.categorization_save.setText(
-      QCoreApplication.translate("Dashboard", u"Save", None))
     self.categorization_restoreDefaults.setText(
       QCoreApplication.translate("Dashboard", u"Restore defaults", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
