@@ -18,7 +18,8 @@ class Classifier():
     for keyword in keywords:
       id, name, category_id = keyword
       if name in entry:
-        keyword_depths[category_id] = self._database.get_category_depth(category_id)
+        keyword_depths[category_id] = self._database.get_category_depth(
+          category_id)
 
     if len(keyword_depths) > 0:
       max_depth = max(keyword_depths, key=keyword_depths.get)

@@ -85,29 +85,34 @@ class DatabaseManager:
     print("Database created successfully")
 
   def insert_default_categories(self):
-    """ Default categories based on activity watch """
-    self.create_category("Work", None, "#00cc00")
-    self.create_category("Programming", 1)
-    self.create_category("Documents", 1)
-    self.create_category("Image", 1)
-    self.create_category("Audio", 1)
-    self.create_category("3D", 1)
+    if self._conn is not None:
+      self._cur.execute('DELETE FROM categories;')
+      self._cur.execute('DELETE FROM keywords;')
+      self._conn.commit()
 
-    self.create_category("Comms", None, "#33ccff")
-    self.create_category("IM", 7)
-    self.create_category("Email", 7)
+      """ Default categories based on activity watch """
+      self.create_category("Work", None, "#00cc00")
+      self.create_category("Programming", 1)
+      self.create_category("Documents", 1)
+      self.create_category("Image", 1)
+      self.create_category("Audio", 1)
+      self.create_category("3D", 1)
 
-    self.create_category("Media", None, "#ff0000")
-    self.create_category("Games", 10)
-    self.create_category("Video", 10)
-    self.create_category("Social media", 10)
-    self.create_category("Music", 10)
+      self.create_category("Comms", None, "#33ccff")
+      self.create_category("IM", 7)
+      self.create_category("Email", 7)
 
-    self.create_category("Productivity", None, "#332032")
+      self.create_category("Media", None, "#ff0000")
+      self.create_category("Games", 10)
+      self.create_category("Video", 10)
+      self.create_category("Social media", 10)
+      self.create_category("Music", 10)
 
-    self.create_category("Uncategorized", None, "#8c8c8c")
+      self.create_category("Productivity", None, "#332032")
 
-    self.insert_default_keywords()
+      self.create_category("Uncategorized", None, "#8c8c8c")
+
+      self.insert_default_keywords()
 
   def insert_default_keywords(self):
     """ Default keywords based on activity watch """

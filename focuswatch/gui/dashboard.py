@@ -371,6 +371,7 @@ class Dashboard(QMainWindow):
         self._database.add_keyword(keyw[1], category_id)
 
       self.onShow(self.showEvent)
+      self.tabWidget.setCurrentIndex(1)
 
   def get_keywords_for_category(self, category_id):
     keywords = self._database.get_all_keywords()
@@ -390,11 +391,8 @@ class Dashboard(QMainWindow):
     for keyword in keywords:
       cat_key[keyword[-1]].append(keyword[1])
 
-    # for key, value in cat_key.items():
-    # print(f"{key} {value}")
-
-    # Organize into parent-cildren
-    cat_dict = defaultdict(list)
+    # Create a temporary dictionary to store categories with parent-child relationships
+    temp_cat_dict = defaultdict(list)
 
     for cat_id, name, parent_cat_id, color in categories:
       category = {
@@ -405,19 +403,34 @@ class Dashboard(QMainWindow):
       }
 
       if parent_cat_id is None:
-        cat_dict[cat_id] = category
-      elif parent_cat_id not in cat_dict:
-        cat_dict[parent_cat_id] = {
-            'name': None,
-            'color': None,
-            'keywords': [],
-            'children': [cat_id],
+        temp_cat_dict[cat_id] = category
+      elif parent_cat_id not in temp_cat_dict:
+        temp_cat_dict[parent_cat_id] = {
+          'name': None,
+          'color': None,
+          'keywords': [],
+          'children': [cat_id],
         }
-        cat_dict[cat_id] = category
+        temp_cat_dict[cat_id] = category
       else:
-        parent_category = cat_dict[int(parent_cat_id)]
+        parent_category = temp_cat_dict[int(parent_cat_id)]
         parent_category['children'].append(cat_id)
-        cat_dict[cat_id] = category
+        temp_cat_dict[cat_id] = category
+
+    # Organize cat_dict with children next to parents
+    cat_dict = defaultdict(list)
+
+    def organize_categories(cat_id):
+      category = temp_cat_dict[cat_id]
+      cat_dict[cat_id] = category
+      for child_id in category['children']:
+        organize_categories(child_id)
+
+    # Start with categories that have no parent
+    root_categories = [cat_id for cat_id, _, parent_cat_id,
+                       _ in categories if parent_cat_id is None]
+    for root_cat_id in root_categories:
+      organize_categories(root_cat_id)
 
     # Create layouts
     category_name_verticalLayout = QVBoxLayout()
@@ -453,6 +466,7 @@ class Dashboard(QMainWindow):
       cat_label_sizePolicy.setHeightForWidth(
         category_label.sizePolicy().hasHeightForWidth())
       category_label.setSizePolicy(cat_label_sizePolicy)
+      category_label.setStyleSheet(f"color: {vals['color']}")
       depth = self._database.get_category_depth(key)
       indent = '\t' * depth
       category_label.setText(f"{indent} {vals['name']}")
@@ -482,20 +496,11 @@ class Dashboard(QMainWindow):
       edit_button.setSizePolicy(action_sizePolicy)
       edit_button.setObjectName(f"edit_button_{key}")
       edit_button.setText(
-        f"Edit category {key}{' ' if key < 10 else ''}")
+        f"Edit")
 
       edit_button.clicked.connect(self.show_category_dialog)
 
       category_action_horizontalLayout.addWidget(edit_button)
-
-      add_child_button = QPushButton(
-        self.categorization_scrollAreaWidgetContents)
-      action_sizePolicy.setHeightForWidth(
-        add_child_button.sizePolicy().hasHeightForWidth())
-      add_child_button.setSizePolicy(action_sizePolicy)
-      add_child_button.setText("Add child category")
-
-      category_action_horizontalLayout.addWidget(add_child_button)
 
       category_actions_verticalLayout.addLayout(
         category_action_horizontalLayout)
@@ -506,6 +511,8 @@ class Dashboard(QMainWindow):
       200, 20, QSizePolicy.Maximum, QSizePolicy.Minimum)
 
     self.categorization_content_horizontalLayout.addLayout(
+      category_actions_verticalLayout)
+    self.categorization_content_horizontalLayout.addLayout(
       category_name_verticalLayout)
     self.categorization_content_horizontalLayout.addItem(
       horizontalSpacer_1)
@@ -513,8 +520,6 @@ class Dashboard(QMainWindow):
       category_keywords_verticalLayout)
     self.categorization_content_horizontalLayout.addItem(
       horizontalSpacer_2)
-    self.categorization_content_horizontalLayout.addLayout(
-      category_actions_verticalLayout)
 
   def dashboard_tab_setup(self):
     self.timeline_setup()
@@ -523,6 +528,11 @@ class Dashboard(QMainWindow):
 
   def categorization_tab_setup(self):
     self.categories_setup()
+
+  def restore_defaults(self):
+    self._database.insert_default_categories()
+    self.onShow(self.showEvent)
+    self.tabWidget.setCurrentIndex(1)
 
   def setupUi(self, Dashboard):
     if not Dashboard.objectName():
@@ -831,6 +841,8 @@ class Dashboard(QMainWindow):
       self.categorization_scrollAreaWidgetContents)
     self.categorization_restoreDefaults.setObjectName(
       u"categorization_restoreDefaults")
+    self.categorization_restoreDefaults.clicked.connect(self.restore_defaults)
+    self.categorization_restoreDefaults.setEnabled(False)
 
     self.categorization_button_horizontalLayout.addWidget(
       self.categorization_restoreDefaults)
@@ -867,7 +879,7 @@ class Dashboard(QMainWindow):
 
     self.retranslateUi(Dashboard)
 
-    self.tabWidget.setCurrentIndex(1)
+    self.tabWidget.setCurrentIndex(0)
 
     QMetaObject.connectSlotsByName(Dashboard)
 
