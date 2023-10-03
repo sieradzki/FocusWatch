@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (QApplication, QDial, QFrame, QGridLayout,
                                QStatusBar, QTabWidget, QVBoxLayout, QWidget)
 
 from focuswatch.database import DatabaseManager
+from focuswatch.gui.category_dialog import CategoryDialog
 
 
 class Dashboard(QMainWindow):
@@ -32,6 +33,8 @@ class Dashboard(QMainWindow):
     brightness = (background_rgb.red() * 299 + background_rgb.green()
                   * 587 + background_rgb.blue() * 114) / 1000
     return "black" if brightness > 90 else "white"
+
+  """ Dashboard tab """
 
   def timeline_setup(self):
     # TODO get items based on selected time period
@@ -327,6 +330,45 @@ class Dashboard(QMainWindow):
     self.top_apps_main_layout.addLayout(breakdown_verticalLayout)
     self.top_apps_main_layout.addWidget(pie_chart)
 
+  """ Categorization tab """
+
+  def show_category_dialog(self):
+    """ This is show edit category, add new dialog for create new? """
+    sender_name = self.sender().objectName()
+    category_id = sender_name.split(sep='_')[-1]
+    category = self._database.get_category_by_id(category_id)
+    keywords = self.get_keywords_for_category(category_id)
+    dialog = CategoryDialog(self, category, keywords)
+    result = dialog.exec_()
+    if result:
+      del_keywords = dialog.del_keywords
+      new_keywords = dialog.new_keywords
+      new_color = dialog.color
+      color = new_color if new_color != category[-1] else category[-1]
+      new_name = dialog.name_textEdit.toPlainText()
+      parent = dialog.parent_comboBox.currentText()
+      if parent != 'None':
+        parent_id = self._database.get_category_id_from_name(parent)
+      else:
+        parent_id = None
+
+      for keyw in del_keywords:
+        self._database.delete_keyword(keyw[0])
+      for keyw in new_keywords:
+        self._database.add_keyword(keyw[1], category_id)
+
+      self._database.update_category(category_id, new_name, parent_id, color)
+
+      self.onShow(self.showEvent)
+
+  def get_keywords_for_category(self, category_id):
+    keywords = self._database.get_all_keywords()
+    cat_key = defaultdict(list)
+    for keyword in keywords:
+      cat_key[str(keyword[-1])].append(keyword)
+
+    return cat_key[category_id]
+
   def categories_setup(self):
     # Get all categories and keywords
     categories = self._database.get_all_categories()
@@ -353,8 +395,16 @@ class Dashboard(QMainWindow):
 
       if parent_cat_id is None:
         cat_dict[cat_id] = category
+      elif parent_cat_id not in cat_dict:
+        cat_dict[parent_cat_id] = {
+            'name': None,
+            'color': None,
+            'keywords': [],
+            'children': [cat_id],
+        }
+        cat_dict[cat_id] = category
       else:
-        parent_category = cat_dict[parent_cat_id]
+        parent_category = cat_dict[int(parent_cat_id)]
         parent_category['children'].append(cat_id)
         cat_dict[cat_id] = category
 
@@ -394,7 +444,7 @@ class Dashboard(QMainWindow):
       category_label.setSizePolicy(cat_label_sizePolicy)
       depth = self._database.get_category_depth(key)
       indent = '\t' * depth
-      category_label.setText(f"{indent} {key}. {vals['name']}")
+      category_label.setText(f"{indent} {vals['name']}")
       font = QFont()
       font.setPointSize(12)
       category_label.setFont(font)
@@ -403,7 +453,7 @@ class Dashboard(QMainWindow):
 
       # Keywords label
       keywords_label = QLabel(self.categorization_scrollAreaWidgetContents)
-      keywords_label.setText("Keywords: " + '| '.join(vals['keywords']))
+      keywords_label.setText("Keywords: " + ' | '.join(vals['keywords']))
       keywords_label.setMinimumSize(QSize(600, 0))
       keywords_label.setWordWrap(True)
 
@@ -419,8 +469,11 @@ class Dashboard(QMainWindow):
       action_sizePolicy.setHeightForWidth(
         edit_button.sizePolicy().hasHeightForWidth())
       edit_button.setSizePolicy(action_sizePolicy)
+      edit_button.setObjectName(f"edit_button_{key}")
       edit_button.setText(
-        f"Edit category {key}{' ' if key < 10 else ''}")  # TODO xd
+        f"Edit category {key}{' ' if key < 10 else ''}")
+
+      edit_button.clicked.connect(self.show_category_dialog)
 
       category_action_horizontalLayout.addWidget(edit_button)
 

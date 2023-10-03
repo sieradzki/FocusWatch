@@ -11,7 +11,8 @@ class DatabaseManager:
 
     try:
       dburi = f"file:{self._db_name}?mode=rw"
-      self._conn = sqlite3.connect(dburi, uri=True, check_same_thread=False)
+      self._conn = sqlite3.connect(
+        dburi, uri=True, check_same_thread=False, timeout=1)
     except sqlite3.OperationalError:
       print("Error connecting to database")
       print("Creating new database")
@@ -166,9 +167,12 @@ class DatabaseManager:
     if self._conn is not None:
       t = (time_start, time_stop, window_class,
            window_name, category, project_id)
-      self._cur.execute(
-          'INSERT INTO activity_log VALUES (?, ?, ?, ?, ?, ?)', t)
-      self._conn.commit()
+      try:
+        self._cur.execute(
+            'INSERT INTO activity_log VALUES (?, ?, ?, ?, ?, ?)', t)
+        self._conn.commit()
+      except sqlite3.OperationalError:
+        print("Database locked")
       if self._conn.total_changes > 0:
         return True
     return False
@@ -228,7 +232,27 @@ class DatabaseManager:
         return True
     return False
 
-    # TODO Reclassify every entry ?
+  def delete_category(self, category_id):
+    if self._conn is not None:
+      t = (category_id,)
+      self._cur.execute(
+        'DELETE FROM categories where id=?', t
+      )
+      self._conn.commit()
+      if self._conn.total_changes > 0:
+        return True
+      return False
+
+  def update_category(self, category_id, name, parent_id, color):
+    if self._conn is not None:
+      t = (name, parent_id, color, category_id)
+      self._cur.execute(
+        'UPDATE categories SET name=?, parent_category=?, color=? WHERE id = ?', t
+      )
+      self._conn.commit()
+      if self._conn.total_changes > 0:
+        return True
+      return False
 
   def get_all_categories(self):
     if self._conn is not None:
@@ -280,6 +304,17 @@ class DatabaseManager:
       if self._conn.total_changes > 0:
         return True
     return False
+
+  def delete_keyword(self, keyword_id):
+    if self._conn is not None:
+      t = (keyword_id,)
+      self._cur.execute(
+        'DELETE FROM keywords where id=?', t
+      )
+      self._conn.commit()
+      if self._conn.total_changes > 0:
+        return True
+      return False
 
   def get_all_keywords(self):
     """ Returns all keyword entries in the database """
@@ -344,31 +379,28 @@ class DatabaseManager:
     if self._conn is not None:
       t = (category_name,)
       res = self._cur.execute('SELECT id FROM categories where name=?', t)
-      if res:
-        return res.fetchall()[0][0]
+      cat_id = res.fetchall()
+      if len(cat_id) > 0:
+        return cat_id[0][0]
       else:
         return ""
 
 
 if __name__ == "__main__":
   db_object = DatabaseManager()
-  # db_object.create_category("work")
-  # db_object.create_category("programming", 1)
-  # db_object.create_category("hobby")
-  # db_object.create_category("programming", 3)
-  # db_object.create_category("python", 4)
-  # db_object.add_keyword("code", 1)
-  # db_object.add_keyword("code", 5)
-  # db_object.add_keyword("alacritty", 1)
-  # entries = db_object.get_all_entries()
-  # entries = db_object.get_all_keywords()
+  # today = time.strftime("%Y-%m-%d", time.localtime(time.time()))
+  # time_from = f"{today} 00:00:00"
+  # time_to = f"{today} 23:59:59"
+  # entries = db_object.get_entries_from_to(time_from, time_to)
   # print(entries)
-  # entries = db_object.get_categories_from_keyword('VSCodium')
+  # entries = db_object.get_todays_entries()
   # print(entries)
-  today = time.strftime("%Y-%m-%d", time.localtime(time.time()))
-  time_from = f"{today} 00:00:00"
-  time_to = f"{today} 23:59:59"
-  entries = db_object.get_entries_from_to(time_from, time_to)
-  print(entries)
-  entries = db_object.get_todays_entries()
-  print(entries)
+
+  # test update category
+  # res1 = db_object.create_category("test_cat", None, "#FFFFFF")
+  # print(res1)
+  # cat_id = db_object.get_category_id_from_name("test_cat")
+  # print(cat_id)
+  # print(db_object.get_category_by_id(cat_id))
+  # db_object.update_category(cat_id, "test_category", None, "#FFFFFF")
+  # print(db_object.get_category_by_id(cat_id))
