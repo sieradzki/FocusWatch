@@ -198,6 +198,14 @@ class DatabaseManager:
           f"SELECT * FROM 'activity_log' WHERE time_start LIKE '%{today}%'")
       return res.fetchall()
 
+  def get_date_entries(self, date):
+    if self._conn is not None:
+      formatted_date = date.strftime("%Y-%m-%d")
+      res = self._cur.execute(
+        f"SELECT * FROM 'activity_log' WHERE time_start LIKE '%{formatted_date}%';"
+      )
+      return res.fetchall()
+
   def get_weeks_entries(self):
     if self._conn is not None:
       res = self._cur.execute(
@@ -213,7 +221,7 @@ class DatabaseManager:
         ) AS total_time_seconds
         FROM activity_log
         WHERE
-          strftime('%d-%m-%Y', time_start) = strftime('%d-%m-%Y', 'now', 'utc')
+          strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', 'now', 'utc')
         GROUP BY
           window_class
         ORDER BY
@@ -221,9 +229,25 @@ class DatabaseManager:
         """)
       return res.fetchall()
 
+  def get_date_entries_class_time_total(self, date):
+    res = self._cur.execute(f"""
+      SELECT window_class, category_id,
+      SUM(
+        strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')
+      ) AS total_time_seconds
+      FROM activity_log
+      WHERE
+        strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', '{date}', 'utc')
+      GROUP BY
+        window_class
+      ORDER BY
+        total_time_seconds DESC;
+      """)
+    return res.fetchall()
+
   # def get_months_entries(self):
     # if self._conn is not None:
-      # res = self._cur.execute("SELECT * FROM 'activity_log' WHERE DATETIME(time_start) >= DATETIME('now', 'weekday 0', '-7 days')")
+    # res = self._cur.execute("SELECT * FROM 'activity_log' WHERE DATETIME(time_start) >= DATETIME('now', 'weekday 0', '-7 days')")
 
   """ Categories """
 
@@ -290,13 +314,30 @@ class DatabaseManager:
         FROM
             activity_log
         WHERE
-            strftime('%d-%m-%Y', time_start) = strftime('%d-%m-%Y', 'now', 'utc')
+            strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', 'now', 'utc')
         GROUP BY
             category_id
         ORDER BY
             total_time_seconds DESC;
         """)
       return res.fetchall()
+
+  def get_date_category_time_totals(self, date):
+    res = self._cur.execute(f"""
+      SELECT category_id,
+      SUM(
+          strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')
+      ) AS total_time_seconds
+      FROM
+          activity_log
+      WHERE
+          strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', '{date}', 'utc')
+      GROUP BY
+          category_id
+      ORDER BY
+          total_time_seconds DESC;
+      """)
+    return res.fetchall()
 
   """ Keywords """
 
