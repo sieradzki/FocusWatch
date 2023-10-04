@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (QApplication, QDial, QFrame, QGridLayout,
                                QHBoxLayout, QLabel, QLayout, QMainWindow,
                                QMenuBar, QProgressBar, QPushButton,
                                QScrollArea, QSizePolicy, QSpacerItem,
-                               QStatusBar, QTabWidget, QVBoxLayout, QWidget)
+                               QStatusBar, QTabWidget, QVBoxLayout, QWidget, QCalendarWidget, QDialog)
 
 from focuswatch.database import DatabaseManager
 from focuswatch.gui.category_dialog import CategoryDialog
@@ -34,11 +34,29 @@ class Dashboard(QMainWindow):
 
   def select_date(self):
     sender_name = self.sender().objectName()
-    # TODO If sender is date_button - show calendar
     if sender_name == 'date_prev_button':
       self.selected_date = self.selected_date - timedelta(days=1)
+
     elif sender_name == 'date_button':
-      pass
+      calendar_dialog = QDialog(self)
+      calendar_dialog.setWindowTitle("Select a Date")
+
+      layout = QVBoxLayout()
+      calendar = QCalendarWidget()
+      layout.addWidget(calendar)
+      confirm_button = QPushButton("Confirm Date")
+      layout.addWidget(confirm_button)
+
+      # Define a slot to capture the selected date
+      def get_selected_date():
+        self.selected_date = calendar.selectedDate().toPython()
+        calendar_dialog.accept()
+
+      confirm_button.clicked.connect(get_selected_date)
+      calendar_dialog.setLayout(layout)
+      calendar_dialog.exec_()
+      self.onShow(self.showEvent)
+
     elif sender_name == 'date_next_button':
       self.selected_date = self.selected_date + timedelta(days=1)
       self.date_button.setText(str(self.selected_date))
@@ -258,7 +276,8 @@ class Dashboard(QMainWindow):
     self.time_breakdown_main_layout.addWidget(pie_chart)
 
   def top_application_setup(self):
-    window_class_by_total_time = self._database.get_date_entries_class_time_total(self.selected_date)
+    window_class_by_total_time = self._database.get_date_entries_class_time_total(
+      self.selected_date)
 
     breakdown_verticalLayout = QVBoxLayout()
     breakdown_verticalLayout.setSizeConstraint(

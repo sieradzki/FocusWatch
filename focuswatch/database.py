@@ -237,7 +237,7 @@ class DatabaseManager:
       ) AS total_time_seconds
       FROM activity_log
       WHERE
-        strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', '{date}', 'utc')
+        strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', '{date}')
       GROUP BY
         window_class
       ORDER BY
@@ -331,7 +331,7 @@ class DatabaseManager:
       FROM
           activity_log
       WHERE
-          strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', '{date}', 'utc')
+          strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', '{date}')
       GROUP BY
           category_id
       ORDER BY
