@@ -61,7 +61,7 @@ class Watcher():
       # Get the window title (name)
       window_title = ctypes.create_unicode_buffer(MAX_PATH)
       user32.GetWindowTextW(active_window_handle, window_title, MAX_PATH)
-      return window_title.value 
+      return window_title.value
     else:
       print("Platform currently not supported.")
       sys.exit()
@@ -108,7 +108,18 @@ class Watcher():
 
   def monitor(self):
     while (True):
-      # TODO watch afk
+      # TODO afk timeout setting
+      if time.time() - self._time_start > 5 * 60:
+        self._time_stop = time.time()
+        self._category = self._database.get_category_id_from_name("AFK")
+        self._window_class = "afk"
+        self._window_name = "afk"
+        self.save_entry()
+
+        self._time_start = time.time()
+        self._window_name = self.get_active_window_name()
+        self._window_class = self.get_active_window_class()
+
       if self._window_name != self.get_active_window_name():  # log only on activity change
         self._time_stop = time.time()
         self._category = self._classifier.classify_entry(
