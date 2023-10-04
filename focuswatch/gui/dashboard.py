@@ -388,8 +388,9 @@ class Dashboard(QMainWindow):
       del_keywords = dialog.del_keywords
       new_keywords = dialog.new_keywords
       new_color = dialog.color
+
       if category is not None:
-        color = new_color if new_color != category[-1] else category[-1]
+        color = new_color if new_color != category[-1] and new_color is not None else category[-1]
       else:
         color = new_color
       new_name = dialog.name_textEdit.toPlainText()
@@ -506,7 +507,17 @@ class Dashboard(QMainWindow):
       cat_label_sizePolicy.setHeightForWidth(
         category_label.sizePolicy().hasHeightForWidth())
       category_label.setSizePolicy(cat_label_sizePolicy)
-      category_label.setStyleSheet(f"color: {vals['color']}")
+      color = vals['color']
+      while color == None:
+        category = self._database.get_category_by_id(key)
+        parent_category_id = category[-2]
+        if parent_category_id:
+          parent_category = self._database.get_category_by_id(
+            parent_category_id)
+          color = parent_category[-1]
+        else:
+          color = "#FFFFFF"  # TODO
+      category_label.setStyleSheet(f"color: {color}")
       depth = self._database.get_category_depth(key)
       indent = '\t' * depth
       category_label.setText(f"{indent} {vals['name']}")
@@ -525,7 +536,6 @@ class Dashboard(QMainWindow):
       category_keywords_verticalLayout.addWidget(keywords_label)
 
       # Actions
-      # TODO Replace text with icons
       category_action_horizontalLayout = QHBoxLayout()
       category_action_horizontalLayout.setSizeConstraint(
         QLayout.SetMinimumSize)
