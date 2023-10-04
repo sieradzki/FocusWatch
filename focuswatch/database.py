@@ -111,6 +111,7 @@ class DatabaseManager:
       self.create_category("Productivity", None, "#332032")
 
       self.create_category("Uncategorized", None, "#8c8c8c")
+      self.create_category("AFK", None, "#3d3d3d")
 
       self.insert_default_keywords()
 
