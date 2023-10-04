@@ -9,7 +9,7 @@ from focuswatch.gui.tray_settings import TraySettings
 from focuswatch.gui.dashboard import Dashboard
 from focuswatch.watcher import Watcher
 
-from qt_material import apply_stylesheet
+# from qt_material import apply_stylesheet
 
 
 def start_watcher(watcher):

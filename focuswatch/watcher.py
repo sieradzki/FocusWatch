@@ -1,27 +1,48 @@
 import subprocess
 import time
 from sys import platform
+import sys
+import ctypes
+import psutil
 
 from focuswatch.database import DatabaseManager
 from focuswatch.classifier import Classifier
 from focuswatch.config import Config
 
+if platform in ['Windows', 'win32', 'cygwin']:
+  # Constants for Windows API
+  GW_HWNDNEXT = 2
+  MAX_PATH = 260
+
+  # Define the necessary Windows API functions
+  user32 = ctypes.windll.user32
+  kernel32 = ctypes.windll.kernel32
+
+  user32.GetWindowTextW.argtypes = [
+    ctypes.c_int, ctypes.c_wchar_p, ctypes.c_int]
+  user32.GetClassNameW.argtypes = [
+    ctypes.c_int, ctypes.c_wchar_p, ctypes.c_int]
+  user32.GetForegroundWindow.restype = ctypes.c_int
+  user32.GetWindowThreadProcessId.argtypes = [
+    ctypes.c_int, ctypes.POINTER(ctypes.c_uint)]
+
 
 class Watcher():
   def __init__(self, watch_interval=None, verbose=None):
-    self._window_name = self.get_active_window_name()
-    self._window_class = self.get_active_window_class()
-    self._time_start = time.time()
-    self._time_stop = None
-    self._category = None
-    self._database = DatabaseManager()
-    self._classifier = Classifier()
-
     self._config = Config()
     self._watch_interval = float(
       self._config.get_config('General', 'watch_interval')) if not watch_interval else watch_interval
     self._verbose = int(self._config.get_config(
       'General', 'verbose')) if not verbose else verbose
+
+    self._database = DatabaseManager()
+    self._classifier = Classifier()
+
+    self._window_name = self.get_active_window_name()
+    self._window_class = self.get_active_window_class()
+    self._time_start = time.time()
+    self._time_stop = None
+    self._category = None
 
   def __del__(self):
     self.save_entry()
@@ -35,10 +56,15 @@ class Watcher():
       except subprocess.CalledProcessError:
         name = "None"
       return name
-    # TODO Windows support
+    elif platform in ['Windows', 'win32', 'cygwin']:
+      active_window_handle = user32.GetForegroundWindow()
+      # Get the window title (name)
+      window_title = ctypes.create_unicode_buffer(MAX_PATH)
+      user32.GetWindowTextW(active_window_handle, window_title, MAX_PATH)
+      return window_title.value 
     else:
       print("Platform currently not supported.")
-      exit()
+      sys.exit()
 
   def get_active_window_class(self):
     if platform in ['linux', 'linux2']:
@@ -49,7 +75,19 @@ class Watcher():
       except subprocess.CalledProcessError:
         class_name = "None"
       return class_name
-    # TODO Windows support
+    elif platform in ['Windows', 'win32', 'cygwin']:
+      active_window_handle = user32.GetForegroundWindow()
+      # Get PID
+      active_window_pid = ctypes.c_uint(0)
+      user32.GetWindowThreadProcessId(
+        active_window_handle, ctypes.byref(active_window_pid))
+      # Get the application name (executable name) using psutil
+      try:
+        process = psutil.Process(active_window_pid.value)
+        app_name = process.exe().split('\\')[-1].split('.')[0]
+      except psutil.NoSuchProcess:
+        app_name = "Unknown (Process not found)"
+      return app_name
     else:
       print("Platform currently not supported.")
       exit()
