@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (QApplication, QDial, QFrame, QGridLayout,
                                QHBoxLayout, QLabel, QLayout, QMainWindow,
                                QMenuBar, QProgressBar, QPushButton,
                                QScrollArea, QSizePolicy, QSpacerItem,
-                               QStatusBar, QTabWidget, QVBoxLayout, QWidget)
+                               QStatusBar, QTabWidget, QVBoxLayout, QWidget, QCalendarWidget, QDialog)
 
 from focuswatch.database import DatabaseManager
 from focuswatch.gui.category_dialog import CategoryDialog
@@ -22,11 +22,50 @@ from focuswatch.gui.category_dialog import CategoryDialog
 class Dashboard(QMainWindow):
   def __init__(self, parent=None):
     super().__init__(parent)
+    self.selected_date = datetime.now()
+
     self.setupUi(self)
     self._database = DatabaseManager()
     self.timeline_setup()
     self.time_breakdown_setup()
     self.top_application_setup()
+
+    # TODO date_start date_end when selected time period > 1 day ?
+
+  def select_date(self):
+    sender_name = self.sender().objectName()
+    if sender_name == 'date_prev_button':
+      self.selected_date = self.selected_date - timedelta(days=1)
+
+    elif sender_name == 'date_button':
+      calendar_dialog = QDialog(self)
+      calendar_dialog.setWindowTitle("Select a Date")
+
+      layout = QVBoxLayout()
+      calendar = QCalendarWidget()
+      layout.addWidget(calendar)
+      confirm_button = QPushButton("Confirm Date")
+      layout.addWidget(confirm_button)
+
+      # Define a slot to capture the selected date
+      def get_selected_date():
+        self.selected_date = calendar.selectedDate().toPython()
+        calendar_dialog.accept()
+
+      confirm_button.clicked.connect(get_selected_date)
+      calendar_dialog.setLayout(layout)
+      calendar_dialog.exec_()
+      self.onShow(self.showEvent)
+
+    elif sender_name == 'date_next_button':
+      self.selected_date = self.selected_date + timedelta(days=1)
+      self.date_button.setText(str(self.selected_date))
+
+    self.onShow(self.showEvent)
+    # TODO clear dashboard without reloading (?)
+    # self.timeline_setup()
+    # self.time_breakdown_setup()
+    # self.top_application_setup()
 
   def get_contrasting_text_color(self, background_color):
     background_rgb = QColor(background_color).toRgb()
@@ -37,8 +76,7 @@ class Dashboard(QMainWindow):
   """ Dashboard tab """
 
   def timeline_setup(self):
-    # TODO get items based on selected time period
-    period_entries = self._database.get_todays_entries()
+    period_entries = self._database.get_date_entries(self.selected_date)
     hour_chunk_entries = defaultdict(list)
     hour_entries = defaultdict(list)
 
@@ -145,7 +183,8 @@ class Dashboard(QMainWindow):
       self.timeline_main_layout.addLayout(hour_horizontalLayout)
 
   def time_breakdown_setup(self):
-    categories_by_total_time = self._database.get_daily_category_time_totals()
+    categories_by_total_time = self._database.get_date_category_time_totals(
+      self.selected_date)
 
     breakdown_verticalLayout = QVBoxLayout()
     breakdown_verticalLayout.setSizeConstraint(
@@ -180,7 +219,7 @@ class Dashboard(QMainWindow):
       category_horizontalLayout = QHBoxLayout()
       category_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
       cat_id, time = vals
-      if time / 60 < 1:  # Don't add really small entries
+      if time < 10:  # Don't add really small entries
         continue
       category = self._database.get_category_by_id(cat_id)
       id, name, parent_category_id, color = category
@@ -237,7 +276,8 @@ class Dashboard(QMainWindow):
     self.time_breakdown_main_layout.addWidget(pie_chart)
 
   def top_application_setup(self):
-    window_class_by_total_time = self._database.get_daily_entries_class_time_total()
+    window_class_by_total_time = self._database.get_date_entries_class_time_total(
+      self.selected_date)
 
     breakdown_verticalLayout = QVBoxLayout()
     breakdown_verticalLayout.setSizeConstraint(
@@ -273,7 +313,7 @@ class Dashboard(QMainWindow):
       class_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
 
       window_class, category_id, time = vals
-      if time / 60 < 1:
+      if time < 10:
         continue
       category = self._database.get_category_by_id(category_id)
       id, name, parent_category_id, color = category
@@ -699,11 +739,13 @@ class Dashboard(QMainWindow):
       self.date_prev_button.sizePolicy().hasHeightForWidth())
     self.date_prev_button.setSizePolicy(sizePolicy1)
     self.date_prev_button.setMaximumSize(QSize(20, 16777215))
+    self.date_prev_button.clicked.connect(self.select_date)
 
     self.horizontalLayout.addWidget(self.date_prev_button)
 
     self.date_button = QPushButton(self.date_nav_frame)
     self.date_button.setObjectName(u"date_button")
+    self.date_button.clicked.connect(self.select_date)
     sizePolicy2 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
     sizePolicy2.setHorizontalStretch(0)
     sizePolicy2.setVerticalStretch(0)
@@ -711,12 +753,17 @@ class Dashboard(QMainWindow):
       self.date_button.sizePolicy().hasHeightForWidth())
     self.date_button.setSizePolicy(sizePolicy2)
     self.date_button.setMaximumSize(QSize(600, 16777215))
+    if str(self.selected_date.strftime("%Y-%m-%d")) == str(datetime.today().strftime("%Y-%m-%d")):
+      self.date_button.setText("Today")
+    else:
+      self.date_button.setText(str(self.selected_date.strftime("%Y-%m-%d")))
 
     self.horizontalLayout.addWidget(self.date_button)
 
     self.date_next_button = QPushButton(self.date_nav_frame)
     self.date_next_button.setObjectName(u"date_next_button")
     self.date_next_button.setMaximumSize(QSize(20, 16777215))
+    self.date_next_button.clicked.connect(self.select_date)
 
     self.horizontalLayout.addWidget(self.date_next_button)
 
@@ -727,6 +774,7 @@ class Dashboard(QMainWindow):
 
     self.time_period_button = QPushButton(self.date_nav_frame)
     self.time_period_button.setObjectName(u"time_period_button")
+    self.time_period_button.setEnabled(False)
 
     self.horizontalLayout.addWidget(self.time_period_button)
 
@@ -896,8 +944,8 @@ class Dashboard(QMainWindow):
       "Dashboard", u"Top applications", None))
     self.date_prev_button.setText(
       QCoreApplication.translate("Dashboard", u"<", None))
-    self.date_button.setText(
-      QCoreApplication.translate("Dashboard", u"Today", None))
+    # self.date_button.setText(
+    # QCoreApplication.translate("Dashboard", u"Today", None))
     self.date_next_button.setText(
       QCoreApplication.translate("Dashboard", u">", None))
     self.time_period_button.setText(
