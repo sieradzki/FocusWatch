@@ -485,11 +485,11 @@ class Dashboard(QMainWindow):
     category_keywords_verticalLayout.setObjectName(
       u"category_keywords_verticalLayout")
     category_keywords_verticalLayout.setSizeConstraint(
-      QLayout.SetDefaultConstraint)
+        QLayout.SetDefaultConstraint)
 
-    category_actions_verticalLayout = QVBoxLayout()
-    category_actions_verticalLayout.setObjectName(
-      u"category_actions_verticalLayout")
+    category_spacer_verticalLayout = QVBoxLayout()
+    category_spacer_verticalLayout.setObjectName(
+      u"category_spacer_verticalLayout")
 
     # Size policies
     cat_label_sizePolicy = QSizePolicy(
@@ -497,16 +497,24 @@ class Dashboard(QMainWindow):
     cat_label_sizePolicy.setHorizontalStretch(0)
     cat_label_sizePolicy.setVerticalStretch(0)
 
-    action_sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-    action_sizePolicy.setHorizontalStretch(0)
-    action_sizePolicy.setVerticalStretch(0)
-
     for key, vals in cat_dict.items():
       # Name label
-      category_label = QLabel(self.categorization_scrollAreaWidgetContents)
+      category_name_horizontalLayout = QHBoxLayout()
+      category_name_horizontalLayout.setObjectName(
+        u"category_name_horizontalLayout")
+      category_name_horizontalLayout.setSizeConstraint(
+        QLayout.SetMinimumSize)
+      category_name_horizontalLayout.setContentsMargins(-1, 0, 0, -1)
+      category_name_horizontalLayout.setAlignment(Qt.AlignLeft)
+
+      category_button = QPushButton(
+        self.categorization_scrollAreaWidgetContents)
+      category_button.setObjectName(f"category_button_{key}")
+      category_button.clicked.connect(self.show_category_dialog)
       cat_label_sizePolicy.setHeightForWidth(
-        category_label.sizePolicy().hasHeightForWidth())
-      category_label.setSizePolicy(cat_label_sizePolicy)
+        category_button.sizePolicy().hasHeightForWidth())
+      category_button.setSizePolicy(cat_label_sizePolicy)
+
       color = vals['color']
       while color == None:
         category = self._database.get_category_by_id(key)
@@ -517,51 +525,46 @@ class Dashboard(QMainWindow):
           color = parent_category[-1]
         else:
           color = "#FFFFFF"  # TODO
-      category_label.setStyleSheet(f"color: {color}")
+
+      font_color = self.get_contrasting_text_color(color)
+      category_button.setStyleSheet(
+        f"background-color: {color}; color: {font_color};")
+
       depth = self._database.get_category_depth(key)
-      indent = '\t' * depth
-      category_label.setText(f"{indent} {vals['name']}")
+      indent = 40 * depth
+
+      horizontalSpacer = QSpacerItem(
+          indent, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
+      category_name_horizontalLayout.addItem(horizontalSpacer)
+#
+      category_button.setText(f"{vals['name']}")
       font = QFont()
       font.setPointSize(12)
-      category_label.setFont(font)
+      category_button.setFont(font)
 
-      category_name_verticalLayout.addWidget(category_label)
+      category_name_horizontalLayout.addWidget(category_button)
+      category_name_verticalLayout.addLayout(category_name_horizontalLayout)
 
       # Keywords label
       keywords_label = QLabel(self.categorization_scrollAreaWidgetContents)
       keywords_label.setText("Keywords: " + ' | '.join(vals['keywords']))
-      keywords_label.setMinimumSize(QSize(600, 0))
+      keywords_label.setMinimumSize(QSize(800, 0))
       keywords_label.setWordWrap(True)
-
+      font = QFont()
+      font.setPointSize(12)
+      keywords_label.setFont(font)
       category_keywords_verticalLayout.addWidget(keywords_label)
 
-      # Actions
-      category_action_horizontalLayout = QHBoxLayout()
-      category_action_horizontalLayout.setSizeConstraint(
-        QLayout.SetMinimumSize)
-
-      edit_button = QPushButton(self.categorization_scrollAreaWidgetContents)
-      action_sizePolicy.setHeightForWidth(
-        edit_button.sizePolicy().hasHeightForWidth())
-      edit_button.setSizePolicy(action_sizePolicy)
-      edit_button.setObjectName(f"edit_button_{key}")
-      edit_button.setText(
-        f"Edit")
-
-      edit_button.clicked.connect(self.show_category_dialog)
-
-      category_action_horizontalLayout.addWidget(edit_button)
-
-      category_actions_verticalLayout.addLayout(
-        category_action_horizontalLayout)
+      # Spacer
+      horizontalSpacer = QSpacerItem(
+          60, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+      category_spacer_verticalLayout.addItem(horizontalSpacer)
 
     horizontalSpacer_1 = QSpacerItem(
       60, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
     horizontalSpacer_2 = QSpacerItem(
       200, 20, QSizePolicy.Maximum, QSizePolicy.Minimum)
 
-    self.categorization_content_horizontalLayout.addLayout(
-      category_actions_verticalLayout)
     self.categorization_content_horizontalLayout.addLayout(
       category_name_verticalLayout)
     self.categorization_content_horizontalLayout.addItem(
@@ -570,6 +573,8 @@ class Dashboard(QMainWindow):
       category_keywords_verticalLayout)
     self.categorization_content_horizontalLayout.addItem(
       horizontalSpacer_2)
+    self.categorization_content_horizontalLayout.addLayout(
+        category_spacer_verticalLayout)
 
   def dashboard_tab_setup(self):
     self.timeline_setup()
