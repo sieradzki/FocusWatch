@@ -132,7 +132,7 @@ class Dashboard(QMainWindow):
       hour, index = quarter.split(sep=":")
       hour_entries[int(hour)][int(index)] = max_category
 
-    for hour, entries in hour_entries.items():
+    for hour, entries in hour_entries.copy().items():
       """ Hour label setup """
       hour_horizontalLayout = QHBoxLayout()
       hour_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
@@ -167,7 +167,7 @@ class Dashboard(QMainWindow):
             if entry != entries[i - 1]:
               entry_text_label.setText(name)
           else:
-            if entry != hour_entries[hour - 1][-1]:
+            if len(hour_entries[hour - 1]) > 0 and entry != hour_entries[hour - 1][-1]:
               entry_text_label.setText(name)
           if color:
             style.append(f"background-color: {color};")
