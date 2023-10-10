@@ -71,7 +71,23 @@ class Dashboard(QMainWindow):
     background_rgb = QColor(background_color).toRgb()
     brightness = (background_rgb.red() * 299 + background_rgb.green()
                   * 587 + background_rgb.blue() * 114) / 1000
-    return "black" if brightness > 90 else "white"
+    return "black" if brightness > 50 else "white"
+
+  def get_category_color(self, category_id):
+    current_id = category_id
+    category = self._database.get_category_by_id(current_id)
+    color = category[-1]
+    while color == None:
+      category = self._database.get_category_by_id(current_id)
+      parent_category_id = category[-2]
+      if parent_category_id:
+        parent_category = self._database.get_category_by_id(
+          parent_category_id)
+        color = parent_category[-1]
+        current_id = parent_category_id
+      else:
+        return None
+    return color
 
   """ Dashboard tab """
 
@@ -145,15 +161,7 @@ class Dashboard(QMainWindow):
         if entry != 0 and entry != None:  # TODO disallow deleting 'Uncategorized' category or change how it works
           category = self._database.get_category_by_id(entry)
           name = category[1]
-          color = category[-1]
-          while color == None:
-            parent_category_id = category[-2]
-            if parent_category_id:
-              parent_category = self._database.get_category_by_id(
-                parent_category_id)
-              color = parent_category[-1]
-            else:
-              color = "#FFFFFF"  # TODO check if this is ever the case
+          color = self.get_category_color(entry)
 
           if i > 0:
             if entry != entries[i - 1]:
@@ -161,7 +169,8 @@ class Dashboard(QMainWindow):
           else:
             if entry != hour_entries[hour - 1][-1]:
               entry_text_label.setText(name)
-          style.append(f"background-color: {color};")
+          if color:
+            style.append(f"background-color: {color};")
           text_color = self.get_contrasting_text_color(color)
           style.append(f"color: {text_color};")
         else:
@@ -225,19 +234,13 @@ class Dashboard(QMainWindow):
       id, name, parent_category_id, color = category
 
       text = ""
-      while color == None:
-        if parent_category_id:
-          parent_category = self._database.get_category_by_id(
-            parent_category_id)
-          color = parent_category[-1]
-          text += parent_category[1] + " > "
-        else:
-          color = "#FFFFFF"  # TODO check if this is ever the case
+      color = self.get_category_color(id)
 
       text += name
       category_label = QLabel(self.time_breakdown_scrollAreaWidgetContents)
       category_label.setText(f"{text} {time/60 :.1f} m")  # TODO if > 60
-      category_label.setStyleSheet(f"color: {color};")
+      if color:
+        category_label.setStyleSheet(f"color: {color};")
       category_label.setMaximumHeight(20)
 
       font = QFont()
@@ -319,14 +322,7 @@ class Dashboard(QMainWindow):
       id, name, parent_category_id, color = category
 
       text = ""
-      while color == None:
-        if parent_category_id:
-          parent_category = self._database.get_category_by_id(
-            parent_category_id)
-          color = parent_category[-1]
-          # text += parent_category[1] + " > "
-        else:
-          color = "#FFFFFF"  # TODO check if this is ever the case
+      color = self.get_category_color(id)
 
       text += window_class
       class_label = QLabel(self.top_apps_scrollAreaWidgetContents)
@@ -515,20 +511,12 @@ class Dashboard(QMainWindow):
         category_button.sizePolicy().hasHeightForWidth())
       category_button.setSizePolicy(cat_label_sizePolicy)
 
-      color = vals['color']
-      while color == None:
-        category = self._database.get_category_by_id(key)
-        parent_category_id = category[-2]
-        if parent_category_id:
-          parent_category = self._database.get_category_by_id(
-            parent_category_id)
-          color = parent_category[-1]
-        else:
-          color = "#FFFFFF"  # TODO
-
+      color = self.get_category_color(key)
       font_color = self.get_contrasting_text_color(color)
-      category_button.setStyleSheet(
-        f"background-color: {color}; color: {font_color};")
+
+      if color:
+        category_button.setStyleSheet(
+          f"background-color: {color}; color: {font_color};")
 
       depth = self._database.get_category_depth(key)
       indent = 40 * depth
