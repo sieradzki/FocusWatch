@@ -103,7 +103,7 @@ class TraySettings(QWidget):
     self.tabWidget.addTab(self.tab_watcher, "")
     self.tab_focused_mode = QWidget()
     self.tab_focused_mode.setObjectName(u"tab_focused_mode")
-    self.tabWidget.addTab(self.tab_focused_mode, "")
+    # self.tabWidget.addTab(self.tab_focused_mode, "")
 
     self.main_layout.addWidget(self.tabWidget)
 
