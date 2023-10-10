@@ -96,7 +96,7 @@ class CategoryDialog(QDialog):
     result = keyword_dialog.exec_()
 
     if result:
-      keyword_name = keyword_dialog.nameEdit.toPlainText()
+      keyword_name = keyword_dialog.nameEdit.text()
       if len(self.new_keywords) == 0:
         last_new_id = 0
       else:

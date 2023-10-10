@@ -109,7 +109,7 @@ class Watcher():
   def monitor(self):
     while (True):
       # TODO afk timeout setting
-      if time.time() - self._time_start > 5 * 60:
+      if time.time() - self._time_start > 10 * 60:
         self._time_stop = time.time()
         self._category = self._database.get_category_id_from_name("AFK")
         self._window_class = "afk"

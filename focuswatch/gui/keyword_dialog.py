@@ -7,7 +7,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
                            QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractButton, QApplication, QDialog, QDialogButtonBox,
                                QFrame, QHBoxLayout, QLabel, QSizePolicy,
-                               QSpacerItem, QTextEdit, QVBoxLayout, QWidget)
+                               QSpacerItem, QTextEdit, QVBoxLayout, QWidget, QLineEdit)
 
 
 class KeywordDialog(QDialog):
@@ -43,7 +43,7 @@ class KeywordDialog(QDialog):
 
     self.horizontalLayout.addWidget(self.nameLabel)
 
-    self.nameEdit = QTextEdit(self.frame)
+    self.nameEdit = QLineEdit(self.frame)
     self.nameEdit.setObjectName(u"nameEdit")
     self.nameEdit.setMaximumSize(QSize(16777215, 30))
 

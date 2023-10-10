@@ -71,7 +71,7 @@ class Dashboard(QMainWindow):
     background_rgb = QColor(background_color).toRgb()
     brightness = (background_rgb.red() * 299 + background_rgb.green()
                   * 587 + background_rgb.blue() * 114) / 1000
-    return "black" if brightness > 50 else "white"
+    return "black" if brightness > 70 else "white"
 
   def get_category_color(self, category_id):
     current_id = category_id
@@ -316,6 +316,8 @@ class Dashboard(QMainWindow):
       class_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
 
       window_class, category_id, time = vals
+      if window_class == "afk":
+        continue
       if time < 10:
         continue
       category = self._database.get_category_by_id(category_id)
