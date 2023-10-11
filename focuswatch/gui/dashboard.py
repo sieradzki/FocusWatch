@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 from PySide6 import QtCharts
+from PySide6.QtCharts import QChart
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
                             QMetaObject, QObject, QPoint, QRect, QSize, Qt,
                             QTime, QUrl)
@@ -201,7 +202,7 @@ class Dashboard(QMainWindow):
 
     if not categories_by_total_time:
       info_label = QLabel(self.time_breakdown_scrollAreaWidgetContents)
-      info_label.setText("No entries for the selected period")
+      info_label.setText("No data for the selected period")
 
       font = QFont()
       font.setPointSize(16)
@@ -221,6 +222,8 @@ class Dashboard(QMainWindow):
     pie_chart = QtCharts.QChartView()
     pie_chart.setRenderHint(QPainter.Antialiasing)
     pie_chart.setMinimumSize(300, 300)
+    pie_chart.chart().setAnimationOptions(QChart.AllAnimations)
+    pie_chart.chart().setBackgroundVisible(False)
 
     series = QtCharts.QPieSeries()
 
@@ -228,46 +231,95 @@ class Dashboard(QMainWindow):
       category_horizontalLayout = QHBoxLayout()
       category_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
       cat_id, time = vals
-      if time < 10:  # Don't add really small entries
-        continue
       category = self._database.get_category_by_id(cat_id)
       id, name, parent_category_id, color = category
 
       text = ""
       color = self.get_category_color(id)
 
-      text += name
+      text += name + ' -'
+      hours = time // 3600
+      minutes = (time // 60) % 60
+      seconds = time % 60
+      if hours:
+        text += f" {hours}h"
+      if minutes:
+        text += f" {minutes}m"
+      if seconds:
+        text += f" {seconds}s"
+
       category_label = QLabel(self.time_breakdown_scrollAreaWidgetContents)
-      category_label.setText(f"{text} {time/60 :.1f} m")  # TODO if > 60
+      category_label.setText(
+        f"{text}")
       if color:
         category_label.setStyleSheet(f"color: {color};")
       category_label.setMaximumHeight(20)
 
       font = QFont()
+      font.setBold(True)
       font.setPointSize(10)
 
       category_label.setFont(font)
 
       slice = QtCharts.QPieSlice(text, time / 60)
 
-      slice.setColor(QColor(color))
+      if color:
+        slice.setColor(QColor(color))
 
       slice.hovered.connect(slice.setExploded)
+      slice.setExplodeDistanceFactor(0.07)
       slice.hovered.connect(slice.setLabelVisible)
 
       series.append(slice)
 
       category_horizontalLayout.addWidget(category_label)
 
+      category_progress = QProgressBar(
+        self.time_breakdown_scrollAreaWidgetContents)
+      category_progress.setValue((time / total_time) * 100)
+      category_progress.setFixedHeight(15)
+
+      base_color = QColor(color)
+
+      # Create gradient stops for smooth transition
+      contrasting_color = self.get_contrasting_text_color(color)
+
+      # Multiplier is needed for really dark colors
+      multiplier = 1 if contrasting_color == 'black' else 2
+
+      stop_1 = f"stop: 0 {base_color.darker(100 - (30*multiplier)).name()},"
+      stop_2 = f"stop: 0.3 {base_color.darker(100 - (20*multiplier)).name()},"
+      stop_3 = f"stop: 0.7 {base_color.darker(100 - (10 * multiplier)).name()},"
+      stop_4 = f"stop: 1 {base_color.name()}"
+
+      category_progress.setStyleSheet(
+          f"""
+          QProgressBar {{
+              text-align: top;
+              border-radius: 3px;
+              {"color: " + contrasting_color if category_progress.value() > 45 else ''}
+          }}
+          QProgressBar::chunk {{
+              background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                  {stop_1}
+                  {stop_2}
+                  {stop_3}
+                  {stop_4}
+              );
+              border-radius: 3px;
+          }}
+          """
+      )
+      category_progress.setFixedWidth(250)
+      category_horizontalLayout.addWidget(category_progress)
       breakdown_verticalLayout.addLayout(category_horizontalLayout)
 
     series.setHoleSize(0.35)
-    # series.setLabelsVisible(True)
-    # series.setLabelsPosition(QtCharts.QPieSlice.LabelInsideNormal)
     pie_chart.chart().addSeries(series)
-    pie_chart.chart().legend().hide()
+    # pie_chart.chart().legend().hide()
 
-    # legend = pie_chart.chart().legend()
+    legend = pie_chart.chart().legend()
+    legend.setVisible(False)
     # legend.setAlignment(Qt.AlignBottom)
     # legend.setFont(QFont("Helvetica", 9))
 
@@ -288,7 +340,7 @@ class Dashboard(QMainWindow):
 
     if not window_class_by_total_time:
       info_label = QLabel(self.top_apps_scrollAreaWidgetContents)
-      info_label.setText("No entries for the selected period")
+      info_label.setText("No data for the selected period")
 
       font = QFont()
       font.setPointSize(16)
@@ -308,6 +360,8 @@ class Dashboard(QMainWindow):
     pie_chart = QtCharts.QChartView()
     pie_chart.setRenderHint(QPainter.Antialiasing)
     pie_chart.setMinimumSize(300, 300)
+    pie_chart.chart().setAnimationOptions(QChart.AllAnimations)
+    pie_chart.chart().setBackgroundVisible(False)
 
     series = QtCharts.QPieSeries()
 
@@ -315,48 +369,97 @@ class Dashboard(QMainWindow):
       class_horizontalLayout = QHBoxLayout()
       class_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
 
-      window_class, category_id, time = vals
+      window_class, _, time = vals
       if window_class == "afk":
         continue
       if time < 10:
         continue
+      category_id = self._database.get_longest_duration_category_id_for_window_class_on_date(
+        self.selected_date, window_class)[0]
       category = self._database.get_category_by_id(category_id)
       id, name, parent_category_id, color = category
-
-      text = ""
       color = self.get_category_color(id)
 
-      text += window_class
+      text = ""
+
+      text += window_class + ' -'
+      hours = time // 3600
+      minutes = (time // 60) % 60
+      seconds = time % 60
+      if hours:
+        text += f" {hours}h"
+      if minutes:
+        text += f" {minutes}m"
+      if seconds:
+        text += f" {seconds}s"
+
       class_label = QLabel(self.top_apps_scrollAreaWidgetContents)
-      class_label.setText(f"{text} {time/60 :.1f} m")  # TODO if > 60
-      # class_label.setStyleSheet(f"color: {color};")
+      class_label.setText(f"{text}")
+      class_label.setStyleSheet(f"color: {color};")
       class_label.setMaximumHeight(20)
 
       font = QFont()
+      font.setBold(True)
       font.setPointSize(10)
 
       class_label.setFont(font)
 
       slice = QtCharts.QPieSlice(text, time / 60)
 
-      # slice.setColor(QColor(color))
-
       slice.hovered.connect(slice.setExploded)
+      slice.setExplodeDistanceFactor(0.07)
       slice.hovered.connect(slice.setLabelVisible)
+      slice.setColor(QColor(color))
 
       series.append(slice)
 
+      class_progress = QProgressBar(
+        self.time_breakdown_scrollAreaWidgetContents)
+      class_progress.setValue((time / total_time) * 100)
+      class_progress.setFixedHeight(15)
+
+      base_color = QColor(color)
+
+      # Create gradient stops for smooth transition
+      contrasting_color = self.get_contrasting_text_color(color)
+      multiplier = 1 if contrasting_color == 'black' else 2
+
+      stop_1 = f"stop: 0 {base_color.darker(100 - (30*multiplier)).name()},"
+      stop_2 = f"stop: 0.3 {base_color.darker(100 - (20*multiplier)).name()},"
+      stop_3 = f"stop: 0.7 {base_color.darker(100 - (10 * multiplier)).name()},"
+      stop_4 = f"stop: 1 {base_color.name()}"
+
+      class_progress.setStyleSheet(
+          f"""
+          QProgressBar {{
+              text-align: top;
+              border-radius: 3px;
+              {"color: " + contrasting_color if class_progress.value() > 45 else ''}
+          }}
+          QProgressBar::chunk {{
+              background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                  {stop_1}
+                  {stop_2}
+                  {stop_3}
+                  {stop_4}
+              );
+              border-radius: 3px;
+          }}
+          """
+      )
+      class_progress.setFixedWidth(250)
+
       class_horizontalLayout.addWidget(class_label)
+      class_horizontalLayout.addWidget(class_progress)
 
       breakdown_verticalLayout.addLayout(class_horizontalLayout)
 
     series.setHoleSize(0.35)
-    # series.setLabelsVisible(True)
     # series.setLabelsPosition(QtCharts.QPieSlice.LabelInsideNormal)
     pie_chart.chart().addSeries(series)
-    pie_chart.chart().legend().hide()
 
-    # legend = pie_chart.chart().legend()
+    legend = pie_chart.chart().legend()
+    legend.setVisible(False)
     # legend.setAlignment(Qt.AlignBottom)
     # legend.setFont(QFont("Helvetica", 9))
 

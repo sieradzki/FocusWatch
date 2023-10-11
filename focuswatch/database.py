@@ -246,6 +246,19 @@ class DatabaseManager:
       """)
     return res.fetchall()
 
+  def get_longest_duration_category_id_for_window_class_on_date(self, date, window_class):
+    res = self._cur.execute(f"""
+      SELECT category_id
+      FROM activity_log
+      WHERE
+        strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', '{date}')
+        AND window_class = '{window_class}'
+      ORDER BY
+        strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc') DESC
+      LIMIT 1;
+      """)
+    return res.fetchone()
+
   # def get_months_entries(self):
     # if self._conn is not None:
     # res = self._cur.execute("SELECT * FROM 'activity_log' WHERE DATETIME(time_start) >= DATETIME('now', 'weekday 0', '-7 days')")

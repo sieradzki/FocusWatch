@@ -43,7 +43,7 @@ def main():
 
   # Add actions to the menu
   dashboard_window = Dashboard()
-  # apply_stylesheet(app, theme='dark_blue.xml')
+  # apply_stylesheet(app, theme='dark_red.xml')
   open_dashboard = QAction("Open dashboard")
   open_dashboard.triggered.connect(dashboard_window.show)
   menu.addAction(open_dashboard)
