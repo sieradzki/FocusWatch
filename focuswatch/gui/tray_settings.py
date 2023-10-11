@@ -62,26 +62,34 @@ class TraySettings(QWidget):
     self.watcher_tab_layout.addWidget(self.watch_interval)
 
     self.watch_afk = QCheckBox(self.tab_watcher)
+    self.watch_afk.setChecked(True if (self.config.get_config(
+      'General', 'watch_afk') == 'True') else False)
     self.watch_afk.setObjectName(u"watch_afk")
 
     self.watcher_tab_layout.addWidget(self.watch_afk)
 
     self.afk_label = QLabel(self.tab_watcher)
     self.afk_label.setObjectName(u"afk_label")
-    self.afk_label.setEnabled(False)
+    self.afk_label.setEnabled(self.watch_afk.isChecked())
 
     self.watcher_tab_layout.addWidget(self.afk_label)
 
     self.afk_timeout = QSpinBox(self.tab_watcher)
     self.afk_timeout.setObjectName(u"afk_timeout")
-    self.afk_timeout.setEnabled(False)
+    self.afk_timeout.setValue(
+      float(self.config.get_config('General', 'afk_timeout'))
+    )
     self.afk_timeout.setMinimum(1)
-    self.afk_timeout.setValue(5)
+    self.afk_timeout.setEnabled(self.watch_afk.isChecked())
 
     self.watch_afk.toggled.connect(self.afk_timeout.setEnabled)
     self.watch_afk.toggled.connect(self.afk_label.setEnabled)
 
     self.watcher_tab_layout.addWidget(self.afk_timeout)
+
+    self.note_label = QLabel(self.tab_watcher)
+    self.note_label.setObjectName(u"label_2")
+    self.watcher_tab_layout.addWidget(self.note_label)
 
     self.verticalSpacer = QSpacerItem(
       20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
@@ -118,16 +126,18 @@ class TraySettings(QWidget):
 
   def accept(self):
     watch_interval = self.watch_interval.value()
-    watch_afk = self.watch_afk.isEnabled()
-    if watch_afk:
-      afk_timeout = self.afk_timeout.value()
+    watch_afk = self.watch_afk.isChecked()
+    afk_timeout = self.afk_timeout.value()
 
     # TODO logging
-
-    # print("Accepted")
-    # print(f"{watch_interval} {watch_afk} {afk_timeout}")
     self.config.update_config(
-        section='General', option='watch_interval', value=watch_interval)
+      section='General', option='watch_interval', value=watch_interval)
+    self.config.update_config(
+      section='General', option='watch_afk', value=watch_afk
+    )
+    self.config.update_config(
+      section='General', option='afk_timeout', value=afk_timeout
+    )
     self.close()
 
   def retranslateUi(self, Settings):
@@ -148,4 +158,6 @@ class TraySettings(QWidget):
       self.tab_watcher), QCoreApplication.translate("Settings", u"Watcher", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
       self.tab_focused_mode), QCoreApplication.translate("Settings", u"Focused mode", None))
+    self.note_label.setText(QCoreApplication.translate(
+      "Dashboard", u"Note: the changes will be applied on next restart", None))
   # retranslateUi
