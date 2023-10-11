@@ -202,7 +202,7 @@ class Dashboard(QMainWindow):
 
     if not categories_by_total_time:
       info_label = QLabel(self.time_breakdown_scrollAreaWidgetContents)
-      info_label.setText("No entries for the selected period")
+      info_label.setText("No data for the selected period")
 
       font = QFont()
       font.setPointSize(16)
@@ -231,8 +231,6 @@ class Dashboard(QMainWindow):
       category_horizontalLayout = QHBoxLayout()
       category_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
       cat_id, time = vals
-      if time < 10:  # Don't add really small entries
-        continue
       category = self._database.get_category_by_id(cat_id)
       id, name, parent_category_id, color = category
 
@@ -240,13 +238,25 @@ class Dashboard(QMainWindow):
       color = self.get_category_color(id)
 
       text += name
+      hours = time // 3600
+      minutes = (time // 60) % 60
+      seconds = time % 60
+      if hours:
+        text += f" {hours}h"
+      if minutes:
+        text += f" {minutes}m"
+      if seconds:
+        text += f" {seconds}s"
+
       category_label = QLabel(self.time_breakdown_scrollAreaWidgetContents)
-      category_label.setText(f"{text} {time/60 :.1f} m")  # TODO if > 60
+      category_label.setText(
+        f"{text}")
       if color:
         category_label.setStyleSheet(f"color: {color};")
       category_label.setMaximumHeight(20)
 
       font = QFont()
+      font.setBold(True)
       font.setPointSize(10)
 
       category_label.setFont(font)
@@ -291,7 +301,7 @@ class Dashboard(QMainWindow):
 
     if not window_class_by_total_time:
       info_label = QLabel(self.top_apps_scrollAreaWidgetContents)
-      info_label.setText("No entries for the selected period")
+      info_label.setText("No data for the selected period")
 
       font = QFont()
       font.setPointSize(16)
@@ -325,22 +335,32 @@ class Dashboard(QMainWindow):
         continue
       if time < 10:
         continue
-
-      text = ""
-
-      text += window_class
-      class_label = QLabel(self.top_apps_scrollAreaWidgetContents)
-      class_label.setText(f"{text} {time/60 :.1f} m")  # TODO if > 60
-      # class_label.setStyleSheet(f"color: {color};")
-      class_label.setMaximumHeight(20)
-
       category_id = self._database.get_longest_duration_category_id_for_window_class_on_date(
         self.selected_date, window_class)[0]
       category = self._database.get_category_by_id(category_id)
       id, name, parent_category_id, color = category
       color = self.get_category_color(id)
 
+      text = ""
+
+      text += window_class
+      hours = time // 3600
+      minutes = (time // 60) % 60
+      seconds = time % 60
+      if hours:
+        text += f" {hours}h"
+      if minutes:
+        text += f" {minutes}m"
+      if seconds:
+        text += f" {seconds}s"
+
+      class_label = QLabel(self.top_apps_scrollAreaWidgetContents)
+      class_label.setText(f"{text}")
+      class_label.setStyleSheet(f"color: {color};")
+      class_label.setMaximumHeight(20)
+
       font = QFont()
+      font.setBold(True)
       font.setPointSize(10)
 
       class_label.setFont(font)
