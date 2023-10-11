@@ -391,7 +391,7 @@ class Dashboard(QMainWindow):
         color = new_color if new_color != category[-1] and new_color is not None else category[-1]
       else:
         color = new_color
-      new_name = dialog.name_textEdit.toPlainText()
+      new_name = dialog.name_lineEdit.text()
       parent = dialog.parent_comboBox.currentText()
       if parent != 'None':
         parent_id = self._database.get_category_id_from_name(parent)

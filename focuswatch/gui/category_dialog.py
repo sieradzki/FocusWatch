@@ -9,7 +9,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QAbstractButton, QApplication, QComboBox, QDialog,
                                QDialogButtonBox, QFrame, QGridLayout, QHBoxLayout,
                                QLabel, QPushButton, QSizePolicy, QSpacerItem,
-                               QTextEdit, QVBoxLayout, QWidget, QColorDialog)
+                               QTextEdit, QVBoxLayout, QWidget, QColorDialog, QLineEdit)
 
 from focuswatch.database import DatabaseManager
 from focuswatch.gui.keyword_dialog import KeywordDialog
@@ -161,19 +161,19 @@ class CategoryDialog(QDialog):
 
     self.horizontalLayout_2.addWidget(self.nameLabel)
 
-    self.name_textEdit = QTextEdit(self.frame)
-    self.name_textEdit.setObjectName(u"name_textEdit")
+    self.name_lineEdit = QLineEdit(self.frame)
+    self.name_lineEdit.setObjectName(u"name_lineEdit")
     sizePolicy1 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
     sizePolicy1.setHorizontalStretch(0)
     sizePolicy1.setVerticalStretch(0)
     sizePolicy1.setHeightForWidth(
-      self.name_textEdit.sizePolicy().hasHeightForWidth())
-    self.name_textEdit.setSizePolicy(sizePolicy1)
-    self.name_textEdit.setMaximumSize(QSize(16777215, 30))
+      self.name_lineEdit.sizePolicy().hasHeightForWidth())
+    self.name_lineEdit.setSizePolicy(sizePolicy1)
+    self.name_lineEdit.setMaximumSize(QSize(16777215, 30))
     if self._category is not None:
-      self.name_textEdit.setText(self._category[1])
+      self.name_lineEdit.setText(self._category[1])
 
-    self.horizontalLayout_2.addWidget(self.name_textEdit)
+    self.horizontalLayout_2.addWidget(self.name_lineEdit)
 
     self.horizontalSpacer_2 = QSpacerItem(
       40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
