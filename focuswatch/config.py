@@ -12,7 +12,9 @@ class Config:
   def initialize_config(self):
     self.config['General'] = {
       'watch_interval': 1.0,
-      'verbose': 0
+      'verbose': 0,
+      'watch_afk': True,
+      'afk_timeout': 10
     }
     self.config['Database'] = {
       'location': './focuswatch.sqlite',

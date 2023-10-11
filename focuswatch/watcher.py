@@ -34,6 +34,9 @@ class Watcher():
       self._config.get_config('General', 'watch_interval')) if not watch_interval else watch_interval
     self._verbose = int(self._config.get_config(
       'General', 'verbose')) if not verbose else verbose
+    self._watch_afk = bool(self._config.get_config('General', 'watch_afk'))
+    self._afk_timeout = float(
+      self._config.get_config('General', 'afk_timeout'))
 
     self._database = DatabaseManager()
     self._classifier = Classifier()
@@ -108,17 +111,17 @@ class Watcher():
 
   def monitor(self):
     while (True):
-      # TODO afk timeout setting
-      if time.time() - self._time_start > 10 * 60:
-        self._time_stop = time.time()
-        self._category = self._database.get_category_id_from_name("AFK")
-        self._window_class = "afk"
-        self._window_name = "afk"
-        self.save_entry()
+      if self._watch_afk:
+        if time.time() - self._time_start > self._afk_timeout * 60:
+          self._time_stop = time.time()
+          self._category = self._database.get_category_id_from_name("AFK")
+          self._window_class = "afk"
+          self._window_name = "afk"
+          self.save_entry()
 
-        self._time_start = time.time()
-        self._window_name = self.get_active_window_name()
-        self._window_class = self.get_active_window_class()
+          self._time_start = time.time()
+          self._window_name = self.get_active_window_name()
+          self._window_class = self.get_active_window_class()
 
       if self._window_name != self.get_active_window_name():  # log only on activity change
         self._time_stop = time.time()

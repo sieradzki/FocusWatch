@@ -55,6 +55,7 @@ def main():
   menu.addAction(open_settings)
 
   logs = QAction("Log")
+  logs.setEnabled(False)
   menu.addAction(logs)
 
   quit = QAction("Quit")

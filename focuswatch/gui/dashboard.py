@@ -915,7 +915,7 @@ class Dashboard(QMainWindow):
     self.tabWidget.addTab(self.categorization_tab, "")
     self.settings_tab = QWidget()
     self.settings_tab.setObjectName(u"settings_tab")
-    self.tabWidget.addTab(self.settings_tab, "")
+    # self.tabWidget.addTab(self.settings_tab, "")
 
     self.verticalLayout.addWidget(self.tabWidget)
 
