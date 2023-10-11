@@ -2,6 +2,7 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 
 from PySide6 import QtCharts
+from PySide6.QtCharts import QChart
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
                             QMetaObject, QObject, QPoint, QRect, QSize, Qt,
                             QTime, QUrl)
@@ -221,6 +222,8 @@ class Dashboard(QMainWindow):
     pie_chart = QtCharts.QChartView()
     pie_chart.setRenderHint(QPainter.Antialiasing)
     pie_chart.setMinimumSize(300, 300)
+    pie_chart.chart().setAnimationOptions(QChart.AllAnimations)
+    pie_chart.chart().setBackgroundVisible(False)
 
     series = QtCharts.QPieSeries()
 
@@ -253,6 +256,7 @@ class Dashboard(QMainWindow):
       slice.setColor(QColor(color))
 
       slice.hovered.connect(slice.setExploded)
+      slice.setExplodeDistanceFactor(0.07)
       slice.hovered.connect(slice.setLabelVisible)
 
       series.append(slice)
@@ -262,12 +266,11 @@ class Dashboard(QMainWindow):
       breakdown_verticalLayout.addLayout(category_horizontalLayout)
 
     series.setHoleSize(0.35)
-    # series.setLabelsVisible(True)
-    # series.setLabelsPosition(QtCharts.QPieSlice.LabelInsideNormal)
     pie_chart.chart().addSeries(series)
-    pie_chart.chart().legend().hide()
+    # pie_chart.chart().legend().hide()
 
-    # legend = pie_chart.chart().legend()
+    legend = pie_chart.chart().legend()
+    legend.setVisible(False)
     # legend.setAlignment(Qt.AlignBottom)
     # legend.setFont(QFont("Helvetica", 9))
 
@@ -308,6 +311,8 @@ class Dashboard(QMainWindow):
     pie_chart = QtCharts.QChartView()
     pie_chart.setRenderHint(QPainter.Antialiasing)
     pie_chart.setMinimumSize(300, 300)
+    pie_chart.chart().setAnimationOptions(QChart.AllAnimations)
+    pie_chart.chart().setBackgroundVisible(False)
 
     series = QtCharts.QPieSeries()
 
@@ -315,22 +320,25 @@ class Dashboard(QMainWindow):
       class_horizontalLayout = QHBoxLayout()
       class_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
 
-      window_class, category_id, time = vals
+      window_class, _, time = vals
       if window_class == "afk":
         continue
       if time < 10:
         continue
-      category = self._database.get_category_by_id(category_id)
-      id, name, parent_category_id, color = category
 
       text = ""
-      color = self.get_category_color(id)
 
       text += window_class
       class_label = QLabel(self.top_apps_scrollAreaWidgetContents)
       class_label.setText(f"{text} {time/60 :.1f} m")  # TODO if > 60
       # class_label.setStyleSheet(f"color: {color};")
       class_label.setMaximumHeight(20)
+
+      category_id = self._database.get_longest_duration_category_id_for_window_class_on_date(
+        self.selected_date, window_class)[0]
+      category = self._database.get_category_by_id(category_id)
+      id, name, parent_category_id, color = category
+      color = self.get_category_color(id)
 
       font = QFont()
       font.setPointSize(10)
@@ -339,10 +347,10 @@ class Dashboard(QMainWindow):
 
       slice = QtCharts.QPieSlice(text, time / 60)
 
-      # slice.setColor(QColor(color))
-
       slice.hovered.connect(slice.setExploded)
+      slice.setExplodeDistanceFactor(0.07)
       slice.hovered.connect(slice.setLabelVisible)
+      slice.setColor(QColor(color))
 
       series.append(slice)
 
@@ -351,12 +359,11 @@ class Dashboard(QMainWindow):
       breakdown_verticalLayout.addLayout(class_horizontalLayout)
 
     series.setHoleSize(0.35)
-    # series.setLabelsVisible(True)
     # series.setLabelsPosition(QtCharts.QPieSlice.LabelInsideNormal)
     pie_chart.chart().addSeries(series)
-    pie_chart.chart().legend().hide()
 
-    # legend = pie_chart.chart().legend()
+    legend = pie_chart.chart().legend()
+    legend.setVisible(False)
     # legend.setAlignment(Qt.AlignBottom)
     # legend.setFont(QFont("Helvetica", 9))
 
