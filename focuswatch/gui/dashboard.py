@@ -237,7 +237,7 @@ class Dashboard(QMainWindow):
       text = ""
       color = self.get_category_color(id)
 
-      text += name
+      text += name + ' -'
       hours = time // 3600
       minutes = (time // 60) % 60
       seconds = time % 60
@@ -263,7 +263,8 @@ class Dashboard(QMainWindow):
 
       slice = QtCharts.QPieSlice(text, time / 60)
 
-      slice.setColor(QColor(color))
+      if color:
+        slice.setColor(QColor(color))
 
       slice.hovered.connect(slice.setExploded)
       slice.setExplodeDistanceFactor(0.07)
@@ -273,6 +274,44 @@ class Dashboard(QMainWindow):
 
       category_horizontalLayout.addWidget(category_label)
 
+      category_progress = QProgressBar(
+        self.time_breakdown_scrollAreaWidgetContents)
+      category_progress.setValue((time / total_time) * 100)
+      category_progress.setFixedHeight(15)
+
+      base_color = QColor(color)
+
+      # Create gradient stops for smooth transition
+      contrasting_color = self.get_contrasting_text_color(color)
+
+      # Multiplier is needed for really dark colors
+      multiplier = 1 if contrasting_color == 'black' else 2
+
+      stop_1 = f"stop: 0 {base_color.darker(100 - (30*multiplier)).name()},"
+      stop_2 = f"stop: 0.3 {base_color.darker(100 - (20*multiplier)).name()},"
+      stop_3 = f"stop: 0.7 {base_color.darker(100 - (10 * multiplier)).name()},"
+      stop_4 = f"stop: 1 {base_color.name()}"
+
+      category_progress.setStyleSheet(
+          f"""
+          QProgressBar {{
+              text-align: top;
+              border-radius: 3px;
+              {"color: " + contrasting_color if category_progress.value() > 45 else ''}
+          }}
+          QProgressBar::chunk {{
+              background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                  {stop_1}
+                  {stop_2}
+                  {stop_3}
+                  {stop_4}
+              );
+              border-radius: 3px;
+          }}
+          """
+      )
+      category_progress.setFixedWidth(250)
+      category_horizontalLayout.addWidget(category_progress)
       breakdown_verticalLayout.addLayout(category_horizontalLayout)
 
     series.setHoleSize(0.35)
@@ -343,7 +382,7 @@ class Dashboard(QMainWindow):
 
       text = ""
 
-      text += window_class
+      text += window_class + ' -'
       hours = time // 3600
       minutes = (time // 60) % 60
       seconds = time % 60
@@ -374,7 +413,44 @@ class Dashboard(QMainWindow):
 
       series.append(slice)
 
+      class_progress = QProgressBar(
+        self.time_breakdown_scrollAreaWidgetContents)
+      class_progress.setValue((time / total_time) * 100)
+      class_progress.setFixedHeight(15)
+
+      base_color = QColor(color)
+
+      # Create gradient stops for smooth transition
+      contrasting_color = self.get_contrasting_text_color(color)
+      multiplier = 1 if contrasting_color == 'black' else 2
+
+      stop_1 = f"stop: 0 {base_color.darker(100 - (30*multiplier)).name()},"
+      stop_2 = f"stop: 0.3 {base_color.darker(100 - (20*multiplier)).name()},"
+      stop_3 = f"stop: 0.7 {base_color.darker(100 - (10 * multiplier)).name()},"
+      stop_4 = f"stop: 1 {base_color.name()}"
+
+      class_progress.setStyleSheet(
+          f"""
+          QProgressBar {{
+              text-align: top;
+              border-radius: 3px;
+              {"color: " + contrasting_color if class_progress.value() > 45 else ''}
+          }}
+          QProgressBar::chunk {{
+              background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
+                  {stop_1}
+                  {stop_2}
+                  {stop_3}
+                  {stop_4}
+              );
+              border-radius: 3px;
+          }}
+          """
+      )
+      class_progress.setFixedWidth(250)
+
       class_horizontalLayout.addWidget(class_label)
+      class_horizontalLayout.addWidget(class_progress)
 
       breakdown_verticalLayout.addLayout(class_horizontalLayout)
 
