@@ -355,7 +355,8 @@ class Dashboard(QMainWindow):
     total_time = 0
 
     for vals in window_class_by_total_time:
-      total_time += vals[-1]
+      if vals[0] != 'afk':
+        total_time += vals[-1]
 
     pie_chart = QtCharts.QChartView()
     pie_chart.setRenderHint(QPainter.Antialiasing)
@@ -512,8 +513,8 @@ class Dashboard(QMainWindow):
       for keyw in new_keywords:
         self._database.add_keyword(keyw[1], category_id)
 
-      self.onShow(self.showEvent)
-      self.tabWidget.setCurrentIndex(1)
+    self.onShow(self.showEvent)
+    self.tabWidget.setCurrentIndex(1)
 
   def get_keywords_for_category(self, category_id):
     keywords = self._database.get_all_keywords()

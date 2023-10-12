@@ -126,6 +126,31 @@ class CategoryDialog(QDialog):
       self.new_keywords.append([key_id, keyword_name])
       self.setup_keyword_grid()
 
+  def delete_category(self):
+    category_id = self._category[0]
+
+    confirmation_dialog = QDialog(self)
+    confirmation_dialog.setWindowTitle("Confirmation")
+
+    message_label = QLabel("Are you sure you want to delete this category?")
+
+    button_box = QDialogButtonBox(QDialogButtonBox.Yes | QDialogButtonBox.No)
+    button_box.accepted.connect(
+      lambda: self.confirm_delete(category_id, confirmation_dialog))
+    button_box.rejected.connect(confirmation_dialog.reject)
+
+    layout = QVBoxLayout()
+    layout.addWidget(message_label)
+    layout.addWidget(button_box)
+    confirmation_dialog.setLayout(layout)
+
+    confirmation_dialog.exec_()
+
+  def confirm_delete(self, category_id, confirmation_dialog):
+    self._database.delete_category(category_id)
+    confirmation_dialog.accept()
+    self.close()
+
   def setupUi(self, Dialog):
     if not Dialog.objectName():
       Dialog.setObjectName(u"Dialog")
@@ -305,6 +330,16 @@ class CategoryDialog(QDialog):
 
     self.verticalLayout_2.addItem(self.verticalSpacer)
 
+    if self._category is not None:
+      if self._category[1] != 'Uncategorized' and self._category[1] != 'AFK':
+        self.deleteButton = QPushButton(self.frame)
+        self.deleteButton.setObjectName(u"deleteButton")
+        self.deleteButton.setStyleSheet(u"background-color: red")
+
+        self.deleteButton.clicked.connect(self.delete_category)
+
+        self.verticalLayout_2.addWidget(self.deleteButton)
+
     self.verticalLayout.addWidget(self.frame)
 
     self.buttonBox = QDialogButtonBox(Dialog)
@@ -340,4 +375,7 @@ class CategoryDialog(QDialog):
       QCoreApplication.translate("Dialog", u"+", None))
     self.noteLabel.setText(QCoreApplication.translate(
       "Dialog", u"Note: Click on keyword to remove it", None))
+    if self._category is not None and self._category[1] != 'Uncategorized' and self._category[1] != 'AFK':
+      self.deleteButton.setText(QCoreApplication.translate(
+        "Dialog", u"Delete category", None))
   # retranslateUi
