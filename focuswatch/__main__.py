@@ -18,6 +18,7 @@ def start_watcher(watcher):
 
 
 def main():
+  # Parse the arguments
   args = parse_arguments()
 
   """ System tray """
@@ -28,10 +29,11 @@ def main():
       None, "Systray", "I couldn't detect any system tray on this system.")
     sys.exit(1)
 
+  # Don't quit the application when the window is closed
   app.setQuitOnLastWindowClosed(False)
 
   # Create the icon
-  icon = QIcon("icon.png")
+  icon = QIcon("icon.png")  # TODO change the icon
 
   # Create the system tray
   tray = QSystemTrayIcon()
@@ -41,9 +43,10 @@ def main():
   # Create the menu
   menu = QMenu()
 
+  # apply_stylesheet(app, theme='dark_blue.xml')
+
   # Add actions to the menu
   dashboard_window = Dashboard()
-  # apply_stylesheet(app, theme='dark_blue.xml')
   open_dashboard = QAction("Open dashboard")
   open_dashboard.triggered.connect(dashboard_window.show)
   menu.addAction(open_dashboard)
@@ -55,6 +58,7 @@ def main():
   menu.addAction(open_settings)
 
   logs = QAction("Log")
+  logs.setEnabled(False)
   menu.addAction(logs)
 
   quit = QAction("Quit")
@@ -64,6 +68,7 @@ def main():
   # Add menu to the system tray
   tray.setContextMenu(menu)
 
+  # Create the watcher
   watcher = Watcher(args.watch_interval if args.watch_interval else None,
                     args.verbose if args.verbose else None)
 
