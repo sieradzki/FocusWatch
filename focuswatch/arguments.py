@@ -6,6 +6,7 @@ from focuswatch.database import DatabaseManager
 
 
 def display_config():
+  """ Display the current configuration """
   config = Config()
   config_contents = config.get_all_config()
   for section in config_contents:
@@ -16,6 +17,7 @@ def display_config():
 
 
 def display_categories():
+  """ Display all categories from the database """
   db = DatabaseManager()
   categories = db.get_all_categories()
   print(f"{'id'.ljust(4)}{'name'.ljust(15)}{'parent category'.ljust(4)}")
@@ -27,6 +29,7 @@ def display_categories():
 
 
 def add_category(category):
+  """ Add a category to the database """
   category_name, parent_category = category[0], category[1] if len(
     category) > 1 else None
   db = DatabaseManager()
@@ -37,6 +40,7 @@ def add_category(category):
 
 
 def display_keywords():
+  """ Display all keywords from the database """
   db = DatabaseManager()
   keywords = db.get_all_keywords()
   print(f"{'id'.ljust(4)}{'name'.ljust(15)}{'category_id'.ljust(4)}")
@@ -48,6 +52,7 @@ def display_keywords():
 
 
 def add_keyword(keyword):
+  """ Add a keyword to the database """
   db = DatabaseManager()
   if db.add_keyword(keyword[0], keyword[1]):
     display_keywords()
@@ -56,6 +61,7 @@ def add_keyword(keyword):
 
 
 def parse_arguments():
+  """ Parse the arguments """
   parser = argparse.ArgumentParser(
     prog="focuswatch",
     description="Activity logging with categorization"
