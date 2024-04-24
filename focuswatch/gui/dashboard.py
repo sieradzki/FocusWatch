@@ -686,7 +686,9 @@ class Dashboard(QMainWindow):
   def setupUi(self, Dashboard):
     if not Dashboard.objectName():
       Dashboard.setObjectName(u"Dashboard")
-    Dashboard.resize(1600, 900)
+      # Resize only on first run
+      if not Dashboard.isVisible():
+        Dashboard.resize(1600, 900)
     Dashboard.setTabShape(QTabWidget.Rounded)
     self.centralwidget = QWidget(Dashboard)
     self.centralwidget.setObjectName(u"centralwidget")
@@ -1158,17 +1160,27 @@ class Dashboard(QMainWindow):
       self.categorization_tab), QCoreApplication.translate("Dashboard", u"Categorization", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
       self.settings_tab), QCoreApplication.translate("Dashboard", u"Settings", None))
-    self.watch_label.setText(QCoreApplication.translate("Dashboard", u"Watch interval", None))
-    self.watch_interval.setSuffix(QCoreApplication.translate("Dashboard", u" s", None))
-    self.watch_afk.setText(QCoreApplication.translate("Dashboard", u"Watch afk", None))
-    self.afk_label.setText(QCoreApplication.translate("Dashboard", u"AFK timeout", None))
-    self.afk_timeout.setSuffix(QCoreApplication.translate("Dashboard", u" m", None))
+    self.watch_label.setText(QCoreApplication.translate(
+      "Dashboard", u"Watch interval", None))
+    self.watch_interval.setSuffix(
+      QCoreApplication.translate("Dashboard", u" s", None))
+    self.watch_afk.setText(QCoreApplication.translate(
+      "Dashboard", u"Watch afk", None))
+    self.afk_label.setText(QCoreApplication.translate(
+      "Dashboard", u"AFK timeout", None))
+    self.afk_timeout.setSuffix(
+      QCoreApplication.translate("Dashboard", u" m", None))
     self.afk_timeout.setPrefix("")
-    self.label_2.setText(QCoreApplication.translate("Dashboard", u"Note: the changes will be applied on next restart", None))
-    self.tab_settings_watcher.setTabText(self.tab_settings_watcher.indexOf(self.tab), QCoreApplication.translate("Dashboard", u"Watcher", None))
-    self.label.setText(QCoreApplication.translate("Dashboard", u"Not implemented", None))
-    self.tab_settings_watcher.setTabText(self.tab_settings_watcher.indexOf(self.tab_settings_startup), QCoreApplication.translate("Dashboard", u"Startup", None))
-    self.tabWidget.setTabText(self.tabWidget.indexOf(self.settings_tab), QCoreApplication.translate("Dashboard", u"Settings", None))
+    self.label_2.setText(QCoreApplication.translate(
+      "Dashboard", u"Note: the changes will be applied on next restart", None))
+    self.tab_settings_watcher.setTabText(self.tab_settings_watcher.indexOf(
+      self.tab), QCoreApplication.translate("Dashboard", u"Watcher", None))
+    self.label.setText(QCoreApplication.translate(
+      "Dashboard", u"Not implemented", None))
+    self.tab_settings_watcher.setTabText(self.tab_settings_watcher.indexOf(
+      self.tab_settings_startup), QCoreApplication.translate("Dashboard", u"Startup", None))
+    self.tabWidget.setTabText(self.tabWidget.indexOf(
+      self.settings_tab), QCoreApplication.translate("Dashboard", u"Settings", None))
   # retranslateUi
 
   def onShow(self, event):
