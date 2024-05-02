@@ -98,7 +98,7 @@ class Watcher():
   def save_entry(self):
     if self._verbose:
       print(
-          f"[{self._time_stop - self._time_start :.3f}] [{self._window_class}] {self._window_name[:32]} {self._category}")
+          f"[{self._time_stop - self._time_start:.3f}] [{self._window_class}] {self._window_name[:32]} {self._category}")
     self._database.insert_activity(
       self._window_class,
       self._window_name,
@@ -112,7 +112,20 @@ class Watcher():
   def monitor(self):
     while (True):
       if self._watch_afk:
-        if time.time() - self._time_start > self._afk_timeout * 60:
+        # Linux afk time
+        if platform in ['linux', 'linux2']:
+          afk_output = subprocess.check_output(["xprintidle"]).decode().strip()
+          afk_time = int(afk_output) / 1000  # in seconds
+
+        # Windows afk time
+        if platform in ['Windows', 'win32', 'cygwin']:
+          # Get idle time
+          last_input_info = ctypes.c_ulong()
+          user32.GetLastInputInfo(ctypes.byref(last_input_info))
+          idle_time = kernel32.GetTickCount() - last_input_info.value
+          afk_time = idle_time / 1000
+
+        if afk_time > self._afk_timeout * 60:
           self._time_stop = time.time()
           self._category = self._database.get_category_id_from_name("AFK")
           self._window_class = "afk"
