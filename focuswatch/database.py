@@ -1,10 +1,24 @@
+""" Database manager for FocusWatch.
+
+This module provides a class for managing the database for FocusWatch.
+It includes methods for creating, reading, updating, and deleting activities,
+categories, and keywords.
+"""
+
 import sqlite3
 import time
 from focuswatch.config import Config
 
 
 class DatabaseManager:
+  """ Class for managing the database for FocusWatch. """
+
   def __init__(self):
+    """ Initialize the database manager. 
+
+    Raises:
+      sqlite3.OperationalError: If there is an error connecting to the database.
+    """
     self._conn = None
     self._config = Config()
     self._db_name = self._config.get_config('Database', 'location')
@@ -22,10 +36,12 @@ class DatabaseManager:
     self._cur = self._conn.cursor()
 
   def __del__(self):
+    """ Close the database connection. """
     if self._conn is not None:
       self._conn.close()
 
   def _create_db(self):
+    """ Create the database. """
     self._conn = sqlite3.connect(self._db_name)
     self._cur = self._conn.cursor()
 
@@ -85,6 +101,7 @@ class DatabaseManager:
     print("Database created successfully")
 
   def insert_default_categories(self):
+    """ Insert default categories into the database. """
     if self._conn is not None:
       self._cur.execute('DELETE FROM categories;')
       self._cur.execute('DELETE FROM keywords;')
@@ -116,7 +133,7 @@ class DatabaseManager:
       self.insert_default_keywords()
 
   def insert_default_keywords(self):
-    """ Default keywords based on activity watch """
+    """ Insert default keywords into the database. """
     self.add_keyword("Google Docs", 1)
     self.add_keyword("libreoffice", 1)
 
@@ -170,6 +187,19 @@ class DatabaseManager:
   """ Activities """
 
   def insert_activity(self, window_class, window_name, time_start, time_stop, category, project_id):
+    """ Insert an activity into the database. 
+
+    Args:
+      window_class: The class of the window.
+      window_name: The name of the window.
+      time_start: The start time of the activity.
+      time_stop: The stop time of the activity.
+      category: The category of the activity.
+      project_id: The project id of the activity.
+
+    Returns:
+      True if the activity was inserted successfully, False otherwise.
+    """
     if self._conn is not None:
       t = (time_start, time_stop, window_class,
            window_name, category, project_id)
@@ -184,6 +214,7 @@ class DatabaseManager:
     return False
 
   def get_all_activities(self):
+    """ Return all activity entries in the database. """
     if self._conn is not None:
       res = self._cur.execute("SELECT * FROM activity_log")
       if res:
@@ -192,6 +223,7 @@ class DatabaseManager:
         return ""
 
   def get_todays_entries(self):
+    """ Return all entries for today. """
     if self._conn is not None:
       today = time.strftime("%m-%d",
                             time.localtime(time.time()))
@@ -200,6 +232,11 @@ class DatabaseManager:
       return res.fetchall()
 
   def get_date_entries(self, date):
+    """ Return all entries for a given date. 
+
+    Args:
+      date: The date to retrieve entries for.
+    """
     if self._conn is not None:
       formatted_date = date.strftime("%Y-%m-%d")
       res = self._cur.execute(
@@ -207,12 +244,15 @@ class DatabaseManager:
       return res.fetchall()
 
   def get_weeks_entries(self):
+    """ Return all entries for the past week. """
     if self._conn is not None:
       res = self._cur.execute(
           "SELECT * FROM 'activity_log' WHERE DATETIME(time_start) >= DATETIME('now', 'weekday 0', '-7 days')")
       return res.fetchall()
 
+  # TODO we can just use get_date_entries_class_time_total with current date
   def get_daily_entries_class_time_total(self):
+    """ Return the total time spent on each window class for today. """
     if self._conn is not None:
       res = self._cur.execute("""
         SELECT window_class, category_id,
@@ -230,6 +270,11 @@ class DatabaseManager:
       return res.fetchall()
 
   def get_date_entries_class_time_total(self, date):
+    """ Return the total time spent on each window class for a given date.
+
+    Args:
+      date: The date to retrieve entries for.
+    """
     res = self._cur.execute(f"""
       SELECT window_class, category_id,
       SUM(
@@ -246,6 +291,12 @@ class DatabaseManager:
     return res.fetchall()
 
   def get_longest_duration_category_id_for_window_class_on_date(self, date, window_class):
+    """ Return the category with the longest duration for a given window class on a given date.
+
+    Args:
+      date: The date to retrieve entries for.
+      window_class: The window class to retrieve entries for.
+    """
     res = self._cur.execute(f"""
       SELECT category_id
       FROM activity_log
@@ -265,11 +316,15 @@ class DatabaseManager:
   """ Categories """
 
   def create_category(self, category_name, parent_category=None, color=None):
-    """ Create a new category
-    :param category_name: name of the category
-    :param parent_category: parent category id
-    :param color: color of the category
-    :return: True if category was created successfully, False otherwise"""
+    """ Create a category. 
+
+    Args:
+      category_name: The name of the category.
+      parent_category: The parent category of the category.
+      color: The color of the category.
+
+    Returns:
+      True if the category was created successfully, False otherwise."""
 
     if self._conn is not None:
       # Check if category exists withing current scope
@@ -302,6 +357,13 @@ class DatabaseManager:
     return False
 
   def delete_category(self, category_id):
+    """ Delete a category. 
+
+    Args:
+      category_id: The id of the category.
+
+    Returns:
+      True if the category was deleted successfully, False otherwise."""
     if self._conn is not None:
       t = (category_id,)
       self._cur.execute(
@@ -313,6 +375,17 @@ class DatabaseManager:
       return False
 
   def update_category(self, category_id, name, parent_id, color):
+    """ Update a category. 
+
+    Args:
+      category_id: The id of the category.
+      name: The name of the category.
+      parent_id: The parent category of the category.
+      color: The color of the category.
+
+    Returns:
+      True if the category was updated successfully, False otherwise.
+    """
     if self._conn is not None:
       # Check if category exists withing current scope
       if parent_id is None:
@@ -347,6 +420,7 @@ class DatabaseManager:
       return False
 
   def get_all_categories(self):
+    """ Return all category entries in the database. """
     if self._conn is not None:
       res = self._cur.execute("SELECT * FROM categories")
       if res:
@@ -355,6 +429,11 @@ class DatabaseManager:
         return ""
 
   def get_category_by_id(self, id):
+    """ Returns a category by id. 
+
+    Args:
+      id: The id of the category.
+    """
     if self._conn is not None:
       t = (id,)
       res = self._cur.execute("SELECT * FROM categories where id=?", t)
@@ -368,6 +447,7 @@ class DatabaseManager:
         return ""
 
   def get_daily_category_time_totals(self):
+    """ Return the total time spent on each category for today. """
     if self._conn is not None:
       res = self._cur.execute("""
         SELECT category_id,
@@ -386,6 +466,11 @@ class DatabaseManager:
       return res.fetchall()
 
   def get_date_category_time_totals(self, date):
+    """ Return the total time spent on each category for a given date. 
+
+    Args:
+      date: The date to retrieve entries for.
+    """
     res = self._cur.execute(f"""
       SELECT category_id,
       SUM(
@@ -405,6 +490,15 @@ class DatabaseManager:
   """ Keywords """
 
   def add_keyword(self, keyword_name, category_id):
+    """ Add a keyword to a category. 
+
+    Args:
+      keyword_name: The name of the keyword.
+      category_id: The id of the category.
+
+    Returns:
+      True if the keyword was added successfully, False otherwise.
+    """
     if self._conn is not None:
       t = (category_id, keyword_name)
       self._cur.execute(
@@ -415,6 +509,14 @@ class DatabaseManager:
     return False
 
   def delete_keyword(self, keyword_id):
+    """ Delete a keyword. 
+    
+    Args:
+      keyword_id: The id of the keyword.
+    
+    Returns:
+      True if the keyword was deleted successfully, False otherwise.
+    """
     if self._conn is not None:
       t = (keyword_id,)
       self._cur.execute(
@@ -426,7 +528,7 @@ class DatabaseManager:
       return False
 
   def get_all_keywords(self):
-    """ Returns all keyword entries in the database """
+    """ Return all keyword entries in the database. """
     if self._conn is not None:
       res = self._cur.execute("SELECT * FROM keywords")
       if res:
@@ -435,7 +537,11 @@ class DatabaseManager:
         return ""
 
   def get_categories_from_keyword(self, keyword):
-    """ Returns categories for given keyword sorted by depth """
+    """ Return the categories associated with a keyword sorted by depth. 
+    
+    Args:
+      keyword: The keyword to retrieve categories for.
+    """
     # TODO no longer used
     if self._conn is not None:
       t = (f'%{keyword}%',)
@@ -461,6 +567,11 @@ class DatabaseManager:
         return ""
 
   def get_category_depth(self, category_id):
+    """ Return the depth of a category. 
+    
+    Args:
+      category_id: The id of the category.
+    """
     if self._conn is not None:
       t = (category_id,)
       res = self._cur.execute(
@@ -485,6 +596,11 @@ class DatabaseManager:
         return ""
 
   def get_category_id_from_name(self, category_name):
+    """ Return the id of a category given its name. 
+    
+    Args:
+      category_name: The name of the category.
+    """
     if self._conn is not None:
       t = (category_name,)
       res = self._cur.execute('SELECT id FROM categories where name=?', t)
