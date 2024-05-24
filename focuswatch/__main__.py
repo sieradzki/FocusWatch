@@ -52,6 +52,10 @@ def main():
   open_dashboard.triggered.connect(dashboard_window.show)
   menu.addAction(open_dashboard)
 
+  # Open dashboard on double-click
+  tray.activated.connect(lambda reason: dashboard_window.show(
+  ) if reason == QSystemTrayIcon.DoubleClick else None)
+
   tray_settings = TraySettings()
 
   open_settings = QAction("Settings")
