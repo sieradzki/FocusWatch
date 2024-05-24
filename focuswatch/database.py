@@ -203,9 +203,7 @@ class DatabaseManager:
     if self._conn is not None:
       formatted_date = date.strftime("%Y-%m-%d")
       res = self._cur.execute(
-        f"SELECT * FROM 'activity_log' WHERE time_start LIKE '%{
-          formatted_date}%';"
-      )
+        f"SELECT * FROM 'activity_log' WHERE time_start LIKE '%{formatted_date}%'")
       return res.fetchall()
 
   def get_weeks_entries(self):
