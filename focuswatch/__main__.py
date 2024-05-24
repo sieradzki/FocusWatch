@@ -52,16 +52,23 @@ def main():
   open_dashboard.triggered.connect(dashboard_window.show)
   menu.addAction(open_dashboard)
 
+  # Open or hide dashboard on double-click
+  tray.activated.connect(lambda reason: dashboard_window.hide() if reason == QSystemTrayIcon.Trigger and dashboard_window.isVisible(
+  ) else dashboard_window.show() if reason == QSystemTrayIcon.Trigger else None)
+
+  # Settings action
   tray_settings = TraySettings()
 
   open_settings = QAction("Settings")
   open_settings.triggered.connect(tray_settings.show)
   menu.addAction(open_settings)
 
+  # Logs action (TODO logs not implemented)
   logs = QAction("Log")
   logs.setEnabled(False)
   menu.addAction(logs)
 
+  # Quit action
   quit = QAction("Quit")
   quit.triggered.connect(app.quit)
   menu.addAction(quit)

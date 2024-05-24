@@ -37,7 +37,7 @@ class DatabaseManager:
         "window_name"	TEXT NOT NULL,
         "category_id"         INTEGER,
         "project_id" INTEGER,
-        FOREIGN KEY("category_id") REFERENCES "categories"("id") 
+        FOREIGN KEY("category_id") REFERENCES "categories"("id")
     );''')
 
     self._cur.execute('''
@@ -203,8 +203,7 @@ class DatabaseManager:
     if self._conn is not None:
       formatted_date = date.strftime("%Y-%m-%d")
       res = self._cur.execute(
-        f"SELECT * FROM 'activity_log' WHERE time_start LIKE '%{formatted_date}%';"
-      )
+        f"SELECT * FROM 'activity_log' WHERE time_start LIKE '%{formatted_date}%'")
       return res.fetchall()
 
   def get_weeks_entries(self):
@@ -266,7 +265,34 @@ class DatabaseManager:
   """ Categories """
 
   def create_category(self, category_name, parent_category=None, color=None):
+    """ Create a new category
+    :param category_name: name of the category
+    :param parent_category: parent category id
+    :param color: color of the category
+    :return: True if category was created successfully, False otherwise"""
+
     if self._conn is not None:
+      # Check if category exists withing current scope
+      # For example: we can have work->programming and hobby->programming but not work->programming and work->programming
+      if parent_category is None:
+        t = (category_name,)
+        res = self._cur.execute(
+          'SELECT * FROM categories WHERE name=? AND parent_category IS NULL', t)
+        if res.fetchall():
+          # TODO return error message
+          return False
+      else:
+        # Don't allow category with the same name as parent category
+        parent_category_name = self.get_category_by_id(parent_category)[1]
+        if category_name == parent_category_name:
+          return False
+        t = (category_name, parent_category)
+        res = self._cur.execute(
+          'SELECT * FROM categories WHERE name=? AND parent_category=?', t)
+        if res.fetchall():
+          # TODO return error message
+          return False
+
       t = (category_name, parent_category, color)
       self._cur.execute(
         'INSERT INTO categories (name, parent_category, color) VALUES (?, ?, ?)', t)
@@ -288,6 +314,29 @@ class DatabaseManager:
 
   def update_category(self, category_id, name, parent_id, color):
     if self._conn is not None:
+      # Check if category exists withing current scope
+      if parent_id is None:
+        t = (name,)
+        res = self._cur.execute(
+          'SELECT * FROM categories WHERE name=? AND parent_category IS NULL', t)
+        if res.fetchall():
+          # TODO return error message
+          return False
+      elif name == parent_id:
+        # TODO return error message
+        return False
+      else:
+        parent_category_name = self.get_category_by_id(parent_id)[1]
+        if name == parent_category_name:
+          return False
+
+        t = (name, parent_id)
+        res = self._cur.execute(
+          'SELECT * FROM categories WHERE name=? AND parent_category=?', t)
+        if res.fetchall():
+          # TODO return error message
+          return False
+
       t = (name, parent_id, color, category_id)
       self._cur.execute(
         'UPDATE categories SET name=?, parent_category=?, color=? WHERE id = ?', t
