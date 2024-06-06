@@ -17,7 +17,7 @@ class ActivityManager:
   def __init__(self) -> None:
     """ Initialize the ActivityManager. """
     self._db_conn = DatabaseConnection()
-    self._db_manager = DatabaseManager()
+    self._db_conn.connect()
 
   def insert_activity(
       self,

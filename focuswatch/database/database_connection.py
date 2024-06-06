@@ -16,7 +16,6 @@ class DatabaseConnection:
     self.conn = None
     self._config = Config()
     self.db_name = self._config.get_config('Database', 'location')
-    self.connect()
 
   def __del__(self):
     """ Close the database connection when the object is deleted. """
@@ -42,6 +41,15 @@ class DatabaseConnection:
     except sqlite3.OperationalError as e:
       logging.error(f"Error connecting to database: {e}")
       raise ConnectionError(f"Failed to connect to the database: {e}")
+
+  def connect_or_create(self):
+    """ Connect to the database, creating it if it doesn't exist. """
+    try:
+      self.connect()
+    except ConnectionError:
+      logging.info("Database does not exist, creating new database.")
+      self.conn = sqlite3.connect(
+        self.db_name, check_same_thread=False, timeout=1)
 
   def execute_query(self, query: str, params: tuple = ()) -> list:
     """ Execute a query on the database. 

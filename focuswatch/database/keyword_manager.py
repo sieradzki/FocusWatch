@@ -14,6 +14,7 @@ class KeywordManager:
   def __init__(self) -> None:
     """ Initialize the keyword manager. """
     self._db_conn = DatabaseConnection()
+    self._db_conn.connect()
 
   def insert_default_keywords(self) -> None:
     """ Insert default keywords into the database. """

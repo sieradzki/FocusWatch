@@ -17,6 +17,7 @@ class CategoryManager:
   def __init__(self) -> None:
     """ Initialize the category manager. """
     self._db_conn = DatabaseConnection()
+    self._db_conn.connect()
     self._keyword_manager = KeywordManager()
 
   def insert_default_categories(self) -> None:

@@ -18,18 +18,20 @@ class DatabaseManager:
     """ Initialize the database manager. """
 
     self._db_conn = DatabaseConnection()
+    self._db_conn.connect_or_create()
 
     if not self.database_exists():
+      self._create_db()
+
       self._category_manager = CategoryManager()
       self._keyword_manager = KeywordManager()
 
-      self._create_db()
       self._category_manager.insert_default_categories()
       self._keyword_manager.insert_default_keywords()
 
   def database_exists(self) -> bool:
     """ Check if the database and tables exist. 
-    
+
     Returns:
       bool: True if the database and tables exist, False otherwise.
     """

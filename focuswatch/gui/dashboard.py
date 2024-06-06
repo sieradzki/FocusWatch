@@ -386,7 +386,7 @@ class Dashboard(QMainWindow):
       if time < 10:
         continue
       category_id = self._activity_manager.get_longest_duration_category_id_for_window_class_on_date(
-        self.selected_date, window_class)[0]
+        self.selected_date, window_class)
       category = self._category_manager.get_category_by_id(category_id)
       id, name, parent_category_id, color = category
       color = self.get_category_color(id)

@@ -8,6 +8,7 @@ from focuswatch.arguments import parse_arguments
 from focuswatch.gui.tray_settings import TraySettings
 from focuswatch.gui.dashboard import Dashboard
 from focuswatch.watcher import Watcher
+from focuswatch.database.database_manager import DatabaseManager
 
 # from qt_material import apply_stylesheet
 
@@ -20,6 +21,9 @@ def start_watcher(watcher):
 def main():
   # Parse the arguments
   args = parse_arguments()
+
+  # Instantiate the DatabaseManager and check if the database exists
+  db_manager = DatabaseManager()
 
   """ System tray """
   app = QApplication([])
