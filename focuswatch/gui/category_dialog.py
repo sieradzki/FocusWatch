@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (QAbstractButton, QApplication, QComboBox, QDialog
                                QLabel, QPushButton, QSizePolicy, QSpacerItem,
                                QTextEdit, QVBoxLayout, QWidget, QColorDialog, QLineEdit)
 
-from focuswatch.database import DatabaseManager
+from focuswatch.database.database_manager import DatabaseManager
 from focuswatch.gui.keyword_dialog import KeywordDialog
 
 

@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (QApplication, QDial, QFrame, QGridLayout,
                                QScrollArea, QSizePolicy, QSpacerItem,
                                QStatusBar, QTabWidget, QVBoxLayout, QWidget, QCalendarWidget, QDialog, QDoubleSpinBox, QCheckBox, QSpinBox, QDialogButtonBox)
 
-from focuswatch.database import DatabaseManager
+from focuswatch.database.database_manager import DatabaseManager
 from focuswatch.gui.category_dialog import CategoryDialog
 
 

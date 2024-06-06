@@ -2,7 +2,7 @@ import argparse
 import sys
 
 from focuswatch.config import Config
-from focuswatch.database import DatabaseManager
+from focuswatch.database.database_manager import DatabaseManager
 
 
 def display_config():

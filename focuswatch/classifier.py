@@ -1,4 +1,4 @@
-from focuswatch.database import DatabaseManager
+from focuswatch.database.database_manager import DatabaseManager
 
 
 class Classifier():
