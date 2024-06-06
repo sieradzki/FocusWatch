@@ -5,7 +5,7 @@ import sys
 import ctypes
 import psutil
 
-from focuswatch.database import DatabaseManager
+from focuswatch.database.database_manager import DatabaseManager
 from focuswatch.classifier import Classifier
 from focuswatch.config import Config
 
