@@ -1,13 +1,16 @@
-import subprocess
-import time
-from sys import platform
-import sys
 import ctypes
+import subprocess
+import sys
+import time
+from datetime import datetime
+from sys import platform
+
 import psutil
 
-from focuswatch.database.database_manager import DatabaseManager
 from focuswatch.classifier import Classifier
 from focuswatch.config import Config
+from focuswatch.database.activity_manager import ActivityManager
+from focuswatch.database.category_manager import CategoryManager
 
 if platform in ['Windows', 'win32', 'cygwin']:
   # Constants for Windows API
@@ -38,7 +41,8 @@ class Watcher():
     self._afk_timeout = float(
       self._config.get_config('General', 'afk_timeout'))
 
-    self._database = DatabaseManager()
+    self._category_manager = CategoryManager()
+    self._activity_manager = ActivityManager()
     self._classifier = Classifier()
 
     self._window_name = self.get_active_window_name()
@@ -99,12 +103,12 @@ class Watcher():
     if self._verbose:
       print(
           f"[{self._time_stop - self._time_start:.3f}] [{self._window_class}] {self._window_name[:32]} {self._category}")
-    self._database.insert_activity(
+    self._activity_manager.insert_activity(
       self._window_class,
       self._window_name,
       # YYYY-MM-DD HH:MM:SS.SSS
-      time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self._time_start)),
-      time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self._time_stop)),
+      datetime.fromtimestamp(self._time_start),
+      datetime.fromtimestamp(self._time_stop),
       self._category,
       None  # TODO add project id when the feature is implemented
     )
@@ -127,7 +131,8 @@ class Watcher():
 
         if afk_time > self._afk_timeout * 60:
           self._time_stop = time.time()
-          self._category = self._database.get_category_id_from_name("AFK")
+          self._category = self._category_manager.get_category_id_from_name(
+            "AFK")
           self._window_class = "afk"
           self._window_name = "afk"
           self.save_entry()
