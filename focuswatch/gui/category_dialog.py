@@ -1,24 +1,25 @@
 
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-                            QMetaObject, QObject, QPoint, QRect,
-                            QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-                           QFont, QFontDatabase, QGradient, QIcon,
-                           QImage, QKeySequence, QLinearGradient, QPainter,
-                           QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractButton, QApplication, QComboBox, QDialog,
-                               QDialogButtonBox, QFrame, QGridLayout, QHBoxLayout,
-                               QLabel, QPushButton, QSizePolicy, QSpacerItem,
-                               QTextEdit, QVBoxLayout, QWidget, QColorDialog, QLineEdit)
+                            QMetaObject, QObject, QPoint, QRect, QSize, Qt,
+                            QTime, QUrl)
+from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
+                           QFontDatabase, QGradient, QIcon, QImage,
+                           QKeySequence, QLinearGradient, QPainter, QPalette,
+                           QPixmap, QRadialGradient, QTransform)
+from PySide6.QtWidgets import (QAbstractButton, QApplication, QColorDialog,
+                               QComboBox, QDialog, QDialogButtonBox, QFrame,
+                               QGridLayout, QHBoxLayout, QLabel, QLineEdit,
+                               QPushButton, QSizePolicy, QSpacerItem,
+                               QTextEdit, QVBoxLayout, QWidget)
 
-from focuswatch.database import DatabaseManager
+from focuswatch.database.category_manager import CategoryManager
 from focuswatch.gui.keyword_dialog import KeywordDialog
 
 
 class CategoryDialog(QDialog):
   def __init__(self, parent=None, category=None, keywords=None):
     super().__init__(parent)
-    self._database = DatabaseManager()
+    self._category_manager = CategoryManager()
     self._category = category
     self._keywords = keywords
     self.i, self.j = 0, 0
@@ -41,13 +42,13 @@ class CategoryDialog(QDialog):
   def get_category_color(self, category_id):
     # TODO move to utils.py (?)
     current_id = category_id
-    category = self._database.get_category_by_id(current_id)
+    category = self._category_manager.get_category_by_id(current_id)
     color = category[-1]
     while color == None:
-      category = self._database.get_category_by_id(current_id)
+      category = self._category_manager.get_category_by_id(current_id)
       parent_category_id = category[-2]
       if parent_category_id:
-        parent_category = self._database.get_category_by_id(
+        parent_category = self._category_manager.get_category_by_id(
           parent_category_id)
         color = parent_category[-1]
         current_id = parent_category_id
@@ -147,7 +148,7 @@ class CategoryDialog(QDialog):
     confirmation_dialog.exec_()
 
   def confirm_delete(self, category_id, confirmation_dialog):
-    self._database.delete_category(category_id)
+    self._category_manager.delete_category(category_id)
     confirmation_dialog.accept()
     self.close()
 
@@ -216,8 +217,8 @@ class CategoryDialog(QDialog):
 
     # Display all categories except self and Uncategorized in ComboBox
     self.parent_comboBox = QComboBox(self.frame)
-    categories = self._database.get_all_categories()
-    uncategorized_id = self._database.get_category_id_from_name(
+    categories = self._category_manager.get_all_categories()
+    uncategorized_id = self._category_manager.get_category_id_from_name(
       "Uncategorized")
     self.parent_comboBox.addItem(f"None")
     if self._category is not None:
@@ -228,7 +229,7 @@ class CategoryDialog(QDialog):
       if category[0] != cat_id and category[0] != uncategorized_id:
         self.parent_comboBox.addItem(f"{category[1]}")
 
-    parent_category = self._database.get_category_by_id(
+    parent_category = self._category_manager.get_category_by_id(
         self._category[-2]) if self._category is not None else None
 
     if parent_category:

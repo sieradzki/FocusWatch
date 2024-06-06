@@ -2,7 +2,9 @@ import argparse
 import sys
 
 from focuswatch.config import Config
-from focuswatch.database import DatabaseManager
+from focuswatch.database.database_manager import DatabaseManager
+from focuswatch.database.category_manager import CategoryManager
+from focuswatch.database.keyword_manager import KeywordManager
 
 
 def display_config():
@@ -18,8 +20,8 @@ def display_config():
 
 def display_categories():
   """ Display all categories from the database """
-  db = DatabaseManager()
-  categories = db.get_all_categories()
+  category_manager = CategoryManager()
+  categories = category_manager.get_all_categories()
   print(f"{'id'.ljust(4)}{'name'.ljust(15)}{'parent category'.ljust(4)}")
   for category in categories:
     id_str = str(category[0]).ljust(4)
@@ -30,10 +32,10 @@ def display_categories():
 
 def add_category(category):
   """ Add a category to the database """
-  category_name, parent_category = category[0], category[1] if len(
+  category_name, parent_category = category[0], int(category[1]) if len(
     category) > 1 else None
-  db = DatabaseManager()
-  if db.create_category(category_name, parent_category):
+  category_manager = CategoryManager()
+  if category_manager.create_category(category_name, parent_category):
     display_categories()
   else:
     print("Error creating a category")
@@ -41,20 +43,20 @@ def add_category(category):
 
 def display_keywords():
   """ Display all keywords from the database """
-  db = DatabaseManager()
-  keywords = db.get_all_keywords()
+  keyword_manager = KeywordManager()
+  keywords = keyword_manager.get_all_keywords()
   print(f"{'id'.ljust(4)}{'name'.ljust(15)}{'category_id'.ljust(4)}")
   for keyword in keywords:
     id_str = str(keyword[0]).ljust(4)
-    name_str = str(keyword[2]).ljust(15)
-    category_id_str = str(keyword[1]).ljust(4)
+    name_str = str(keyword[1]).ljust(15)
+    category_id_str = str(keyword[2]).ljust(4)
     print(f"{id_str}{name_str}{category_id_str}")
 
 
 def add_keyword(keyword):
   """ Add a keyword to the database """
-  db = DatabaseManager()
-  if db.add_keyword(keyword[0], keyword[1]):
+  keyword_manager = KeywordManager()
+  if keyword_manager.add_keyword(keyword[0], keyword[1]):
     display_keywords()
   else:
     print("Error adding a keyword")
