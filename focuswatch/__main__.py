@@ -26,7 +26,7 @@ def main():
 
   if not QSystemTrayIcon.isSystemTrayAvailable():
     QMessageBox.critical(
-      None, "Systray", "I couldn't detect any system tray on this system.")
+      None, "Systray", "Couldn't detect any system tray on this system.")
     sys.exit(1)
 
   # Don't quit the application when the window is closed
