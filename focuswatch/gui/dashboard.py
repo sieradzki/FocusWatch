@@ -10,13 +10,17 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
                            QFontDatabase, QGradient, QIcon, QImage,
                            QKeySequence, QLinearGradient, QPainter, QPalette,
                            QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QDial, QFrame, QGridLayout,
-                               QHBoxLayout, QLabel, QLayout, QMainWindow,
-                               QMenuBar, QProgressBar, QPushButton,
-                               QScrollArea, QSizePolicy, QSpacerItem,
-                               QStatusBar, QTabWidget, QVBoxLayout, QWidget, QCalendarWidget, QDialog, QDoubleSpinBox, QCheckBox, QSpinBox, QDialogButtonBox)
+from PySide6.QtWidgets import (QApplication, QCalendarWidget, QCheckBox, QDial,
+                               QDialog, QDialogButtonBox, QDoubleSpinBox,
+                               QFrame, QGridLayout, QHBoxLayout, QLabel,
+                               QLayout, QMainWindow, QMenuBar, QProgressBar,
+                               QPushButton, QScrollArea, QSizePolicy,
+                               QSpacerItem, QSpinBox, QStatusBar, QTabWidget,
+                               QVBoxLayout, QWidget)
 
-from focuswatch.database.database_manager import DatabaseManager
+from focuswatch.database.activity_manager import ActivityManager
+from focuswatch.database.category_manager import CategoryManager
+from focuswatch.database.keyword_manager import KeywordManager
 from focuswatch.gui.category_dialog import CategoryDialog
 
 
@@ -26,7 +30,9 @@ class Dashboard(QMainWindow):
     self.selected_date = datetime.now()
 
     self.setupUi(self)
-    self._database = DatabaseManager()
+    self._activity_manager = ActivityManager()
+    self._category_manager = CategoryManager()
+    self._keyword_manager = KeywordManager()
     self.timeline_setup()
     self.time_breakdown_setup()
     self.top_application_setup()
@@ -76,13 +82,13 @@ class Dashboard(QMainWindow):
 
   def get_category_color(self, category_id):
     current_id = category_id
-    category = self._database.get_category_by_id(current_id)
+    category = self._category_manager.get_category_by_id(current_id)
     color = category[-1]
     while color == None:
-      category = self._database.get_category_by_id(current_id)
+      category = self._category_manager.get_category_by_id(current_id)
       parent_category_id = category[-2]
       if parent_category_id:
-        parent_category = self._database.get_category_by_id(
+        parent_category = self._category_manager.get_category_by_id(
           parent_category_id)
         color = parent_category[-1]
         current_id = parent_category_id
@@ -93,7 +99,8 @@ class Dashboard(QMainWindow):
   """ Dashboard tab """
 
   def timeline_setup(self):
-    period_entries = self._database.get_date_entries(self.selected_date)
+    period_entries = self._activity_manager.get_date_entries(
+      self.selected_date)
     hour_chunk_entries = defaultdict(list)
     hour_entries = defaultdict(list)
 
@@ -101,8 +108,8 @@ class Dashboard(QMainWindow):
       hour_entries[i] = [0, 0, 0, 0, 0, 0]
 
     for entry in period_entries:
-      timestamp_start = datetime.strptime(entry[0], "%Y-%m-%d %H:%M:%S")
-      timestamp_stop = datetime.strptime(entry[1], "%Y-%m-%d %H:%M:%S")
+      timestamp_start = datetime.strptime(entry[0], "%Y-%m-%dT%H:%M:%S.%f")
+      timestamp_stop = datetime.strptime(entry[1], "%Y-%m-%dT%H:%M:%S.%f")
       category_id = entry[-2]
 
       while timestamp_start < timestamp_stop:
@@ -160,7 +167,7 @@ class Dashboard(QMainWindow):
         entry_text_label = QLabel(self.scrollAreaWidgetContents)
         style = []
         if entry != 0 and entry != None:  # TODO disallow deleting 'Uncategorized' category or change how it works
-          category = self._database.get_category_by_id(entry)
+          category = self._category_manager.get_category_by_id(entry)
           name = category[1]
           color = self.get_category_color(entry)
 
@@ -193,7 +200,7 @@ class Dashboard(QMainWindow):
       self.timeline_main_layout.addLayout(hour_horizontalLayout)
 
   def time_breakdown_setup(self):
-    categories_by_total_time = self._database.get_date_category_time_totals(
+    categories_by_total_time = self._category_manager.get_date_category_time_totals(
       self.selected_date)
 
     breakdown_verticalLayout = QVBoxLayout()
@@ -231,7 +238,7 @@ class Dashboard(QMainWindow):
       category_horizontalLayout = QHBoxLayout()
       category_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
       cat_id, time = vals
-      category = self._database.get_category_by_id(cat_id)
+      category = self._category_manager.get_category_by_id(cat_id)
       id, name, parent_category_id, color = category
 
       text = ""
@@ -287,9 +294,11 @@ class Dashboard(QMainWindow):
       # Multiplier is needed for really dark colors
       multiplier = 1 if contrasting_color == 'black' else 2
 
-      stop_1 = f"stop: 0 {base_color.darker(100 - (30*multiplier)).name()},"
-      stop_2 = f"stop: 0.3 {base_color.darker(100 - (20*multiplier)).name()},"
-      stop_3 = f"stop: 0.7 {base_color.darker(100 - (10 * multiplier)).name()},"
+      stop_1 = f"stop: 0 {base_color.darker(100 - (30 * multiplier)).name()},"
+      stop_2 = f"stop: 0.3 {base_color.darker(
+        100 - (20 * multiplier)).name()},"
+      stop_3 = f"stop: 0.7 {base_color.darker(
+        100 - (10 * multiplier)).name()},"
       stop_4 = f"stop: 1 {base_color.name()}"
 
       category_progress.setStyleSheet(
@@ -297,7 +306,8 @@ class Dashboard(QMainWindow):
           QProgressBar {{
               text-align: top;
               border-radius: 3px;
-              {"color: " + contrasting_color if category_progress.value() > 45 else ''}
+              {"color: " + contrasting_color if category_progress.value() >
+               45 else ''}
           }}
           QProgressBar::chunk {{
               background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
@@ -331,7 +341,7 @@ class Dashboard(QMainWindow):
     self.time_breakdown_main_layout.addWidget(pie_chart)
 
   def top_application_setup(self):
-    window_class_by_total_time = self._database.get_date_entries_class_time_total(
+    window_class_by_total_time = self._activity_manager.get_date_entries_class_time_total(
       self.selected_date)
 
     breakdown_verticalLayout = QVBoxLayout()
@@ -375,9 +385,9 @@ class Dashboard(QMainWindow):
         continue
       if time < 10:
         continue
-      category_id = self._database.get_longest_duration_category_id_for_window_class_on_date(
+      category_id = self._activity_manager.get_longest_duration_category_id_for_window_class_on_date(
         self.selected_date, window_class)[0]
-      category = self._database.get_category_by_id(category_id)
+      category = self._category_manager.get_category_by_id(category_id)
       id, name, parent_category_id, color = category
       color = self.get_category_color(id)
 
@@ -425,9 +435,11 @@ class Dashboard(QMainWindow):
       contrasting_color = self.get_contrasting_text_color(color)
       multiplier = 1 if contrasting_color == 'black' else 2
 
-      stop_1 = f"stop: 0 {base_color.darker(100 - (30*multiplier)).name()},"
-      stop_2 = f"stop: 0.3 {base_color.darker(100 - (20*multiplier)).name()},"
-      stop_3 = f"stop: 0.7 {base_color.darker(100 - (10 * multiplier)).name()},"
+      stop_1 = f"stop: 0 {base_color.darker(100 - (30 * multiplier)).name()},"
+      stop_2 = f"stop: 0.3 {base_color.darker(
+        100 - (20 * multiplier)).name()},"
+      stop_3 = f"stop: 0.7 {base_color.darker(
+        100 - (10 * multiplier)).name()},"
       stop_4 = f"stop: 1 {base_color.name()}"
 
       class_progress.setStyleSheet(
@@ -479,7 +491,7 @@ class Dashboard(QMainWindow):
     sender_name = self.sender().objectName()
     if sender_name != 'categorization_addCategory':
       category_id = sender_name.split(sep='_')[-1]
-      category = self._database.get_category_by_id(category_id)
+      category = self._category_manager.get_category_by_id(category_id)
       keywords = self.get_keywords_for_category(category_id)
     else:
       category = None
@@ -498,26 +510,26 @@ class Dashboard(QMainWindow):
       new_name = dialog.name_lineEdit.text()
       parent = dialog.parent_comboBox.currentText()
       if parent != 'None':
-        parent_id = self._database.get_category_id_from_name(parent)
+        parent_id = self._category_manager.get_category_id_from_name(parent)
       else:
         parent_id = None
 
       if category is not None:
-        self._database.update_category(category_id, new_name, parent_id, color)
+        self._category_manager.update_category(category_id, new_name, parent_id, color)
       else:
-        self._database.create_category(new_name, parent_id, color)
-        category_id = self._database.get_category_id_from_name(new_name)
+        self._category_manager.create_category(new_name, parent_id, color)
+        category_id = self._category_manager.get_category_id_from_name(new_name)
 
       for keyw in del_keywords:
-        self._database.delete_keyword(keyw[0])
+        self._keyword_manager.delete_keyword(keyw[0])
       for keyw in new_keywords:
-        self._database.add_keyword(keyw[1], category_id)
+        self._keyword_manager.add_keyword(keyw[1], category_id)
 
     self.onShow(self.showEvent)
     self.tabWidget.setCurrentIndex(1)
 
   def get_keywords_for_category(self, category_id):
-    keywords = self._database.get_all_keywords()
+    keywords = self._keyword_manager.get_all_keywords()
     cat_key = defaultdict(list)
     for keyword in keywords:
       cat_key[str(keyword[-1])].append(keyword)
@@ -526,8 +538,8 @@ class Dashboard(QMainWindow):
 
   def categories_setup(self):
     # Get all categories and keywords
-    categories = self._database.get_all_categories()
-    keywords = self._database.get_all_keywords()
+    categories = self._category_manager.get_all_categories()
+    keywords = self._keyword_manager.get_all_keywords()
 
     # Make a dict category: keywords
     cat_key = defaultdict(list)
@@ -624,7 +636,7 @@ class Dashboard(QMainWindow):
         category_button.setStyleSheet(
           f"background-color: {color}; color: {font_color};")
 
-      depth = self._database.get_category_depth(key)
+      depth = self._category_manager.get_category_depth(key)
       indent = 40 * depth
 
       horizontalSpacer = QSpacerItem(
@@ -679,7 +691,7 @@ class Dashboard(QMainWindow):
     self.categories_setup()
 
   def restore_defaults(self):
-    self._database.insert_default_categories()
+    self._category_manager.insert_default_categories()
     self.onShow(self.showEvent)
     self.tabWidget.setCurrentIndex(1)
 
