@@ -162,6 +162,9 @@ class CategoryManager:
 
     Args:
       category_id: The id of the category.
+
+    Returns:
+      The depth of the category.
     """
     query = """
       WITH RECURSIVE CategoryHierarchy(id, depth) AS (
