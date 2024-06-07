@@ -35,7 +35,7 @@ class TestConfig(unittest.TestCase):
         config = Config(self.config_path)
 
         mock_print.assert_called_with(
-          "An error occured while writing the configuration file. Mocked exception.")
+          "An unexpected error occurred while writing the configuration file. Mocked exception.")
 
   def test_initialize_config_file_content(self):
     config = Config(self.config_path)

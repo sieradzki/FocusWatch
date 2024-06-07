@@ -26,6 +26,7 @@ class Config:
 
     self.write_config_to_file()
 
+
   def write_config_to_file(self):
     """ Write the configuration to the configuration file """
     try:
@@ -33,11 +34,13 @@ class Config:
         self.config.write(config_file)
       print("Configuration file written successfully.")  # TODO  logging
     except FileNotFoundError as e:
-      print(
-        f"The configuration file was not found. {e}.")
+      print(f"The configuration file was not found. {e}.")
     except IOError as e:
+      print(f"An error occurred while writing the configuration file. {e}.")
+    except Exception as e:
       print(
-        f"An error occurred while writing the configuration file. {e}.")
+        f"An unexpected error occurred while writing the configuration file. {e}.")
+
 
   def load_config(self):
     """ Load config from the configuration file """
