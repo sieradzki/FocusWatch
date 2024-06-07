@@ -1,3 +1,4 @@
+""" Main file for the FocusWatch application. """
 import sys
 import threading
 
@@ -23,7 +24,7 @@ def main():
   args = parse_arguments()
 
   # Instantiate the DatabaseManager and check if the database exists
-  db_manager = DatabaseManager()
+  _ = DatabaseManager()
 
   """ System tray """
   app = QApplication([])
@@ -57,8 +58,9 @@ def main():
   menu.addAction(open_dashboard)
 
   # Open or hide dashboard on double-click
-  tray.activated.connect(lambda reason: dashboard_window.hide() if reason == QSystemTrayIcon.Trigger and dashboard_window.isVisible(
-  ) else dashboard_window.show() if reason == QSystemTrayIcon.Trigger else None)
+  tray.activated.connect(
+    lambda reason: dashboard_window.hide() if reason == QSystemTrayIcon.Trigger and dashboard_window.isVisible(
+    ) else dashboard_window.show() if reason == QSystemTrayIcon.Trigger else None)
 
   # Settings action
   tray_settings = TraySettings()
@@ -73,9 +75,9 @@ def main():
   menu.addAction(logs)
 
   # Quit action
-  quit = QAction("Quit")
-  quit.triggered.connect(app.quit)
-  menu.addAction(quit)
+  quit_action = QAction("Quit")
+  quit_action.triggered.connect(app.quit)
+  menu.addAction(quit_action)
 
   # Add menu to the system tray
   tray.setContextMenu(menu)
@@ -92,5 +94,5 @@ def main():
   sys.exit(app.exec())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   main()

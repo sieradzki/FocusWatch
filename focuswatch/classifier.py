@@ -1,11 +1,12 @@
-from typing import List, Optional
-
+""" Classifier module for FocusWatch. """
 from focuswatch.database.category_manager import CategoryManager
 from focuswatch.database.keyword_manager import KeywordManager
 
 
 class Classifier():
+  """ Classifier class for FocusWatch application. """
   def __init__(self):
+    """ Initialize the classifier. """
     self._category_manager = CategoryManager()
     self._keyword_manager = KeywordManager()
 
@@ -20,13 +21,13 @@ class Classifier():
       Category id with max depth from keywords in window name and class or id of 'Uncategorized' category
     """
 
-    entry = window_class + ' ' + window_name
+    entry = window_class + " " + window_name
     keywords = self._keyword_manager.get_all_keywords()
 
     keyword_depths = {}
 
     for keyword in keywords:
-      id, name, category_id = keyword
+      _, name, category_id = keyword
       # TODO tolower check
       if name in entry:
         keyword_depths[category_id] = self._category_manager.get_category_depth(
@@ -41,7 +42,7 @@ class Classifier():
       return uncategorized_id if uncategorized_id else None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   classifier = Classifier()
   category = classifier.classify_entry(
     window_class="code", window_name="classifier.py - FocusWatch - Visual Studio Code")

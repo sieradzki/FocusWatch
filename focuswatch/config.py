@@ -1,3 +1,4 @@
+""" Configuration module for FocusWatch. """
 import configparser
 import os
 
@@ -5,7 +6,7 @@ import os
 class Config:
   """ Configuration class for FocusWatch """
 
-  def __init__(self, config_file_path='config.ini'):
+  def __init__(self, config_file_path="config.ini"):
     self.config_file_path = config_file_path
     self.config = configparser.ConfigParser()
     self.load_config()
@@ -13,14 +14,14 @@ class Config:
 
   def initialize_config(self):
     """ Initialize the configuration file with default values """
-    self.config['General'] = {
-      'watch_interval': 1.0,
-      'verbose': 0,
-      'watch_afk': True,
-      'afk_timeout': 10
+    self.config["General"] = {
+      "watch_interval": 1.0,
+      "verbose": 0,
+      "watch_afk": True,
+      "afk_timeout": 10
     }
-    self.config['Database'] = {
-      'location': './focuswatch.sqlite',
+    self.config["Database"] = {
+      "location": "./focuswatch.sqlite",
     }
 
     self.write_config_to_file()
@@ -28,12 +29,15 @@ class Config:
   def write_config_to_file(self):
     """ Write the configuration to the configuration file """
     try:
-      with open(self.config_file_path, 'w') as config_file:
+      with open(self.config_file_path, "w", encoding="utf-8") as config_file:
         self.config.write(config_file)
       print("Configuration file written successfully.")  # TODO  logging
-    except Exception as e:
+    except FileNotFoundError as e:
       print(
-        f"An error occured while writing the configuration file. {e}.")
+        f"The configuration file was not found. {e}.")
+    except IOError as e:
+      print(
+        f"An error occurred while writing the configuration file. {e}.")
 
   def load_config(self):
     """ Load config from the configuration file """
@@ -68,8 +72,8 @@ class Config:
     return all_config
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   config = Config()
   print(config.get_all_config())
-  config.update_config('General', 'verbose', '1')
+  config.update_config("General", "verbose", "1")
   print(config.get_all_config())
