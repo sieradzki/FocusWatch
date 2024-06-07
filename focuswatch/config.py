@@ -37,9 +37,6 @@ class Config:
       print(f"The configuration file was not found. {e}.")
     except IOError as e:
       print(f"An error occurred while writing the configuration file. {e}.")
-    except Exception as e:
-      print(
-        f"An unexpected error occurred while writing the configuration file. {e}.")
 
 
   def load_config(self):

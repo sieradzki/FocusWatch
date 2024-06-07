@@ -131,7 +131,6 @@ disable=R,
         zip-builtin-not-iterating,
         W0105,
 
-
 [REPORTS]
 
 # Set the output format. Available formats are text, parseable, colorized, msvs
