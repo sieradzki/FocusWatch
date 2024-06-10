@@ -1,4 +1,4 @@
-""" Database connection class for FocusWatch. 
+""" Database connection module for FocusWatch. 
 
 This module is responsible for managing the connection to the SQLite database used by FocusWatch. It provides methods for creating, updating, and querying the database. The class uses the sqlite3 module to interact with the database.
 """
