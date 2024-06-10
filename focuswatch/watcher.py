@@ -38,7 +38,8 @@ if platform in ["Windows", "win32", "cygwin"]:
 class Watcher():
   """ Watcher class for FocusWatch. 
 
-  This class is responsible for monitoring the user's activity and logging it to the database. It uses the Classifier class to classify the activity based on the window class and name.
+  This class is responsible for monitoring the user's activity and logging it to the database. 
+  It uses the Classifier class to classify the activity based on the window class and name.
 
   Currently, the Watcher class supports Linux with xorg and Windows platforms.
   """
@@ -99,7 +100,7 @@ class Watcher():
       logging.error("This platform is not supported")
       raise NotImplementedError("This platform is not supported")
 
-  def get_active_window_class(self):
+  def get_active_window_class(self) -> str:
     """ Get the class name of the active window. 
 
     Returns:
@@ -135,7 +136,7 @@ class Watcher():
       logging.error("This platform is not supported")
       raise NotImplementedError("This platform is not supported")
 
-  def save_entry(self):
+  def save_entry(self) -> None:
     """ Save the current activity entry to the database. """
     if self._verbose:
       print(
@@ -150,65 +151,100 @@ class Watcher():
       None  # TODO add project id when the feature is implemented
     )
 
-  def monitor(self):
+  def _get_linux_idle_time(self) -> int:
+    """ Get the idle time on Linux using xprintidle. 
+
+    Returns:
+      int: The idle time in seconds.
+
+    Raises:
+      subprocess.CalledProcessError: If the xprintidle command fails.
+    """
+    try:
+      afk_output = subprocess.check_output(["xprintidle"]).decode().strip()
+      return int(afk_output) / 1000  # in seconds
+    except subprocess.CalledProcessError as e:
+      logging.error(
+        f"Error getting idle time: {e}")
+      return 0
+
+  def _get_windows_idle_time(self) -> int:
+    """ Get the idle time on Windows using the Windows API. 
+
+    Returns:
+      int: The idle time in seconds.
+
+    Raises:
+      ctypes.ArgumentError: If there is an error in the ctypes arguments.
+      OSError: If there is an OS error.
+    """
+    try:
+      last_input_info = ctypes.c_ulong()
+      user32.GetLastInputInfo(ctypes.byref(last_input_info))
+      idle_time = kernel32.GetTickCount() - last_input_info.value
+      return idle_time / 1000
+    except (ctypes.ArgumentError, OSError) as e:
+      logging.error(f"Error getting idle time: {e}")
+      return 0
+
+  def _check_afk_status(self) -> None:
+    """ Check the AFK status of the user. 
+
+    If the user is AFK for more than the AFK timeout, log the AFK status to the database.
+
+    Raises:
+      NotImplementedError: If the platform is not supported.
+    """
+    afk_time = 0
+    if platform in ["linux", "linux2"]:
+      afk_time = self._get_linux_idle_time()
+    elif platform in ["Windows", "win32", "cygwin"]:
+      afk_time = self._get_windows_idle_time()
+    else:
+      logging.error("This platform is not supported")
+      raise NotImplementedError("This platform is not supported")
+
+    if afk_time > self._afk_timeout * 60:
+      self._time_stop = time.time()
+      self._category = self._category_manager.get_category_id_from_name(
+        "AFK")
+      self._window_class = "afk"
+      self._window_name = "afk"
+      self.save_entry()
+
+      self._time_start = time.time()
+      self._window_name = self.get_active_window_name()
+      self._window_class = self.get_active_window_class()
+
+  def _reset_activity_state(self) -> None:
+    """ Reset the activity state. """
+    self._time_start = time.time()
+    self._window_name = self.get_active_window_name()
+    self._window_class = self.get_active_window_class()
+
+  def _log_activity_change(self) -> None:
+    """ Log the activity change to the database. """
+    self._time_stop = time.time()
+    self._category = self._classifier.classify_entry(
+        window_class=self._window_class, window_name=self._window_name)
+    self.save_entry()
+
+  def monitor(self) -> None:
     """ Monitor the user's activity and log it to the database. 
 
-    This method continuously monitors the user's activity by checking the active window and class. It logs the activity to the database using the Classifier class to classify the activity based on the window class and name. It also logs the time spent on each activity.
+    This method continuously monitors the user's activity by checking the active window and class. 
+    It logs the activity to the database using the Classifier class to classify the activity based on the window class and name. 
+    It also logs the time spent on each activity.
 
     Raises:
       NotImplementedError: If the platform is not supported.
     """
     while True:
       if self._watch_afk:
-        afk_time = 0
-        # Linux afk time
-        if platform in ["linux", "linux2"]:
-          # Get system idle time
-          try:
-            afk_output = subprocess.check_output(
-              ["xprintidle"]).decode().strip()
-            afk_time = int(afk_output) / 1000  # in seconds
-          except subprocess.CalledProcessError as e:
-            logging.error(
-              "Error getting idle time. Check if xprintidle is installed.")
-
-        # Windows afk time
-        elif platform in ["Windows", "win32", "cygwin"]:
-          # Get idle time
-          try:
-            last_input_info = ctypes.c_ulong()
-            user32.GetLastInputInfo(ctypes.byref(last_input_info))
-            idle_time = kernel32.GetTickCount() - last_input_info.value
-            afk_time = idle_time / 1000
-          except ctypes.ArgumentError as e:
-            logging.error(f"Argument error in ctypes: {e}")
-          except OSError as e:
-            logging.error(f"OS error: {e}")
-        else:
-          logging.error("This platform is not supported")
-          raise NotImplementedError("This platform is not supported")
-
-        if afk_time > self._afk_timeout * 60:
-          self._time_stop = time.time()
-          self._category = self._category_manager.get_category_id_from_name(
-            "AFK")
-          self._window_class = "afk"
-          self._window_name = "afk"
-          self.save_entry()
-
-          self._time_start = time.time()
-          self._window_name = self.get_active_window_name()
-          self._window_class = self.get_active_window_class()
+        self._check_afk_status()
 
       if self._window_name != self.get_active_window_name():  # log only on activity change
-        self._time_stop = time.time()
-        self._category = self._classifier.classify_entry(
-          window_class=self._window_class, window_name=self._window_name)
-        self.save_entry()
-
-        self._time_start = time.time()
-        self._window_name = self.get_active_window_name()
-        self._window_class = self.get_active_window_class()
+        self._log_activity_change()
 
       time.sleep(self._watch_interval)
 
