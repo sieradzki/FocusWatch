@@ -17,6 +17,8 @@ from focuswatch.config import Config
 from focuswatch.database.activity_manager import ActivityManager
 from focuswatch.database.category_manager import CategoryManager
 
+user32 = None
+kernel32 = None
 if platform in ["Windows", "win32", "cygwin"]:
   # Constants for Windows API
   GW_HWNDNEXT = 2
