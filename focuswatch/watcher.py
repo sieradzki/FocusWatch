@@ -9,6 +9,7 @@ import subprocess
 import time
 from datetime import datetime
 from sys import platform
+from typing import Optional
 
 import psutil
 
@@ -29,7 +30,8 @@ if platform in ["Windows", "win32", "cygwin"]:
   kernel32 = ctypes.windll.kernel32
 
   user32.GetWindowTextW.argtypes = [
-    ctypes.c_int, ctypes.c_wchar_p, ctypes.c_int]
+    ctypes.c_int, ctypes.c_wchar_p, ctypes.c_intnsta
+    ]
   user32.GetClassNameW.argtypes = [
     ctypes.c_int, ctypes.c_wchar_p, ctypes.c_int]
   user32.GetForegroundWindow.restype = ctypes.c_int
@@ -46,7 +48,7 @@ class Watcher():
   Currently, the Watcher class supports Linux with xorg and Windows platforms.
   """
 
-  def __init__(self, watch_interval=None, verbose=None):
+  def __init__(self, watch_interval: Optional[float] = None, verbose: Optional[int] = None):
     # Load configuration
     self._config = Config()
     self._watch_interval = float(
