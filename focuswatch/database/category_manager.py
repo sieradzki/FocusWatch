@@ -151,7 +151,7 @@ class CategoryManager:
       SELECT category_id,
       SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
       FROM activity_log
-      WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
+      WHERE strftime('%Y-%m-%d', time_start, 'utc') = strftime('%Y-%m-%d', ?, 'utc')
       GROUP BY category_id
       ORDER BY total_time_seconds DESC;
     """

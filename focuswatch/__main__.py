@@ -6,8 +6,8 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QSystemTrayIcon
 
 from focuswatch.arguments import parse_arguments
-from focuswatch.gui.tray_settings import TraySettings
-from focuswatch.gui.dashboard import Dashboard
+from focuswatch.ui.tray_settings import TraySettings
+from focuswatch.ui.dashboard import Dashboard
 from focuswatch.watcher import Watcher
 from focuswatch.database.database_manager import DatabaseManager
 

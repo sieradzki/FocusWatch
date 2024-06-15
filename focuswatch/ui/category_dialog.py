@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (QAbstractButton, QApplication, QColorDialog,
                                QTextEdit, QVBoxLayout, QWidget)
 
 from focuswatch.database.category_manager import CategoryManager
-from focuswatch.gui.keyword_dialog import KeywordDialog
+from focuswatch.ui.keyword_dialog import KeywordDialog
 
 
 class CategoryDialog(QDialog):

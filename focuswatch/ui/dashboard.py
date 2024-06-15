@@ -1,3 +1,4 @@
+""" Dashboard UI """
 from collections import defaultdict
 from datetime import datetime, timedelta
 
@@ -21,7 +22,7 @@ from PySide6.QtWidgets import (QApplication, QCalendarWidget, QCheckBox, QDial,
 from focuswatch.database.activity_manager import ActivityManager
 from focuswatch.database.category_manager import CategoryManager
 from focuswatch.database.keyword_manager import KeywordManager
-from focuswatch.gui.category_dialog import CategoryDialog
+from focuswatch.ui.category_dialog import CategoryDialog
 
 
 class Dashboard(QMainWindow):
@@ -40,11 +41,16 @@ class Dashboard(QMainWindow):
     # TODO date_start date_end when selected time period > 1 day ?
 
   def select_date(self):
+    """ Select date for dashboard """
     sender_name = self.sender().objectName()
+
+    # Previous day
     if sender_name == 'date_prev_button':
       self.selected_date = self.selected_date - timedelta(days=1)
 
+    # Select date
     elif sender_name == 'date_button':
+      # Create a dialog to select a date
       calendar_dialog = QDialog(self)
       calendar_dialog.setWindowTitle("Select a Date")
 
@@ -64,15 +70,13 @@ class Dashboard(QMainWindow):
       calendar_dialog.exec_()
       self.onShow(self.showEvent)
 
+    # Next day
     elif sender_name == 'date_next_button':
       self.selected_date = self.selected_date + timedelta(days=1)
       self.date_button.setText(str(self.selected_date))
 
+    # Refresh the dashboard
     self.onShow(self.showEvent)
-    # TODO clear dashboard without reloading (?)
-    # self.timeline_setup()
-    # self.time_breakdown_setup()
-    # self.top_application_setup()
 
   def get_contrasting_text_color(self, background_color):
     background_rgb = QColor(background_color).toRgb()
@@ -515,10 +519,12 @@ class Dashboard(QMainWindow):
         parent_id = None
 
       if category is not None:
-        self._category_manager.update_category(category_id, new_name, parent_id, color)
+        self._category_manager.update_category(
+          category_id, new_name, parent_id, color)
       else:
         self._category_manager.create_category(new_name, parent_id, color)
-        category_id = self._category_manager.get_category_id_from_name(new_name)
+        category_id = self._category_manager.get_category_id_from_name(
+          new_name)
 
       for keyw in del_keywords:
         self._keyword_manager.delete_keyword(keyw[0])
