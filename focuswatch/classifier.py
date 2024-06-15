@@ -1,16 +1,23 @@
-""" Classifier module for FocusWatch. """
+""" Classifier module for FocusWatch. 
+
+This module provides the Classifier class, which is responsible for classifying 
+user activity entries based on window class and name.
+"""
+from typing import Optional
+
 from focuswatch.database.category_manager import CategoryManager
 from focuswatch.database.keyword_manager import KeywordManager
 
 
 class Classifier():
   """ Classifier class for FocusWatch application. """
+
   def __init__(self):
     """ Initialize the classifier. """
     self._category_manager = CategoryManager()
     self._keyword_manager = KeywordManager()
 
-  def classify_entry(self, window_class: str, window_name=str) -> int:
+  def classify_entry(self, window_class: str, window_name: str) -> Optional[int]:
     """ Classify an entry based on the window class and name. 
 
     Args:
@@ -33,7 +40,7 @@ class Classifier():
         keyword_depths[category_id] = self._category_manager.get_category_depth(
           category_id)
 
-    if len(keyword_depths) > 0:
+    if keyword_depths:
       max_depth = max(keyword_depths, key=keyword_depths.get)
       return max_depth
     else:
@@ -47,7 +54,3 @@ if __name__ == "__main__":
   category = classifier.classify_entry(
     window_class="code", window_name="classifier.py - FocusWatch - Visual Studio Code")
   print(category)
-
-  # category = classifier.classify_entry(
-  # window_class="test", window_name="nothing at all")
-  # print(category)
