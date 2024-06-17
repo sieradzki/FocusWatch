@@ -2,7 +2,7 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-from PySide6.QtCore import QRect, QSize, Qt
+from PySide6.QtCore import QRect, QSize, Qt, QTimer
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout,
                                QScrollArea, QSizePolicy, QVBoxLayout, QWidget)
 
@@ -16,6 +16,53 @@ class TimelineComponent(QFrame):
     self._activity_manager = activity_manager
     self._category_manager = category_manager
     self.selected_date = selected_date
+
+  def setupUi(self):
+    self.timeline_frame = QFrame(self._parent)
+    self.timeline_frame.setObjectName(u"timeline_frame")
+    sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
+    sizePolicy.setHorizontalStretch(0)
+    sizePolicy.setVerticalStretch(0)
+    sizePolicy.setHeightForWidth(
+      self.timeline_frame.sizePolicy().hasHeightForWidth())
+    self.timeline_frame.setSizePolicy(sizePolicy)
+    self.timeline_frame.setMinimumSize(QSize(300, 0))
+    self.timeline_frame.setFrameShape(QFrame.StyledPanel)
+    self.timeline_frame.setFrameShadow(QFrame.Raised)
+    self.horizontalLayout_2 = QHBoxLayout(self.timeline_frame)
+    self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+    self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
+    self.timeline_scrollArea = QScrollArea(self.timeline_frame)
+    self.timeline_scrollArea.setObjectName(u"timeline_scrollArea")
+    self.timeline_scrollArea.setWidgetResizable(True)
+    self.scrollAreaWidgetContents = QWidget()
+    self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
+    self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 296, 723))
+    self.verticalLayout_6 = QVBoxLayout(self.scrollAreaWidgetContents)
+    self.verticalLayout_6.setSpacing(0)
+    self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+    self.timeline_main_layout = QVBoxLayout()
+    self.timeline_main_layout.setObjectName(u"timeline_main_layout")
+
+    self.verticalLayout_6.addLayout(self.timeline_main_layout)
+    self.timeline_scrollArea.setWidget(self.scrollAreaWidgetContents)
+    self.horizontalLayout_2.addWidget(self.timeline_scrollArea)
+
+    self.setup_timeline()
+
+    return self.timeline_frame
+
+  def scroll_to_current_hour(self):
+    """ Scroll to the current hour label. (-2 hours for better visibility) """
+    current_hour = datetime.now().hour
+    current_hour_label = self.scrollAreaWidgetContents.findChild(
+      QLabel, f"hour_label_{current_hour - 2}")
+    y_position = current_hour_label.y()
+    if y_position == 0:
+      # If the position is still zero, defer scrolling to allow layout to update
+      QTimer.singleShot(0, self.scroll_to_current_hour)
+      return
+    self.timeline_scrollArea.verticalScrollBar().setValue(y_position)
 
   def setup_timeline(self):
     """ Setup the timeline component for the selected date. """
@@ -62,6 +109,9 @@ class TimelineComponent(QFrame):
       hour, index = quarter.split(sep=":")
       hour_entries[int(hour)][int(index)] = max_category
 
+    self.populate_timeline(hour_entries)
+
+  def populate_timeline(self, hour_entries):
     for hour, entries in hour_entries.copy().items():
       """ Hour label setup """
       hour_horizontalLayout = QHBoxLayout()
@@ -72,6 +122,7 @@ class TimelineComponent(QFrame):
       hour_label.setMinimumSize(QSize(30, 90))
       hour_label.setText(f"{'0' if hour < 10 else ''}{hour}:00")
       hour_label.setAlignment(Qt.AlignTop)
+      hour_label.setObjectName(f"hour_label_{hour}")
 
       hour_horizontalLayout.addWidget(hour_label)
 
@@ -121,37 +172,4 @@ class TimelineComponent(QFrame):
       hour_horizontalLayout.addLayout(hour_verticalLayout)
       self.timeline_main_layout.addLayout(hour_horizontalLayout)
 
-  def setupUi(self, TimelineComponent):
-    self.timeline_frame = QFrame(self._parent)
-    self.timeline_frame.setObjectName(u"timeline_frame")
-    sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
-    sizePolicy.setHorizontalStretch(0)
-    sizePolicy.setVerticalStretch(0)
-    sizePolicy.setHeightForWidth(
-      self.timeline_frame.sizePolicy().hasHeightForWidth())
-    self.timeline_frame.setSizePolicy(sizePolicy)
-    self.timeline_frame.setMinimumSize(QSize(300, 0))
-    self.timeline_frame.setFrameShape(QFrame.StyledPanel)
-    self.timeline_frame.setFrameShadow(QFrame.Raised)
-    self.horizontalLayout_2 = QHBoxLayout(self.timeline_frame)
-    self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-    self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
-    self.timeline_scrollArea = QScrollArea(self.timeline_frame)
-    self.timeline_scrollArea.setObjectName(u"timeline_scrollArea")
-    self.timeline_scrollArea.setWidgetResizable(True)
-    self.scrollAreaWidgetContents = QWidget()
-    self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-    self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 296, 723))
-    self.verticalLayout_6 = QVBoxLayout(self.scrollAreaWidgetContents)
-    self.verticalLayout_6.setSpacing(0)
-    self.verticalLayout_6.setObjectName(u"verticalLayout_6")
-    self.timeline_main_layout = QVBoxLayout()
-    self.timeline_main_layout.setObjectName(u"timeline_main_layout")
-
-    self.verticalLayout_6.addLayout(self.timeline_main_layout)
-    self.timeline_scrollArea.setWidget(self.scrollAreaWidgetContents)
-    self.horizontalLayout_2.addWidget(self.timeline_scrollArea)
-
-    self.setup_timeline()
-
-    return self.timeline_frame
+    self.scroll_to_current_hour()

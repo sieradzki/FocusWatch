@@ -564,7 +564,6 @@ class Dashboard(QMainWindow):
         category_spacer_verticalLayout)
 
   def dashboard_tab_setup(self):
-    # self._timeline.setup_timeline()
     self.time_breakdown_setup()
     self.top_application_setup()
 
@@ -643,10 +642,10 @@ class Dashboard(QMainWindow):
 
     self.gridLayout.addWidget(self.time_breakdown_frame, 2, 2, 1, 1)
 
-    """ Timeline setup """
+    # Timeline setup
     self._timeline = TimelineComponent(
         self.dashboard_tab, self._activity_manager, self._category_manager, self.selected_date)
-    self.timeline_frame = self._timeline.setupUi(self._timeline)
+    self.timeline_frame = self._timeline.setupUi()
 
     self.gridLayout.addWidget(self.timeline_frame, 2, 0, 1, 1)
 
