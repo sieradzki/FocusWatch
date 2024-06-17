@@ -4,14 +4,9 @@ from datetime import datetime, timedelta
 
 from PySide6 import QtCharts
 from PySide6.QtCharts import QChart
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-                            QMetaObject, QObject, QPoint, QRect, QSize, Qt,
-                            QTime, QUrl)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
-                           QFontDatabase, QGradient, QIcon, QImage,
-                           QKeySequence, QLinearGradient, QPainter, QPalette,
-                           QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCalendarWidget, QCheckBox, QDial,
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect, QSize, Qt)
+from PySide6.QtGui import (QColor, QFont, QPainter)
+from PySide6.QtWidgets import (QCalendarWidget, QCheckBox,
                                QDialog, QDialogButtonBox, QDoubleSpinBox,
                                QFrame, QGridLayout, QHBoxLayout, QLabel,
                                QLayout, QMainWindow, QMenuBar, QProgressBar,
@@ -23,8 +18,9 @@ from focuswatch.database.activity_manager import ActivityManager
 from focuswatch.database.category_manager import CategoryManager
 from focuswatch.database.keyword_manager import KeywordManager
 from focuswatch.ui.category_dialog import CategoryDialog
+from focuswatch.ui.timeline import TimelineComponent
 from focuswatch.ui.utils import (get_category_color,
-                                   get_contrasting_text_color)
+                                 get_contrasting_text_color)
 
 
 class Dashboard(QMainWindow):
@@ -33,11 +29,10 @@ class Dashboard(QMainWindow):
     self.selected_date = datetime.now()
     # TODO date_start date_end when selected time period > 1 day ?
 
-    self.setupUi(self)
     self._activity_manager = ActivityManager()
     self._category_manager = CategoryManager()
     self._keyword_manager = KeywordManager()
-    self.timeline_setup()
+    self.setupUi(self)
     self.time_breakdown_setup()
     self.top_application_setup()
 
@@ -81,108 +76,8 @@ class Dashboard(QMainWindow):
 
   """ Dashboard tab """
 
-  def timeline_setup(self):
-    period_entries = self._activity_manager.get_date_entries(
-      self.selected_date)
-    hour_chunk_entries = defaultdict(list)
-    hour_entries = defaultdict(list)
-
-    for i in range(24):
-      hour_entries[i] = [0, 0, 0, 0, 0, 0]
-
-    for entry in period_entries:
-      timestamp_start = datetime.strptime(entry[0], "%Y-%m-%dT%H:%M:%S.%f")
-      timestamp_stop = datetime.strptime(entry[1], "%Y-%m-%dT%H:%M:%S.%f")
-      category_id = entry[-2]
-
-      while timestamp_start < timestamp_stop:
-        hour_start = timestamp_start.hour
-        minute_start = timestamp_start.minute // 10
-        quarter_hour_start = f"{hour_start:02d}:{minute_start}"
-
-        duration_in_this_quarter = min(
-            10 - (timestamp_start.minute % 10), (timestamp_stop -
-                                                 timestamp_start).total_seconds() / 60
-        )
-
-        if quarter_hour_start not in hour_chunk_entries:
-          hour_chunk_entries[quarter_hour_start] = {}
-
-        if category_id in hour_chunk_entries[quarter_hour_start]:
-          hour_chunk_entries[quarter_hour_start][category_id] += duration_in_this_quarter
-        else:
-          hour_chunk_entries[quarter_hour_start][category_id] = duration_in_this_quarter
-
-        timestamp_start += timedelta(minutes=duration_in_this_quarter)
-
-    for quarter, entries in hour_chunk_entries.items():
-      max_category = max(entries, key=lambda category_id: entries[category_id])
-      hour_chunk_entries[quarter] = max_category
-
-    for quarter, max_category in hour_chunk_entries.items():
-      hour, index = quarter.split(sep=":")
-      hour_entries[int(hour)][int(index)] = max_category
-
-    for hour, entries in hour_entries.copy().items():
-      """ Hour label setup """
-      hour_horizontalLayout = QHBoxLayout()
-      hour_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
-
-      hour_label = QLabel(self.scrollAreaWidgetContents)
-      hour_label.setMaximumSize(QSize(30, 90))
-      hour_label.setMinimumSize(QSize(30, 90))
-      hour_label.setText(f"{'0' if hour < 10 else ''}{hour}:00")
-      hour_label.setAlignment(Qt.AlignTop)
-
-      hour_horizontalLayout.addWidget(hour_label)
-
-      line = QFrame(self.scrollAreaWidgetContents)
-      line.setObjectName(u"line")
-      line.setFrameShape(QFrame.VLine)
-      line.setFrameShadow(QFrame.Sunken)
-
-      hour_horizontalLayout.addWidget(line)
-
-      """ Hour entries setup """
-      hour_verticalLayout = QVBoxLayout()
-      hour_verticalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
-      for i, entry in enumerate(entries):
-        entry_text_label = QLabel(self.scrollAreaWidgetContents)
-        style = []
-        if entry != 0 and entry != None:  # TODO disallow deleting 'Uncategorized' category or change how it works
-          category = self._category_manager.get_category_by_id(entry)
-          name = category[1]
-          color = get_category_color(entry)
-
-          if i > 0:
-            if entry != entries[i - 1]:
-              entry_text_label.setText(name)
-          else:
-            if len(hour_entries[hour - 1]) > 0 and entry != hour_entries[hour - 1][-1]:
-              entry_text_label.setText(name)
-          if color:
-            style.append(f"background-color: {color};")
-          text_color = get_contrasting_text_color(color)
-          style.append(f"color: {text_color};")
-        else:
-          style.append(f"background-color: rgba(0,0,0,0);")
-
-        if i == len(hour_entries[0]) - 1:
-          style.append("border-bottom: 1px dashed #141414;")
-        entry_text_label.setStyleSheet(''.join(style))
-        entry_text_label.setAlignment(Qt.AlignCenter)
-        entry_text_label.setMaximumHeight(90 // len(hour_entries[0]))
-        # font = QFont()
-        # font.setPointSize(6)
-
-        # entry_text_label.setFont(font)
-
-        hour_verticalLayout.addWidget(entry_text_label)
-
-      hour_horizontalLayout.addLayout(hour_verticalLayout)
-      self.timeline_main_layout.addLayout(hour_horizontalLayout)
-
   def time_breakdown_setup(self):
+    """ Setup the time breakdown component for the selected date. """
     categories_by_total_time = self._category_manager.get_date_category_time_totals(
       self.selected_date)
 
@@ -324,6 +219,7 @@ class Dashboard(QMainWindow):
     self.time_breakdown_main_layout.addWidget(pie_chart)
 
   def top_application_setup(self):
+    """ Setup the top application component for the selected date. """
     window_class_by_total_time = self._activity_manager.get_date_entries_class_time_total(
       self.selected_date)
 
@@ -668,7 +564,7 @@ class Dashboard(QMainWindow):
         category_spacer_verticalLayout)
 
   def dashboard_tab_setup(self):
-    self.timeline_setup()
+    # self._timeline.setup_timeline()
     self.time_breakdown_setup()
     self.top_application_setup()
 
@@ -747,40 +643,14 @@ class Dashboard(QMainWindow):
 
     self.gridLayout.addWidget(self.time_breakdown_frame, 2, 2, 1, 1)
 
-    self.timeline_frame = QFrame(self.dashboard_tab)
-    self.timeline_frame.setObjectName(u"timeline_frame")
-    sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
-    sizePolicy.setHorizontalStretch(0)
-    sizePolicy.setVerticalStretch(0)
-    sizePolicy.setHeightForWidth(
-      self.timeline_frame.sizePolicy().hasHeightForWidth())
-    self.timeline_frame.setSizePolicy(sizePolicy)
-    self.timeline_frame.setMinimumSize(QSize(300, 0))
-    self.timeline_frame.setFrameShape(QFrame.StyledPanel)
-    self.timeline_frame.setFrameShadow(QFrame.Raised)
-    self.horizontalLayout_2 = QHBoxLayout(self.timeline_frame)
-    self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-    self.horizontalLayout_2.setContentsMargins(0, 0, 0, 0)
-    self.timeline_scrollArea = QScrollArea(self.timeline_frame)
-    self.timeline_scrollArea.setObjectName(u"timeline_scrollArea")
-    self.timeline_scrollArea.setWidgetResizable(True)
-    self.scrollAreaWidgetContents = QWidget()
-    self.scrollAreaWidgetContents.setObjectName(u"scrollAreaWidgetContents")
-    self.scrollAreaWidgetContents.setGeometry(QRect(0, 0, 296, 723))
-    self.verticalLayout_6 = QVBoxLayout(self.scrollAreaWidgetContents)
-    self.verticalLayout_6.setSpacing(0)
-    self.verticalLayout_6.setObjectName(u"verticalLayout_6")
-    self.timeline_main_layout = QVBoxLayout()
-    self.timeline_main_layout.setObjectName(u"timeline_main_layout")
-
-    self.verticalLayout_6.addLayout(self.timeline_main_layout)
-
-    self.timeline_scrollArea.setWidget(self.scrollAreaWidgetContents)
-
-    self.horizontalLayout_2.addWidget(self.timeline_scrollArea)
+    """ Timeline setup """
+    self._timeline = TimelineComponent(
+        self.dashboard_tab, self._activity_manager, self._category_manager, self.selected_date)
+    self.timeline_frame = self._timeline.setupUi(self._timeline)
 
     self.gridLayout.addWidget(self.timeline_frame, 2, 0, 1, 1)
 
+    # Top applications setup
     self.top_apps_frame = QFrame(self.dashboard_tab)
     self.top_apps_frame.setObjectName(u"top_apps_frame")
     self.top_apps_frame.setMinimumSize(QSize(50, 0))
