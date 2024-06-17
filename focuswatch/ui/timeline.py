@@ -56,7 +56,7 @@ class TimelineComponent(QFrame):
     """ Scroll to the current hour label. (-2 hours for better visibility) """
     current_hour = datetime.now().hour
     current_hour_label = self.scrollAreaWidgetContents.findChild(
-      QLabel, f"hour_label_{current_hour - 2}")
+      QLabel, f"hour_label_{max(0, current_hour - 2)}")
     y_position = current_hour_label.y()
     if y_position == 0:
       # If the position is still zero, defer scrolling to allow layout to update
