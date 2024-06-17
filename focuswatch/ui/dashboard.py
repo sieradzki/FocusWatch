@@ -23,12 +23,15 @@ from focuswatch.database.activity_manager import ActivityManager
 from focuswatch.database.category_manager import CategoryManager
 from focuswatch.database.keyword_manager import KeywordManager
 from focuswatch.ui.category_dialog import CategoryDialog
+from focuswatch.ui.utils import (get_category_color,
+                                   get_contrasting_text_color)
 
 
 class Dashboard(QMainWindow):
   def __init__(self, parent=None):
     super().__init__(parent)
     self.selected_date = datetime.now()
+    # TODO date_start date_end when selected time period > 1 day ?
 
     self.setupUi(self)
     self._activity_manager = ActivityManager()
@@ -37,8 +40,6 @@ class Dashboard(QMainWindow):
     self.timeline_setup()
     self.time_breakdown_setup()
     self.top_application_setup()
-
-    # TODO date_start date_end when selected time period > 1 day ?
 
   def select_date(self):
     """ Select date for dashboard """
@@ -77,28 +78,6 @@ class Dashboard(QMainWindow):
 
     # Refresh the dashboard
     self.onShow(self.showEvent)
-
-  def get_contrasting_text_color(self, background_color):
-    background_rgb = QColor(background_color).toRgb()
-    brightness = (background_rgb.red() * 299 + background_rgb.green()
-                  * 587 + background_rgb.blue() * 114) / 1000
-    return "black" if brightness > 70 else "white"
-
-  def get_category_color(self, category_id):
-    current_id = category_id
-    category = self._category_manager.get_category_by_id(current_id)
-    color = category[-1]
-    while color == None:
-      category = self._category_manager.get_category_by_id(current_id)
-      parent_category_id = category[-2]
-      if parent_category_id:
-        parent_category = self._category_manager.get_category_by_id(
-          parent_category_id)
-        color = parent_category[-1]
-        current_id = parent_category_id
-      else:
-        return None
-    return color
 
   """ Dashboard tab """
 
@@ -173,7 +152,7 @@ class Dashboard(QMainWindow):
         if entry != 0 and entry != None:  # TODO disallow deleting 'Uncategorized' category or change how it works
           category = self._category_manager.get_category_by_id(entry)
           name = category[1]
-          color = self.get_category_color(entry)
+          color = get_category_color(entry)
 
           if i > 0:
             if entry != entries[i - 1]:
@@ -183,7 +162,7 @@ class Dashboard(QMainWindow):
               entry_text_label.setText(name)
           if color:
             style.append(f"background-color: {color};")
-          text_color = self.get_contrasting_text_color(color)
+          text_color = get_contrasting_text_color(color)
           style.append(f"color: {text_color};")
         else:
           style.append(f"background-color: rgba(0,0,0,0);")
@@ -246,7 +225,7 @@ class Dashboard(QMainWindow):
       id, name, parent_category_id, color = category
 
       text = ""
-      color = self.get_category_color(id)
+      color = get_category_color(id)
 
       text += name + ' -'
       hours = time // 3600
@@ -293,7 +272,7 @@ class Dashboard(QMainWindow):
       base_color = QColor(color)
 
       # Create gradient stops for smooth transition
-      contrasting_color = self.get_contrasting_text_color(color)
+      contrasting_color = get_contrasting_text_color(color)
 
       # Multiplier is needed for really dark colors
       multiplier = 1 if contrasting_color == 'black' else 2
@@ -393,7 +372,7 @@ class Dashboard(QMainWindow):
         self.selected_date, window_class)
       category = self._category_manager.get_category_by_id(category_id)
       id, name, parent_category_id, color = category
-      color = self.get_category_color(id)
+      color = get_category_color(id)
 
       text = ""
 
@@ -436,7 +415,7 @@ class Dashboard(QMainWindow):
       base_color = QColor(color)
 
       # Create gradient stops for smooth transition
-      contrasting_color = self.get_contrasting_text_color(color)
+      contrasting_color = get_contrasting_text_color(color)
       multiplier = 1 if contrasting_color == 'black' else 2
 
       stop_1 = f"stop: 0 {base_color.darker(100 - (30 * multiplier)).name()},"
@@ -635,8 +614,8 @@ class Dashboard(QMainWindow):
         category_button.sizePolicy().hasHeightForWidth())
       category_button.setSizePolicy(cat_label_sizePolicy)
 
-      color = self.get_category_color(key)
-      font_color = self.get_contrasting_text_color(color)
+      color = get_category_color(key)
+      font_color = get_contrasting_text_color(color)
 
       if color:
         category_button.setStyleSheet(
