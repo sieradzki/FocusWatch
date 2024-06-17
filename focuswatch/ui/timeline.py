@@ -1,4 +1,4 @@
-""" Timeline component for the FocusWatch UI. """
+""" Timeline component for the FocusWatch Ui. """
 from collections import defaultdict
 from datetime import datetime, timedelta
 

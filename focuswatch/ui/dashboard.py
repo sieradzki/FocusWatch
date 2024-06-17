@@ -19,6 +19,7 @@ from focuswatch.database.category_manager import CategoryManager
 from focuswatch.database.keyword_manager import KeywordManager
 from focuswatch.ui.category_dialog import CategoryDialog
 from focuswatch.ui.timeline import TimelineComponent
+from focuswatch.ui.top_categories import TopCategoriesComponent
 from focuswatch.ui.utils import (get_category_color,
                                  get_contrasting_text_color)
 
@@ -33,7 +34,6 @@ class Dashboard(QMainWindow):
     self._category_manager = CategoryManager()
     self._keyword_manager = KeywordManager()
     self.setupUi(self)
-    self.time_breakdown_setup()
     self.top_application_setup()
 
   def select_date(self):
@@ -75,148 +75,6 @@ class Dashboard(QMainWindow):
     self.onShow(self.showEvent)
 
   """ Dashboard tab """
-
-  def time_breakdown_setup(self):
-    """ Setup the time breakdown component for the selected date. """
-    categories_by_total_time = self._category_manager.get_date_category_time_totals(
-      self.selected_date)
-
-    breakdown_verticalLayout = QVBoxLayout()
-    breakdown_verticalLayout.setSizeConstraint(
-        QLayout.SetDefaultConstraint)
-
-    if not categories_by_total_time:
-      info_label = QLabel(self.time_breakdown_scrollAreaWidgetContents)
-      info_label.setText("No data for the selected period")
-
-      font = QFont()
-      font.setPointSize(16)
-
-      info_label.setFont(font)
-      info_label.setAlignment(Qt.AlignCenter)
-
-      breakdown_verticalLayout.addWidget(info_label)
-      self.time_breakdown_main_layout.addLayout(breakdown_verticalLayout)
-      return
-
-    total_time = 0
-
-    for vals in categories_by_total_time:
-      total_time += vals[-1]
-
-    pie_chart = QtCharts.QChartView()
-    pie_chart.setRenderHint(QPainter.Antialiasing)
-    pie_chart.setMinimumSize(300, 300)
-    pie_chart.chart().setAnimationOptions(QChart.AllAnimations)
-    pie_chart.chart().setBackgroundVisible(False)
-
-    series = QtCharts.QPieSeries()
-
-    for vals in categories_by_total_time:
-      category_horizontalLayout = QHBoxLayout()
-      category_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
-      cat_id, time = vals
-      category = self._category_manager.get_category_by_id(cat_id)
-      id, name, parent_category_id, color = category
-
-      text = ""
-      color = get_category_color(id)
-
-      text += name + ' -'
-      hours = time // 3600
-      minutes = (time // 60) % 60
-      seconds = time % 60
-      if hours:
-        text += f" {hours}h"
-      if minutes:
-        text += f" {minutes}m"
-      if seconds:
-        text += f" {seconds}s"
-
-      category_label = QLabel(self.time_breakdown_scrollAreaWidgetContents)
-      category_label.setText(
-        f"{text}")
-      if color:
-        category_label.setStyleSheet(f"color: {color};")
-      category_label.setMaximumHeight(20)
-
-      font = QFont()
-      font.setBold(True)
-      font.setPointSize(10)
-
-      category_label.setFont(font)
-
-      slice = QtCharts.QPieSlice(text, time / 60)
-
-      if color:
-        slice.setColor(QColor(color))
-
-      slice.hovered.connect(slice.setExploded)
-      slice.setExplodeDistanceFactor(0.07)
-      slice.hovered.connect(slice.setLabelVisible)
-
-      series.append(slice)
-
-      category_horizontalLayout.addWidget(category_label)
-
-      category_progress = QProgressBar(
-        self.time_breakdown_scrollAreaWidgetContents)
-      category_progress.setValue((time / total_time) * 100)
-      category_progress.setFixedHeight(15)
-
-      base_color = QColor(color)
-
-      # Create gradient stops for smooth transition
-      contrasting_color = get_contrasting_text_color(color)
-
-      # Multiplier is needed for really dark colors
-      multiplier = 1 if contrasting_color == 'black' else 2
-
-      stop_1 = f"stop: 0 {base_color.darker(100 - (30 * multiplier)).name()},"
-      stop_2 = f"stop: 0.3 {base_color.darker(
-        100 - (20 * multiplier)).name()},"
-      stop_3 = f"stop: 0.7 {base_color.darker(
-        100 - (10 * multiplier)).name()},"
-      stop_4 = f"stop: 1 {base_color.name()}"
-
-      category_progress.setStyleSheet(
-          f"""
-          QProgressBar {{
-              text-align: top;
-              border-radius: 3px;
-              {"color: " + contrasting_color if category_progress.value() >
-               45 else ''}
-          }}
-          QProgressBar::chunk {{
-              background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
-                  {stop_1}
-                  {stop_2}
-                  {stop_3}
-                  {stop_4}
-              );
-              border-radius: 3px;
-          }}
-          """
-      )
-      category_progress.setFixedWidth(250)
-      category_horizontalLayout.addWidget(category_progress)
-      breakdown_verticalLayout.addLayout(category_horizontalLayout)
-
-    series.setHoleSize(0.35)
-    pie_chart.chart().addSeries(series)
-    # pie_chart.chart().legend().hide()
-
-    legend = pie_chart.chart().legend()
-    legend.setVisible(False)
-    # legend.setAlignment(Qt.AlignBottom)
-    # legend.setFont(QFont("Helvetica", 9))
-
-    verticalSpacer = QSpacerItem(
-      20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-
-    breakdown_verticalLayout.addItem(verticalSpacer)
-    self.time_breakdown_main_layout.addLayout(breakdown_verticalLayout)
-    self.time_breakdown_main_layout.addWidget(pie_chart)
 
   def top_application_setup(self):
     """ Setup the top application component for the selected date. """
@@ -304,7 +162,7 @@ class Dashboard(QMainWindow):
       series.append(slice)
 
       class_progress = QProgressBar(
-        self.time_breakdown_scrollAreaWidgetContents)
+        self.top_apps_scrollAreaWidgetContents)
       class_progress.setValue((time / total_time) * 100)
       class_progress.setFixedHeight(15)
 
@@ -564,7 +422,6 @@ class Dashboard(QMainWindow):
         category_spacer_verticalLayout)
 
   def dashboard_tab_setup(self):
-    self.time_breakdown_setup()
     self.top_application_setup()
 
   def categorization_tab_setup(self):
@@ -597,59 +454,25 @@ class Dashboard(QMainWindow):
     self.dashboard_tab.setObjectName(u"dashboard_tab")
     self.gridLayout = QGridLayout(self.dashboard_tab)
     self.gridLayout.setObjectName(u"gridLayout")
-    self.time_breakdown_frame = QFrame(self.dashboard_tab)
-    self.time_breakdown_frame.setObjectName(u"time_breakdown_frame")
-    self.time_breakdown_frame.setFrameShape(QFrame.StyledPanel)
-    self.time_breakdown_frame.setFrameShadow(QFrame.Raised)
-    self.verticalLayout_4 = QVBoxLayout(self.time_breakdown_frame)
-    self.verticalLayout_4.setSpacing(0)
-    self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-    self.verticalLayout_4.setContentsMargins(0, 0, 0, 0)
-    self.time_breakdown_label = QLabel(self.time_breakdown_frame)
-    self.time_breakdown_label.setObjectName(u"time_breakdown_label")
-    font = QFont()
-    font.setPointSize(12)
-    font.setBold(False)
-    self.time_breakdown_label.setFont(font)
-    self.time_breakdown_label.setAutoFillBackground(False)
-    self.time_breakdown_label.setAlignment(
-      Qt.AlignLeading | Qt.AlignLeft | Qt.AlignVCenter)
-    self.time_breakdown_label.setMargin(4)
 
-    self.verticalLayout_4.addWidget(self.time_breakdown_label)
+    # Top categories setup
+    self._top_categories = TopCategoriesComponent(
+        self.dashboard_tab, self._activity_manager, self._category_manager, self.selected_date)
+    self._top_categories_frame = self._top_categories.setupUi()
 
-    self.time_breakdown_scrollArea = QScrollArea(self.time_breakdown_frame)
-    self.time_breakdown_scrollArea.setObjectName(u"time_breakdown_scrollArea")
-    self.time_breakdown_scrollArea.setWidgetResizable(True)
-    self.time_breakdown_scrollAreaWidgetContents = QWidget()
-    self.time_breakdown_scrollAreaWidgetContents.setObjectName(
-      u"time_breakdown_scrollAreaWidgetContents")
-    self.time_breakdown_scrollAreaWidgetContents.setGeometry(
-      QRect(0, 0, 611, 693))
-    self.verticalLayout_3 = QVBoxLayout(
-      self.time_breakdown_scrollAreaWidgetContents)
-    self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-    self.time_breakdown_main_layout = QVBoxLayout()
-    self.time_breakdown_main_layout.setObjectName(
-      u"time_breakdown_main_layout")
-
-    self.verticalLayout_3.addLayout(self.time_breakdown_main_layout)
-
-    self.time_breakdown_scrollArea.setWidget(
-      self.time_breakdown_scrollAreaWidgetContents)
-
-    self.verticalLayout_4.addWidget(self.time_breakdown_scrollArea)
-
-    self.gridLayout.addWidget(self.time_breakdown_frame, 2, 2, 1, 1)
+    self.gridLayout.addWidget(self._top_categories_frame, 2, 2, 1, 1)
 
     # Timeline setup
     self._timeline = TimelineComponent(
         self.dashboard_tab, self._activity_manager, self._category_manager, self.selected_date)
-    self.timeline_frame = self._timeline.setupUi()
+    self._timeline_frame = self._timeline.setupUi()
 
-    self.gridLayout.addWidget(self.timeline_frame, 2, 0, 1, 1)
+    self.gridLayout.addWidget(self._timeline_frame, 2, 0, 1, 1)
 
     # Top applications setup
+    font = QFont()
+    font.setPointSize(12)
+    font.setBold(False)
     self.top_apps_frame = QFrame(self.dashboard_tab)
     self.top_apps_frame.setObjectName(u"top_apps_frame")
     self.top_apps_frame.setMinimumSize(QSize(50, 0))
@@ -998,8 +821,6 @@ class Dashboard(QMainWindow):
   def retranslateUi(self, Dashboard):
     Dashboard.setWindowTitle(QCoreApplication.translate(
       "Dashboard", u"FocusWatch", None))
-    self.time_breakdown_label.setText(
-      QCoreApplication.translate("Dashboard", u"Top categories", None))
     self.top_apps_label.setText(QCoreApplication.translate(
       "Dashboard", u"Top applications", None))
     self.date_prev_button.setText(
