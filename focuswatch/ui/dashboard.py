@@ -1,5 +1,4 @@
 """ Dashboard UI """
-from collections import defaultdict
 from datetime import datetime, timedelta
 
 from PySide6.QtCore import QCoreApplication, QMetaObject, QRect, QSize, Qt
@@ -15,11 +14,10 @@ from focuswatch.database.activity_manager import ActivityManager
 from focuswatch.database.category_manager import CategoryManager
 from focuswatch.database.keyword_manager import KeywordManager
 from focuswatch.ui.categorization_tab import CategorizationTab
-from focuswatch.ui.category_dialog import CategoryDialog
 from focuswatch.ui.timeline import TimelineComponent
 from focuswatch.ui.top_categories import TopCategoriesComponent
 from focuswatch.ui.top_applications import TopApplicationsComponent
-from focuswatch.ui.utils import get_category_color, get_contrasting_text_color
+from focuswatch.ui.settings_tab import SettingsTab
 
 
 class Dashboard(QMainWindow):
@@ -71,8 +69,6 @@ class Dashboard(QMainWindow):
     # Refresh the dashboard
     self.onShow(self.showEvent)
 
-  """ Categorization tab """
-
   def setupUi(self, Dashboard):
     if not Dashboard.objectName():
       Dashboard.setObjectName(u"Dashboard")
@@ -91,6 +87,8 @@ class Dashboard(QMainWindow):
     self.tabWidget.setTabShape(QTabWidget.Rounded)
     self.tabWidget.setDocumentMode(False)
     self.tabWidget.setTabBarAutoHide(False)
+
+    # Dashboard tab
     self.dashboard_tab = QWidget()
     self.dashboard_tab.setObjectName(u"dashboard_tab")
     self.gridLayout = QGridLayout(self.dashboard_tab)
@@ -212,8 +210,9 @@ class Dashboard(QMainWindow):
 
     self.gridLayout.addWidget(self.frame, 0, 4, 1, 1)
 
-    # Categorization tab
     self.tabWidget.addTab(self.dashboard_tab, "")
+
+    # Categorization tab
     self._categorization_tab = CategorizationTab(
         self._category_manager, self._keyword_manager, parent=self)
     self.categorization_tab = self._categorization_tab.setupUi()
@@ -221,97 +220,13 @@ class Dashboard(QMainWindow):
     self.tabWidget.addTab(self.categorization_tab, "")
 
     # Settings tab
-    self.settings_tab = QWidget()
-    self.settings_tab.setObjectName(u"settings_tab")
-    self.verticalLayout_9 = QVBoxLayout(self.settings_tab)
-    self.verticalLayout_9.setObjectName(u"verticalLayout_9")
-    self.tab_settings_watcher = QTabWidget(self.settings_tab)
-    self.tab_settings_watcher.setObjectName(u"tab_settings_watcher")
-    self.tab = QWidget()
-    self.tab.setObjectName(u"tab")
-    self.verticalLayout_10 = QVBoxLayout(self.tab)
-    self.verticalLayout_10.setObjectName(u"verticalLayout_10")
-    self.watcher_tab_layout = QVBoxLayout()
-    self.watcher_tab_layout.setObjectName(u"watcher_tab_layout")
-    self.watcher_tab_layout.setContentsMargins(2, -1, -1, -1)
-    self.watch_label = QLabel(self.tab)
-    self.watch_label.setObjectName(u"watch_label")
-    font2 = QFont()
-    font2.setBold(False)
-    self.watch_label.setFont(font2)
-
-    self.watcher_tab_layout.addWidget(self.watch_label)
-
-    self.watch_interval = QDoubleSpinBox(self.tab)
-    self.watch_interval.setObjectName(u"watch_interval")
-    self.watch_interval.setDecimals(1)
-    self.watch_interval.setMinimum(1.000000000000000)
-    self.watch_interval.setMaximum(60.000000000000000)
-    self.watch_interval.setSingleStep(0.500000000000000)
-
-    self.watcher_tab_layout.addWidget(self.watch_interval)
-
-    self.watch_afk = QCheckBox(self.tab)
-    self.watch_afk.setObjectName(u"watch_afk")
-
-    self.watcher_tab_layout.addWidget(self.watch_afk)
-
-    self.afk_label = QLabel(self.tab)
-    self.afk_label.setObjectName(u"afk_label")
-    self.afk_label.setEnabled(False)
-
-    self.watcher_tab_layout.addWidget(self.afk_label)
-
-    self.afk_timeout = QSpinBox(self.tab)
-    self.afk_timeout.setObjectName(u"afk_timeout")
-    self.afk_timeout.setEnabled(False)
-    self.afk_timeout.setMinimum(1)
-    self.afk_timeout.setValue(5)
-
-    self.watcher_tab_layout.addWidget(self.afk_timeout)
-
-    self.label_2 = QLabel(self.tab)
-    self.label_2.setObjectName(u"label_2")
-
-    self.watcher_tab_layout.addWidget(self.label_2)
-
-    self.verticalSpacer_3 = QSpacerItem(
-      20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-
-    self.watcher_tab_layout.addItem(self.verticalSpacer_3)
-
-    self.verticalLayout_10.addLayout(self.watcher_tab_layout)
-
-    self.tab_settings_watcher.addTab(self.tab, "")
-    self.tab_settings_startup = QWidget()
-    self.tab_settings_startup.setObjectName(u"tab_settings_startup")
-    self.horizontalLayout_4 = QHBoxLayout(self.tab_settings_startup)
-    self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-    self.label = QLabel(self.tab_settings_startup)
-    self.label.setObjectName(u"label")
-    font3 = QFont()
-    font3.setPointSize(16)
-    self.label.setFont(font3)
-    self.label.setAlignment(Qt.AlignCenter)
-
-    self.horizontalLayout_4.addWidget(self.label)
-
-    self.tab_settings_watcher.addTab(self.tab_settings_startup, "")
-
-    self.verticalLayout_9.addWidget(self.tab_settings_watcher)
-
-    self.buttonBox = QDialogButtonBox(self.settings_tab)
-    self.buttonBox.setObjectName(u"buttonBox")
-    self.buttonBox.setStandardButtons(
-      QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
-
-    self.verticalLayout_9.addWidget(self.buttonBox)
+    self._settings_tab = SettingsTab(parent=self)
+    self.settings_tab = self._settings_tab.setupUi()
     self.tabWidget.addTab(self.settings_tab, "")
 
     self.verticalLayout.addWidget(self.tabWidget)
 
     self.verticalLayout_2.addLayout(self.verticalLayout)
-
     Dashboard.setCentralWidget(self.centralwidget)
     self.menubar = QMenuBar(Dashboard)
     self.menubar.setObjectName(u"menubar")
@@ -334,6 +249,7 @@ class Dashboard(QMainWindow):
   def retranslateUi(self, Dashboard):
     Dashboard.setWindowTitle(QCoreApplication.translate(
       "Dashboard", u"FocusWatch", None))
+    # Date nav
     self.date_prev_button.setText(
       QCoreApplication.translate("Dashboard", u"<", None))
     # self.date_button.setText(
@@ -344,31 +260,12 @@ class Dashboard(QMainWindow):
       QCoreApplication.translate("Dashboard", u"Day view", None))
     self.refreshButton.setText(
       QCoreApplication.translate("Dashboard", u"Refresh", None))
+
+    # Tabs
     self.tabWidget.setTabText(self.tabWidget.indexOf(
       self.dashboard_tab), QCoreApplication.translate("Dashboard", u"Dashboard", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
       self.categorization_tab), QCoreApplication.translate("Dashboard", u"Categorization", None))
-    self.tabWidget.setTabText(self.tabWidget.indexOf(
-      self.settings_tab), QCoreApplication.translate("Dashboard", u"Settings", None))
-    self.watch_label.setText(QCoreApplication.translate(
-      "Dashboard", u"Watch interval", None))
-    self.watch_interval.setSuffix(
-      QCoreApplication.translate("Dashboard", u" s", None))
-    self.watch_afk.setText(QCoreApplication.translate(
-      "Dashboard", u"Watch afk", None))
-    self.afk_label.setText(QCoreApplication.translate(
-      "Dashboard", u"AFK timeout", None))
-    self.afk_timeout.setSuffix(
-      QCoreApplication.translate("Dashboard", u" m", None))
-    self.afk_timeout.setPrefix("")
-    self.label_2.setText(QCoreApplication.translate(
-      "Dashboard", u"Note: the changes will be applied on next restart", None))
-    self.tab_settings_watcher.setTabText(self.tab_settings_watcher.indexOf(
-      self.tab), QCoreApplication.translate("Dashboard", u"Watcher", None))
-    self.label.setText(QCoreApplication.translate(
-      "Dashboard", u"Not implemented", None))
-    self.tab_settings_watcher.setTabText(self.tab_settings_watcher.indexOf(
-      self.tab_settings_startup), QCoreApplication.translate("Dashboard", u"Startup", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
       self.settings_tab), QCoreApplication.translate("Dashboard", u"Settings", None))
   # retranslateUi
