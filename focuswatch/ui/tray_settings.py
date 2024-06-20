@@ -1,13 +1,8 @@
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-                            QMetaObject, QObject, QPoint, QRect, QSize, Qt,
-                            QTime, QUrl)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
-                           QFontDatabase, QGradient, QIcon, QImage,
-                           QKeySequence, QLinearGradient, QPainter, QPalette,
-                           QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QDoubleSpinBox, QLabel,
-                               QSizePolicy, QSpacerItem, QSpinBox, QTabWidget,
-                               QVBoxLayout, QWidget, QDialogButtonBox)
+from PySide6.QtCore import QCoreApplication, QMetaObject
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import (QCheckBox, QDialogButtonBox, QDoubleSpinBox,
+                               QLabel, QSizePolicy, QSpacerItem, QSpinBox,
+                               QTabWidget, QVBoxLayout, QWidget)
 
 from focuswatch.config import Config
 

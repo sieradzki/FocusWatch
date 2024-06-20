@@ -5,12 +5,13 @@ from PySide6.QtWidgets import (QCheckBox, QDialogButtonBox, QDoubleSpinBox,
                                QHBoxLayout, QLabel, QSizePolicy, QSpacerItem,
                                QSpinBox, QTabWidget, QVBoxLayout, QWidget)
 
-from focuswatch.ui.utils import get_category_color, get_contrasting_text_color
+from focuswatch.config import Config
 
 
 class SettingsTab(QWidget):
   def __init__(self, parent=None):
     super().__init__(parent)
+    self.config = Config()
     self._parent = parent
     self.setupUi()
 
@@ -37,6 +38,8 @@ class SettingsTab(QWidget):
     self.watcher_tab_layout.addWidget(self.watch_label)
 
     self.watch_interval = QDoubleSpinBox(self.tab)
+    self.watch_interval.setValue(
+      float(self.config.get_config('General', 'watch_interval')))
     self.watch_interval.setObjectName(u"watch_interval")
     self.watch_interval.setDecimals(1)
     self.watch_interval.setMinimum(1.000000000000000)
@@ -46,13 +49,15 @@ class SettingsTab(QWidget):
     self.watcher_tab_layout.addWidget(self.watch_interval)
 
     self.watch_afk = QCheckBox(self.tab)
+    self.watch_afk.setChecked(True if (self.config.get_config(
+      'General', 'watch_afk') == 'True') else False)
     self.watch_afk.setObjectName(u"watch_afk")
 
     self.watcher_tab_layout.addWidget(self.watch_afk)
 
     self.afk_label = QLabel(self.tab)
     self.afk_label.setObjectName(u"afk_label")
-    self.afk_label.setEnabled(False)
+    self.afk_label.setEnabled(self.watch_afk.isChecked())
 
     self.watcher_tab_layout.addWidget(self.afk_label)
 
@@ -60,7 +65,10 @@ class SettingsTab(QWidget):
     self.afk_timeout.setObjectName(u"afk_timeout")
     self.afk_timeout.setEnabled(False)
     self.afk_timeout.setMinimum(1)
-    self.afk_timeout.setValue(5)
+    self.afk_timeout.setValue(
+      float(self.config.get_config('General', 'afk_timeout'))
+    )
+    self.afk_timeout.setEnabled(self.watch_afk.isChecked())
 
     self.watcher_tab_layout.addWidget(self.afk_timeout)
 
@@ -71,6 +79,9 @@ class SettingsTab(QWidget):
 
     self.verticalSpacer_3 = QSpacerItem(
       20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+    self.watch_afk.toggled.connect(self.afk_timeout.setEnabled)
+    self.watch_afk.toggled.connect(self.afk_label.setEnabled)
 
     self.watcher_tab_layout.addItem(self.verticalSpacer_3)
 
@@ -96,8 +107,9 @@ class SettingsTab(QWidget):
 
     self.buttonBox = QDialogButtonBox(self.settings_tab)
     self.buttonBox.setObjectName(u"buttonBox")
-    self.buttonBox.setStandardButtons(
-      QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+    self.buttonBox.setStandardButtons(QDialogButtonBox.Apply)
+    self.buttonBox.button(QDialogButtonBox.Apply).clicked.connect(
+      self.apply_settings)
 
     self.verticalLayout_9.addWidget(self.buttonBox)
 
@@ -125,4 +137,17 @@ class SettingsTab(QWidget):
       "Dashboard", u"Not implemented", None))
     self.tab_settings_watcher.setTabText(self.tab_settings_watcher.indexOf(
       self.tab_settings_startup), QCoreApplication.translate("Dashboard", u"Startup", None))
-    
+
+  def apply_settings(self):
+    watch_interval = self.watch_interval.value()
+    watch_afk = self.watch_afk.isChecked()
+    afk_timeout = self.afk_timeout.value()
+
+    self.config.update_config(
+      section='General', option='watch_interval', value=watch_interval)
+    self.config.update_config(
+      section='General', option='watch_afk', value=watch_afk
+    )
+    self.config.update_config(
+      section='General', option='afk_timeout', value=afk_timeout
+    )
