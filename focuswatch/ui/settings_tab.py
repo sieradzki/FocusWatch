@@ -1,13 +1,10 @@
 """ Settings tab for the FocusWatch Ui. """
-from collections import defaultdict
-
-from PySide6.QtCore import QCoreApplication, QRect, QSize, Qt
+from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QHBoxLayout, QLabel, QLayout,
-                               QPushButton, QScrollArea, QSizePolicy,
-                               QSpacerItem, QVBoxLayout, QWidget, QCheckBox, QDoubleSpinBox, QSpinBox, QTabWidget, QDialogButtonBox)
+from PySide6.QtWidgets import (QCheckBox, QDialogButtonBox, QDoubleSpinBox,
+                               QHBoxLayout, QLabel, QSizePolicy, QSpacerItem,
+                               QSpinBox, QTabWidget, QVBoxLayout, QWidget)
 
-from focuswatch.ui.category_dialog import CategoryDialog
 from focuswatch.ui.utils import get_category_color, get_contrasting_text_color
 
 

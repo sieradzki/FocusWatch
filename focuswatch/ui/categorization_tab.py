@@ -17,7 +17,7 @@ class CategorizationTab(QWidget):
     self._category_manager = category_manager
     self._keyword_manager = keyword_manager
     self._parent = parent
-    self.setupUi()
+    # self.setupUi()
 
   def setupUi(self):
     self.categorization_tab = QWidget()
