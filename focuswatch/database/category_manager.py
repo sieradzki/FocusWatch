@@ -3,6 +3,7 @@
 This module is responsible for managing the categories in the database.
 """
 
+from datetime import datetime
 import sqlite3
 from typing import List, Optional, Tuple, Union
 
@@ -133,29 +134,30 @@ class CategoryManager:
     """ Return the total time spent on each category for today. """
     query = """
       SELECT category_id,
-      SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
+      SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
       FROM activity_log
-      WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', 'now', 'utc')
+      WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', 'now')
       GROUP BY category_id
       ORDER BY total_time_seconds DESC;
     """
     return self._db_conn.execute_query(query)
 
-  def get_date_category_time_totals(self, date: str) -> List[Tuple[int, int]]:
+  def get_date_category_time_totals(self, date: datetime) -> List[Tuple[int, int]]:
     """ Return the total time spent on each category for a given date. 
 
     Args:
       date: The date to retrieve entries for.
     """
+    formatted_date = date.strftime("%Y-%m-%d")
     query = """
       SELECT category_id,
-      SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
+      SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
       FROM activity_log
       WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
       GROUP BY category_id
       ORDER BY total_time_seconds DESC;
     """
-    params = (date,)
+    params = (formatted_date,)
     return self._db_conn.execute_query(query, params)
 
   def get_category_depth(self, category_id: int) -> int:

@@ -6,8 +6,8 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QSystemTrayIcon
 
 from focuswatch.arguments import parse_arguments
-from focuswatch.gui.tray_settings import TraySettings
-from focuswatch.gui.dashboard import Dashboard
+from focuswatch.ui.tray_settings import TraySettings
+from focuswatch.ui.home import Home
 from focuswatch.watcher import Watcher
 from focuswatch.database.database_manager import DatabaseManager
 
@@ -51,9 +51,9 @@ def main():
   # apply_stylesheet(app, theme='dark_blue.xml')
 
   # Add actions to the menu
-  dashboard_window = Dashboard()
+  dashboard_window = Home()
   # apply_stylesheet(app, theme='dark_red.xml')
-  open_dashboard = QAction("Open dashboard")
+  open_dashboard = QAction("Open")
   open_dashboard.triggered.connect(dashboard_window.show)
   menu.addAction(open_dashboard)
 

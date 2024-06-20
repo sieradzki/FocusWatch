@@ -13,7 +13,8 @@ from PySide6.QtWidgets import (QAbstractButton, QApplication, QColorDialog,
                                QTextEdit, QVBoxLayout, QWidget)
 
 from focuswatch.database.category_manager import CategoryManager
-from focuswatch.gui.keyword_dialog import KeywordDialog
+from focuswatch.ui.keyword_dialog import KeywordDialog
+from focuswatch.ui.utils import get_category_color
 
 
 class CategoryDialog(QDialog):
@@ -38,23 +39,6 @@ class CategoryDialog(QDialog):
       self.color = color.name()
       self.selectColor_pushButton.setStyleSheet(
         f"background-color: {self.color};")
-
-  def get_category_color(self, category_id):
-    # TODO move to utils.py (?)
-    current_id = category_id
-    category = self._category_manager.get_category_by_id(current_id)
-    color = category[-1]
-    while color == None:
-      category = self._category_manager.get_category_by_id(current_id)
-      parent_category_id = category[-2]
-      if parent_category_id:
-        parent_category = self._category_manager.get_category_by_id(
-          parent_category_id)
-        color = parent_category[-1]
-        current_id = parent_category_id
-      else:
-        return None
-    return color
 
   def delete_keyword(self):
     sender_name = self.sender().objectName()
@@ -269,7 +253,7 @@ class CategoryDialog(QDialog):
 
     # Set button color from category or parent if empty
     if self._category is not None:
-      color = self.get_category_color(self._category[0])
+      color = get_category_color(self._category[0])
       self.selectColor_pushButton.setStyleSheet(
           f"background-color: {color};")
     self.selectColor_pushButton.clicked.connect(self.show_color_picker)

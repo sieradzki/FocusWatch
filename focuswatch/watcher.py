@@ -31,7 +31,7 @@ if platform in ["Windows", "win32", "cygwin"]:
 
   user32.GetWindowTextW.argtypes = [
     ctypes.c_int, ctypes.c_wchar_p, ctypes.c_intnsta
-    ]
+  ]
   user32.GetClassNameW.argtypes = [
     ctypes.c_int, ctypes.c_wchar_p, ctypes.c_int]
   user32.GetForegroundWindow.restype = ctypes.c_int
@@ -249,6 +249,7 @@ class Watcher():
 
       if self._window_name != self.get_active_window_name():  # log only on activity change
         self._log_activity_change()
+        self._reset_activity_state()
 
       time.sleep(self._watch_interval)
 
