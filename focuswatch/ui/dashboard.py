@@ -41,19 +41,19 @@ class Dashboard(QMainWindow):
 
     # Dashboard tab
     self._dashboard_tab = DashboardTab(
-        self._activity_manager, self._category_manager, self._keyword_manager, parent=self)
+        self._activity_manager, self._category_manager, self._keyword_manager)
     self.dashboard_tab = self._dashboard_tab.setupUi()
     self.tabWidget.addTab(self.dashboard_tab, "")
 
     # Categorization tab
     self._categorization_tab = CategorizationTab(
-        self._category_manager, self._keyword_manager, parent=self)
+        self._category_manager, self._keyword_manager)
     self.categorization_tab = self._categorization_tab.setupUi()
 
     self.tabWidget.addTab(self.categorization_tab, "")
 
     # Settings tab
-    self._settings_tab = SettingsTab(parent=self)
+    self._settings_tab = SettingsTab()
     self.settings_tab = self._settings_tab.setupUi()
     self.tabWidget.addTab(self.settings_tab, "")
 
