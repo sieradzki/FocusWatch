@@ -24,8 +24,13 @@ class Config:
       "location": "./focuswatch.sqlite",
     }
 
-    self.write_config_to_file()
+    self.config["Logging"] = {
+      "location": "./logs/focuswatch.log",
+      "logger_config": "./logging.json",
+      "log_level": "DEBUG",
+    }
 
+    self.write_config_to_file()
 
   def write_config_to_file(self):
     """ Write the configuration to the configuration file """
@@ -37,7 +42,6 @@ class Config:
       print(f"The configuration file was not found. {e}.")
     except IOError as e:
       print(f"An error occurred while writing the configuration file. {e}.")
-
 
   def load_config(self):
     """ Load config from the configuration file """

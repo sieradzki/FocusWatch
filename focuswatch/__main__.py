@@ -1,4 +1,8 @@
 """ Main file for the FocusWatch application. """
+import atexit
+import json
+import logging.config
+import logging.handlers
 import sys
 import threading
 
@@ -6,12 +10,15 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QSystemTrayIcon
 
 from focuswatch.arguments import parse_arguments
-from focuswatch.ui.tray_settings import TraySettings
-from focuswatch.ui.home import Home
-from focuswatch.watcher import Watcher
+from focuswatch.config import Config
 from focuswatch.database.database_manager import DatabaseManager
+from focuswatch.ui.home import Home
+from focuswatch.ui.tray_settings import TraySettings
+from focuswatch.watcher import Watcher
 
 # from qt_material import apply_stylesheet
+
+logger = logging.getLogger(__name__)
 
 
 def start_watcher(watcher):
@@ -19,7 +26,26 @@ def start_watcher(watcher):
   watcher.monitor()
 
 
+def setup_logging():
+  # Get logging file path from config
+  config = Config()
+  config_file = config.get_config("Logging", "logger_config")
+  with open(config_file) as f_in:
+    config = json.load(f_in)
+
+  logging.config.dictConfig(config)
+  queue_handler = logging.getHandlerByName("queue_handler")
+  if queue_handler is not None:
+    queue_handler.listener.start()
+    atexit.register(queue_handler.listener.stop)
+
+
 def main():
+  # Setup logging
+  setup_logging()
+
+  logger.info("Starting FocusWatch...")
+
   # Parse the arguments
   args = parse_arguments()
 
