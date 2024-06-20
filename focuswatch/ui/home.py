@@ -1,4 +1,4 @@
-""" Dashboard UI """
+""" Home UI """
 from PySide6.QtCore import QCoreApplication, QMetaObject, QRect
 from PySide6.QtWidgets import (QMainWindow, QMenuBar, QStatusBar, QTabWidget,
                                QVBoxLayout, QWidget)
@@ -11,7 +11,7 @@ from focuswatch.ui.dashboard_tab import DashboardTab
 from focuswatch.ui.settings_tab import SettingsTab
 
 
-class Dashboard(QMainWindow):
+class Home(QMainWindow):
   def __init__(self, parent=None):
     super().__init__(parent)
     self._activity_manager = ActivityManager()
@@ -19,14 +19,14 @@ class Dashboard(QMainWindow):
     self._keyword_manager = KeywordManager()
     self.setupUi(self)
 
-  def setupUi(self, Dashboard):
-    if not Dashboard.objectName():
-      Dashboard.setObjectName(u"Dashboard")
+  def setupUi(self, Home):
+    if not Home.objectName():
+      Home.setObjectName(u"Home")
       # Resize only on first run
-      if not Dashboard.isVisible():
-        Dashboard.resize(1600, 900)
-    Dashboard.setTabShape(QTabWidget.Rounded)
-    self.centralwidget = QWidget(Dashboard)
+      if not Home.isVisible():
+        Home.resize(1600, 900)
+    Home.setTabShape(QTabWidget.Rounded)
+    self.centralwidget = QWidget(Home)
     self.centralwidget.setObjectName(u"centralwidget")
     self.verticalLayout_2 = QVBoxLayout(self.centralwidget)
     self.verticalLayout_2.setObjectName(u"verticalLayout_2")
@@ -60,31 +60,31 @@ class Dashboard(QMainWindow):
     self.verticalLayout.addWidget(self.tabWidget)
 
     self.verticalLayout_2.addLayout(self.verticalLayout)
-    Dashboard.setCentralWidget(self.centralwidget)
-    self.menubar = QMenuBar(Dashboard)
+    Home.setCentralWidget(self.centralwidget)
+    self.menubar = QMenuBar(Home)
     self.menubar.setObjectName(u"menubar")
     self.menubar.setGeometry(QRect(0, 0, 1600, 22))
-    Dashboard.setMenuBar(self.menubar)
-    self.statusbar = QStatusBar(Dashboard)
+    Home.setMenuBar(self.menubar)
+    self.statusbar = QStatusBar(Home)
     self.statusbar.setObjectName(u"statusbar")
-    Dashboard.setStatusBar(self.statusbar)
+    Home.setStatusBar(self.statusbar)
 
-    self.retranslateUi(Dashboard)
+    self.retranslateUi(Home)
 
     self.tabWidget.setCurrentIndex(0)
 
-    QMetaObject.connectSlotsByName(Dashboard)
+    QMetaObject.connectSlotsByName(Home)
   # setupUi
 
-  def retranslateUi(self, Dashboard):
-    Dashboard.setWindowTitle(QCoreApplication.translate(
-      "Dashboard", u"FocusWatch", None))
+  def retranslateUi(self, Home):
+    Home.setWindowTitle(QCoreApplication.translate(
+      "Home", u"FocusWatch", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
-      self.dashboard_tab), QCoreApplication.translate("Dashboard", u"Dashboard", None))
+      self.dashboard_tab), QCoreApplication.translate("Home", u"Dashboard", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
-      self.categorization_tab), QCoreApplication.translate("Dashboard", u"Categorization", None))
+      self.categorization_tab), QCoreApplication.translate("Home", u"Categorization", None))
     self.tabWidget.setTabText(self.tabWidget.indexOf(
-      self.settings_tab), QCoreApplication.translate("Dashboard", u"Settings", None))
+      self.settings_tab), QCoreApplication.translate("Home", u"Settings", None))
   # retranslateUi
 
   # def onShow(self, event):
