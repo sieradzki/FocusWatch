@@ -1,6 +1,7 @@
 """ Timeline component for the FocusWatch Ui. """
 from collections import defaultdict
 from datetime import datetime, timedelta
+from typing import Optional
 
 from PySide6.QtCore import QRect, QSize, Qt, QTimer
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout,
@@ -10,12 +11,13 @@ from focuswatch.ui.utils import get_category_color, get_contrasting_text_color
 
 
 class TimelineComponent(QFrame):
-  def __init__(self, parent, activity_manager, category_manager, selected_date):
+  def __init__(self, parent, activity_manager, category_manager, period_start: datetime, perdiod_end: Optional[datetime] = None):
     super().__init__(parent)
     self._parent = parent
     self._activity_manager = activity_manager
     self._category_manager = category_manager
-    self.selected_date = selected_date
+    self.period_start = period_start
+    self.period_end = perdiod_end
 
   def setupUi(self):
     self.timeline_frame = QFrame(self._parent)
@@ -65,9 +67,9 @@ class TimelineComponent(QFrame):
     self.timeline_scrollArea.verticalScrollBar().setValue(y_position)
 
   def setup_timeline(self):
-    """ Setup the timeline component for the selected date. """
-    period_entries = self._activity_manager.get_date_entries(
-      self.selected_date)
+    """ Setup the timeline component for the selected period. """
+    period_entries = self._activity_manager.get_period_entries(
+      self.period_start, self.period_end)
     hour_chunk_entries = defaultdict(list)
     hour_entries = defaultdict(list)
 

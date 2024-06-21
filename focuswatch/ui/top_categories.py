@@ -1,4 +1,7 @@
 """ Top categories component for the FocusWatch Ui. """
+from datetime import datetime
+from typing import Optional
+
 from PySide6 import QtCharts
 from PySide6.QtCharts import QChart
 from PySide6.QtCore import QCoreApplication, QRect, Qt
@@ -11,12 +14,13 @@ from focuswatch.ui.utils import get_category_color, get_contrasting_text_color
 
 
 class TopCategoriesComponent(QFrame):
-  def __init__(self, parent, activity_manager, category_manager, selected_date):
+  def __init__(self, parent, activity_manager, category_manager, period_start: datetime, period_end: Optional[datetime] = None):
     super().__init__(parent)
     self._parent = parent
     self._activity_manager = activity_manager
     self._category_manager = category_manager
-    self.selected_date = selected_date
+    self.period_start = period_start
+    self.period_end = period_end
 
   def setupUi(self):
     self.top_categories_frame = QFrame(self._parent)
@@ -75,8 +79,8 @@ class TopCategoriesComponent(QFrame):
 
   def setup_top_categories(self):
     """ Setup the top categories component for the selected date. """
-    categories_by_total_time = self._category_manager.get_date_category_time_totals(
-      self.selected_date)
+    categories_by_total_time = self._category_manager.get_period_category_time_totals(
+        self.period_start, self.period_end)
 
     breakdown_verticalLayout = QVBoxLayout()
     breakdown_verticalLayout.setSizeConstraint(

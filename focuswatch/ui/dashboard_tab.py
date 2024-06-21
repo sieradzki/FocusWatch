@@ -19,7 +19,8 @@ class DashboardTab(QWidget):
     self._keyword_manager = keyword_manager
     self._parent = parent
 
-    self.selected_date: datetime = datetime.now()
+    self.period_start: datetime = datetime.now()
+    self.period_end: datetime = None
     # self.setupUi()
 
   def setupUi(self):
@@ -139,31 +140,31 @@ class DashboardTab(QWidget):
     """ Setup the components """
     # Timeline setup
     self._timeline = TimelineComponent(
-        self.dashboard_tab, self._activity_manager, self._category_manager, self.selected_date)
+        self.dashboard_tab, self._activity_manager, self._category_manager, self.period_start)
     self._timeline_frame = self._timeline.setupUi()
 
     self.gridLayout.addWidget(self._timeline_frame, 2, 0, 1, 1)
 
     # Top categories setup
     self._top_categories = TopCategoriesComponent(
-        self.dashboard_tab, self._activity_manager, self._category_manager, self.selected_date)
+        self.dashboard_tab, self._activity_manager, self._category_manager, self.period_start)
     self._top_categories_frame = self._top_categories.setupUi()
 
     self.gridLayout.addWidget(self._top_categories_frame, 2, 2, 1, 1)
 
     # Top applications setup
     self._top_applications = TopApplicationsComponent(
-        self.dashboard_tab, self._activity_manager, self._category_manager, self.selected_date)
+        self.dashboard_tab, self._activity_manager, self._category_manager, self.period_start)
     self._top_applications_frame = self._top_applications.setupUi()
 
     self.gridLayout.addWidget(self._top_applications_frame, 2, 4, 1, 1)
 
   def update_date(self):
     """ Update the date displayed on the button. """
-    if str(self.selected_date.strftime("%Y-%m-%d")) == str(datetime.today().strftime("%Y-%m-%d")):
+    if str(self.period_start.strftime("%Y-%m-%d")) == str(datetime.today().strftime("%Y-%m-%d")):
       self.date_button.setText("Today")
     else:
-      self.date_button.setText(str(self.selected_date.strftime("%Y-%m-%d")))
+      self.date_button.setText(str(self.period_start.strftime("%Y-%m-%d")))
 
   def clearLayout(self, layout):
     """ Clear the layout """
@@ -199,7 +200,7 @@ class DashboardTab(QWidget):
 
     # Previous day
     if sender_name == 'date_prev_button':
-      self.selected_date = self.selected_date - timedelta(days=1)
+      self.period_start = self.period_start - timedelta(days=1)
 
     # Select date
     elif sender_name == 'date_button':
@@ -217,7 +218,7 @@ class DashboardTab(QWidget):
       def get_selected_date():
         calendar_date = calendar.selectedDate().toPython()
         formatted_date = calendar_date.strftime("%Y-%m-%d")
-        self.selected_date = datetime.strptime(formatted_date, "%Y-%m-%d")
+        self.period_start = datetime.strptime(formatted_date, "%Y-%m-%d")
         calendar_dialog.accept()
 
       confirm_button.clicked.connect(get_selected_date)
@@ -226,8 +227,8 @@ class DashboardTab(QWidget):
 
     # Next day
     elif sender_name == 'date_next_button':
-      self.selected_date = self.selected_date + timedelta(days=1)
-      self.date_button.setText(str(self.selected_date))
+      self.period_start = self.period_start + timedelta(days=1)
+      self.date_button.setText(str(self.period_start))
 
     # Refresh the dashboard
     self.onShow(self.showEvent)
