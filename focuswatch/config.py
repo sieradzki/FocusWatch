@@ -69,7 +69,7 @@ class Config:
         self.config.read(self.config_file_path)
         if "Logging" not in self.config or not os.path.exists(self.config["Logging"].get("location", "")):
           logger.info(
-            f"Logging file not found. Creating default configuration")
+            "Logging file not found. Creating default configuration")
           self.initialize_config()
     except (IOError, configparser.Error) as e:
       logger.error(f"Error loading configuration file: {e}")

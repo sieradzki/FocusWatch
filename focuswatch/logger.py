@@ -1,3 +1,5 @@
+""" Logger module for FocusWatch.
+https://github.com/mCodingLLC/VideosSampleCode/blob/master/videos/135_modern_logging/mylogger.py """
 import datetime as dt
 import json
 import logging
@@ -31,6 +33,8 @@ LOG_RECORD_BUILTIN_ATTRS = {
 
 
 class MyJSONFormatter(logging.Formatter):
+  """ Custom JSON formatter for logging. """
+
   def __init__(self, *, fmt_keys: dict[str, str] | None = None,):
     super().__init__()
     self.fmt_keys = fmt_keys if fmt_keys is not None else {}

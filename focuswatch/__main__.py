@@ -30,7 +30,7 @@ def setup_logging():
   # Get logging file path from config
   config = Config()
   config_file = config.get_value("Logging", "logger_config")
-  with open(config_file) as f_in:
+  with open(config_file, encoding="utf-8") as f_in:
     config = json.load(f_in)
 
   logging.config.dictConfig(config)
