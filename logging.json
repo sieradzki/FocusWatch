@@ -10,9 +10,9 @@
       "()": "focuswatch.logger.MyJSONFormatter",
       "fmt_keys": {
         "level": "levelname",
+        "logger": "name",
         "message": "message",
         "timestamp": "timestamp",
-        "logger": "name",
         "module": "module",
         "function": "funcName",
         "line": "lineno",

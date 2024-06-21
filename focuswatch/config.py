@@ -22,21 +22,24 @@ class Config:
 
   def initialize_config(self):
     """ Initialize the configuration file with default values """
-    self.config["General"] = {
-      "watch_interval": 1.0,
-      "verbose": 0,
-      "watch_afk": True,
-      "afk_timeout": 10
-    }
-    self.config["Database"] = {
-      "location": os.path.join(self.project_root, "focuswatch.sqlite"),
-    }
+    if "General" not in self.config:
+      self.config["General"] = {
+        "watch_interval": 1.0,
+        "verbose": 0,
+        "watch_afk": True,
+        "afk_timeout": 10
+      }
+    if "Database" not in self.config:
+      self.config["Database"] = {
+        "location": os.path.join(self.project_root, "focuswatch.sqlite"),
+      }
 
-    self.config["Logging"] = {
-      "location": os.path.join(self.project_root, "logs", "focuswatch.log"),
-      "logger_config": os.path.join(self.project_root, "logging.json"),
-      "log_level": "DEBUG",
-    }
+    if "Logging" not in self.config:
+      self.config["Logging"] = {
+        "location": os.path.join(self.project_root, "logs", "focuswatch.log.jsonl"),
+        "logger_config": os.path.join(self.project_root, "logging.json"),
+        "log_level": "DEBUG",
+      }
 
     self.write_config_to_file()
 
@@ -57,12 +60,20 @@ class Config:
 
   def load_config(self):
     """ Load config from the configuration file """
-    if not os.path.exists(self.config_file_path):
-      logging.info(f"Configuration file {
-                   self.config_file_path} not found. Creating default configuration")
-      self.initialize_config()
-    else:
-      self.config.read(self.config_file_path)
+    try:
+      if not os.path.exists(self.config_file_path):
+        logger.info(f"Configuration file {
+            self.config_file_path} not found. Creating default configuration")
+        self.initialize_config()
+      else:
+        self.config.read(self.config_file_path)
+        if "Logging" not in self.config or not os.path.exists(self.config["Logging"].get("location", "")):
+          logger.info(
+            f"Logging file not found. Creating default configuration")
+          self.initialize_config()
+    except (IOError, configparser.Error) as e:
+      logger.error(f"Error loading configuration file: {e}")
+      raise
 
   def set_value(self, section, option, value):
     """ Update the configuration with a new value """
