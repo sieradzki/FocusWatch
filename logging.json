@@ -21,6 +21,12 @@
     }
   },
   "handlers": {
+    "stdout": {
+      "class": "logging.StreamHandler",
+      "formatter": "simple",
+      "stream": "ext://sys.stdout",
+      "level": "DEBUG"
+    },
     "stderr": {
       "class": "logging.StreamHandler",
       "level": "WARNING",
@@ -38,6 +44,7 @@
     "queue_handler": {
       "class": "logging.handlers.QueueHandler",
       "handlers": [
+        "stdout",
         "stderr",
         "file_json"
       ],
