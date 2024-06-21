@@ -23,28 +23,27 @@ class TestConfig(unittest.TestCase):
     cls.temp_dir.cleanup()
 
   def test_initialize_config_file_created(self):
-    with mock.patch("builtins.print") as mock_print:
+    with mock.patch("logging.Logger.info") as mock_info:
       config = Config(self.config_path)
       config.initialize_config()
 
       self.assertTrue(os.path.exists(self.config_path))
-      mock_print.assert_called_with(
-          "Configuration file written successfully.")
+      mock_info.assert_any_call("Configuration file written successfully.")
 
   def test_write_config_to_file_filenotfounderror(self):
     with mock.patch("builtins.open", side_effect=FileNotFoundError("Mocked FileNotFoundError")), \
-            mock.patch("builtins.print") as mock_print:
+      mock.patch("logging.Logger.error") as mock_error:
       config = Config(self.config_path)
       config.write_config_to_file()
-      mock_print.assert_called_with(
+      mock_error.assert_called_with(
         "The configuration file was not found. Mocked FileNotFoundError.")
 
   def test_write_config_to_file_ioerror(self):
     with mock.patch("builtins.open", side_effect=IOError("Mocked IOError")), \
-            mock.patch("builtins.print") as mock_print:
+      mock.patch("logging.Logger.error") as mock_error:
       config = Config(self.config_path)
       config.write_config_to_file()
-      mock_print.assert_called_with(
+      mock_error.assert_called_with(
         "An error occurred while writing the configuration file. Mocked IOError.")
 
   def test_initialize_config_file_content(self):

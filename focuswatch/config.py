@@ -49,6 +49,7 @@ class Config:
       os.makedirs(os.path.dirname(self.config_file_path), exist_ok=True)
       os.makedirs(os.path.dirname(
         self.config["Logging"]["location"]), exist_ok=True)
+
       with open(self.config_file_path, "w", encoding="utf-8") as config_file:
         self.config.write(config_file)
       logger.info("Configuration file written successfully.")
