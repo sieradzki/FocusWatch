@@ -90,5 +90,5 @@ class Config:
 if __name__ == "__main__":
   config = Config()
   print(config.get_config())
-  config.update_value("General", "verbose", "1")
+  config.set_value("General", "verbose", "1")
   print(config.get_config())

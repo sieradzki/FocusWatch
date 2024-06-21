@@ -125,12 +125,12 @@ class TraySettings(QWidget):
     afk_timeout = self.afk_timeout.value()
 
     # TODO logging
-    self.config.update_value(
+    self.config.set_value(
       section='General', option='watch_interval', value=watch_interval)
-    self.config.update_value(
+    self.config.set_value(
       section='General', option='watch_afk', value=watch_afk
     )
-    self.config.update_value(
+    self.config.set_value(
       section='General', option='afk_timeout', value=afk_timeout
     )
     self.close()
