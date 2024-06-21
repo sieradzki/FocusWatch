@@ -18,6 +18,8 @@ from focuswatch.config import Config
 from focuswatch.database.activity_manager import ActivityManager
 from focuswatch.database.category_manager import CategoryManager
 
+logger = logging.getLogger(__name__)
+
 user32 = None
 kernel32 = None
 if platform in ["Windows", "win32", "cygwin"]:
@@ -101,7 +103,7 @@ class Watcher():
       user32.GetWindowTextW(active_window_handle, window_title, MAX_PATH)
       return window_title.value
     else:
-      logging.error("This platform is not supported")
+      logger.error("This platform is not supported")
       raise NotImplementedError("This platform is not supported")
 
   def get_active_window_class(self) -> str:
@@ -137,7 +139,7 @@ class Watcher():
         app_name = "Unknown (Process not found)"
       return app_name
     else:
-      logging.error("This platform is not supported")
+      logger.error("This platform is not supported")
       raise NotImplementedError("This platform is not supported")
 
   def save_entry(self) -> None:
@@ -168,7 +170,7 @@ class Watcher():
       afk_output = subprocess.check_output(["xprintidle"]).decode().strip()
       return int(afk_output) / 1000  # in seconds
     except subprocess.CalledProcessError as e:
-      logging.error(
+      logger.error(
         f"Error getting idle time: {e}")
       return 0
 
@@ -188,7 +190,7 @@ class Watcher():
       idle_time = kernel32.GetTickCount() - last_input_info.value
       return idle_time / 1000
     except (ctypes.ArgumentError, OSError) as e:
-      logging.error(f"Error getting idle time: {e}")
+      logger.error(f"Error getting idle time: {e}")
       return 0
 
   def _check_afk_status(self) -> None:
@@ -205,7 +207,7 @@ class Watcher():
     elif platform in ["Windows", "win32", "cygwin"]:
       afk_time = self._get_windows_idle_time()
     else:
-      logging.error("This platform is not supported")
+      logger.error("This platform is not supported")
       raise NotImplementedError("This platform is not supported")
 
     if afk_time > self._afk_timeout * 60:

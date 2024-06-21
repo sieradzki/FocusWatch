@@ -6,9 +6,13 @@ This module is responsible for managing the activities in the database.
 import time
 from datetime import datetime
 from typing import List, Optional, Tuple
+import logging
 
 from focuswatch.database.database_connection import DatabaseConnection
 from focuswatch.database.database_manager import DatabaseManager
+
+
+logger = logging.getLogger(__name__)
 
 
 class ActivityManager:

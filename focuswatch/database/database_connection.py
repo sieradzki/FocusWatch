@@ -7,6 +7,8 @@ import sqlite3
 from focuswatch.config import Config
 import logging
 
+logger = logging.getLogger(__name__)
+
 
 class DatabaseConnection:
   """ Class for managing the connection to the database. """
@@ -39,7 +41,7 @@ class DatabaseConnection:
       self.conn = sqlite3.connect(
         dburi, uri=True, check_same_thread=False, timeout=1)
     except sqlite3.OperationalError as e:
-      logging.error(f"Error connecting to database: {e}")
+      logger.error(f"Error connecting to database: {e}")
       raise ConnectionError(f"Failed to connect to the database: {e}")
 
   def connect_or_create(self):
@@ -47,7 +49,7 @@ class DatabaseConnection:
     try:
       self.connect()
     except ConnectionError:
-      logging.info("Database does not exist, creating new database.")
+      logger.info("Database does not exist, creating new database.")
       self.conn = sqlite3.connect(
         self.db_name, check_same_thread=False, timeout=1)
 
@@ -68,7 +70,7 @@ class DatabaseConnection:
       cur.execute(query, params)
       result = cur.fetchall()
     except sqlite3.DatabaseError as e:
-      logging.error(f"Error executing query: {e}")
+      logger.error(f"Error executing query: {e}")
       result = []
     finally:
       cur.close()
@@ -92,7 +94,7 @@ class DatabaseConnection:
       self.conn.commit()
       return self.conn.total_changes > 0
     except sqlite3.OperationalError as e:
-      logging.error(f"Error executing update: {e}")
+      logger.error(f"Error executing update: {e}")
       self.conn.rollback()
       return False
     finally:

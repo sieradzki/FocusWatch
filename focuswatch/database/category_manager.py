@@ -6,10 +6,13 @@ This module is responsible for managing the categories in the database.
 from datetime import datetime
 import sqlite3
 from typing import List, Optional, Tuple, Union
+import logging
 
 from focuswatch.config import Config
 from focuswatch.database.database_connection import DatabaseConnection
 from focuswatch.database.keyword_manager import KeywordManager
+
+logger = logging.getLogger(__name__)
 
 
 class CategoryManager:
