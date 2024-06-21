@@ -52,12 +52,12 @@ class Watcher():
     # Load configuration
     self._config = Config()
     self._watch_interval = float(
-      self._config.get_config("General", "watch_interval")) if not watch_interval else watch_interval
-    self._verbose = int(self._config.get_config(
+      self._config.get_value("General", "watch_interval")) if not watch_interval else watch_interval
+    self._verbose = int(self._config.get_value(
       "General", "verbose")) if not verbose else verbose
-    self._watch_afk = bool(self._config.get_config("General", "watch_afk"))
+    self._watch_afk = bool(self._config.get_value("General", "watch_afk"))
     self._afk_timeout = float(
-      self._config.get_config("General", "afk_timeout"))
+      self._config.get_value("General", "afk_timeout"))
 
     # Initialize database managers
     self._category_manager = CategoryManager()

@@ -50,7 +50,7 @@ class TestConfig(unittest.TestCase):
   def test_initialize_config_file_content(self):
     config = Config(self.config_path)
     config.initialize_config()
-    config_contents = config.get_all_config()
+    config_contents = config.get_config()
 
     self.assertIn("General", config_contents)
     self.assertIn("Database", config_contents)
