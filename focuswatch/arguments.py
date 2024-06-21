@@ -10,7 +10,7 @@ from focuswatch.database.keyword_manager import KeywordManager
 def display_config():
   """ Display the current configuration """
   config = Config()
-  config_contents = config.get_all_config()
+  config_contents = config.get_config()
   for section in config_contents:
     print(f"[{section}]")
     for option, value in config_contents[section].items():
@@ -133,22 +133,22 @@ def parse_arguments():
   # Config
   if args.config_wi:
     config = Config()
-    config.update_config("General", "watch_interval", args.config_wi)
+    config.set_value("General", "watch_interval", args.config_wi)
     sys.exit()
 
   if args.config_verbose:
     config = Config()
-    config.update_config("General", "verbose", True)
+    config.set_value("General", "verbose", True)
     sys.exit()
 
   if args.config_no_verbose:
     config = Config()
-    config.update_config("General", "verbose", False)
+    config.set_value("General", "verbose", False)
     sys.exit()
 
   if args.config_db:
     config = Config()
-    config.update_config("Database", "location", args.config_db)
+    config.set_value("Database", "location", args.config_db)
     sys.exit()
 
   return args

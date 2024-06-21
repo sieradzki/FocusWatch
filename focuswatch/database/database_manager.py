@@ -10,6 +10,8 @@ from focuswatch.database.category_manager import CategoryManager
 from focuswatch.database.database_connection import DatabaseConnection
 from focuswatch.database.keyword_manager import KeywordManager
 
+logger = logging.getLogger(__name__)
+
 
 class DatabaseManager:
   """ Class for managing the database for FocusWatch. """
@@ -21,12 +23,15 @@ class DatabaseManager:
     self._db_conn.connect_or_create()
 
     if not self.database_exists():
+      logger.info("Database does not exist. Creating database.")
       self._create_db()
 
       self._category_manager = CategoryManager()
       self._keyword_manager = KeywordManager()
 
+      logger.info("Inserting default categories.")
       self._category_manager.insert_default_categories()
+      logger.info("Inserting default keywords.")
       self._keyword_manager.insert_default_keywords()
 
   def database_exists(self) -> bool:
@@ -37,11 +42,11 @@ class DatabaseManager:
     """
     query = "SELECT name FROM sqlite_master WHERE type='table' AND name='activity_log';"
     result = self._db_conn.execute_query(query)
-    if result:
-      logging.info("Database and tables exist.")
-      return True
-    else:
-      logging.info("Database and tables do not exist.")
+    try:
+      result = self._db_conn.execute_query(query)
+      return bool(result)
+    except sqlite3.Error as e:
+      logger.error(f"Error checking database existence: {e}")
       return False
 
   def _create_db(self):
@@ -97,6 +102,6 @@ class DatabaseManager:
     try:
       for query in create_table_queries:
         self._db_conn.execute_update(query)
-      logging.info("Database created successfully")
+      logger.info("Database created successfully")
     except sqlite3.DatabaseError as e:
-      logging.error(f"Error creating database: {e}")
+      logger.error(f"Error creating database: {e}")

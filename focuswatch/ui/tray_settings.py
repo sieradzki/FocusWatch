@@ -48,7 +48,7 @@ class TraySettings(QWidget):
     self.watch_interval.setObjectName(u"watch_interval")
 
     self.watch_interval.setValue(
-      float(self.config.get_config('General', 'watch_interval')))
+      float(self.config.get_value('General', 'watch_interval')))
     self.watch_interval.setDecimals(1.0)
     self.watch_interval.setMinimum(1.000000000000000)
     self.watch_interval.setMaximum(60.000000000000000)
@@ -57,7 +57,7 @@ class TraySettings(QWidget):
     self.watcher_tab_layout.addWidget(self.watch_interval)
 
     self.watch_afk = QCheckBox(self.tab_watcher)
-    self.watch_afk.setChecked(True if (self.config.get_config(
+    self.watch_afk.setChecked(True if (self.config.get_value(
       'General', 'watch_afk') == 'True') else False)
     self.watch_afk.setObjectName(u"watch_afk")
 
@@ -72,7 +72,7 @@ class TraySettings(QWidget):
     self.afk_timeout = QSpinBox(self.tab_watcher)
     self.afk_timeout.setObjectName(u"afk_timeout")
     self.afk_timeout.setValue(
-      float(self.config.get_config('General', 'afk_timeout'))
+      float(self.config.get_value('General', 'afk_timeout'))
     )
     self.afk_timeout.setMinimum(1)
     self.afk_timeout.setEnabled(self.watch_afk.isChecked())
@@ -125,12 +125,12 @@ class TraySettings(QWidget):
     afk_timeout = self.afk_timeout.value()
 
     # TODO logging
-    self.config.update_config(
+    self.config.set_value(
       section='General', option='watch_interval', value=watch_interval)
-    self.config.update_config(
+    self.config.set_value(
       section='General', option='watch_afk', value=watch_afk
     )
-    self.config.update_config(
+    self.config.set_value(
       section='General', option='afk_timeout', value=afk_timeout
     )
     self.close()

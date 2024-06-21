@@ -4,8 +4,11 @@ This module is responsible for managing the keywords in the database.
 """
 
 from typing import List, Optional
+import logging
 
 from focuswatch.database.database_connection import DatabaseConnection
+
+logger = logging.getLogger(__name__)
 
 
 class KeywordManager:
