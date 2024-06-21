@@ -22,7 +22,6 @@ class CategoryManager:
     """ Initialize the category manager. """
     self._db_conn = DatabaseConnection()
     self._db_conn.connect()
-    self._keyword_manager = KeywordManager()
 
   def insert_default_categories(self) -> None:
     """ Insert default categories into the database. """
@@ -41,8 +40,6 @@ class CategoryManager:
 
     for name, parent_id, color in categories:
       self.create_category(name, parent_id, color)
-
-    self._keyword_manager.insert_default_keywords()
 
   def create_category(self, category_name: str, parent_id: Optional[int] = None, color: Optional[str] = None) -> bool:
     """ Create a category. 
