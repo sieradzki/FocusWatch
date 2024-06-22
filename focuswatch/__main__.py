@@ -22,7 +22,6 @@ logger = logging.getLogger(__name__)
 
 
 def start_watcher(watcher):
-  # print("Monitoring...")
   watcher.monitor()
 
 
@@ -43,8 +42,6 @@ def setup_logging():
 def main():
   # Setup logging
   setup_logging()
-
-  logger.info("Starting FocusWatch...")
 
   # Parse the arguments
   args = parse_arguments()
