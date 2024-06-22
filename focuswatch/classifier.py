@@ -33,12 +33,18 @@ class Classifier():
 
     keyword_depths = {}
 
+    entry_lower = entry.lower()
+
     for keyword in keywords:
-      _, name, category_id = keyword
-      # TODO tolower check
-      if name in entry:
-        keyword_depths[category_id] = self._category_manager.get_category_depth(
-          category_id)
+      _, name, match_case, category_id = keyword
+      if match_case:
+        if name in entry:
+          keyword_depths[category_id] = self._category_manager.get_category_depth(
+            category_id)
+      else:
+        if name.lower() in entry_lower:
+          keyword_depths[category_id] = self._category_manager.get_category_depth(
+            category_id)
 
     if keyword_depths:
       max_depth = max(keyword_depths, key=keyword_depths.get)
