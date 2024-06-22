@@ -160,6 +160,38 @@ class CategoryManager:
     params = (formatted_date,)
     return self._db_conn.execute_query(query, params)
 
+  def get_period_category_time_totals(self, start_date: datetime, end_date: Optional[datetime] = None) -> List[Tuple[int, int]]:
+    """ Return the total time spent on each category for a given period.
+
+    Args:
+        start_date: The start date of the period.
+        end_date: The end date of the period. If None, only start_date is considered.
+    """
+    formatted_start_date = start_date.strftime("%Y-%m-%d")
+    if end_date:
+      formatted_end_date = end_date.strftime("%Y-%m-%d")
+      query = """
+        SELECT category_id,
+        SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
+        FROM activity_log
+        WHERE strftime('%Y-%m-%d', time_start) BETWEEN ? AND ?
+        GROUP BY category_id
+        ORDER BY total_time_seconds DESC;
+      """
+      params = (formatted_start_date, formatted_end_date)
+    else:
+      query = """
+        SELECT category_id,
+        SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
+        FROM activity_log
+        WHERE strftime('%Y-%m-%d', time_start) = ?
+        GROUP BY category_id
+        ORDER BY total_time_seconds DESC;
+      """
+      params = (formatted_start_date,)
+
+    return self._db_conn.execute_query(query, params)
+
   def get_category_depth(self, category_id: int) -> int:
     """ Return the depth of a category. 
 

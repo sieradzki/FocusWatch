@@ -1,4 +1,7 @@
 """ Top applications component for the FocusWatch Ui. """
+from datetime import datetime
+from typing import Optional
+
 from PySide6 import QtCharts
 from PySide6.QtCharts import QChart
 from PySide6.QtCore import QCoreApplication, QRect, QSize, Qt
@@ -11,12 +14,13 @@ from focuswatch.ui.utils import get_category_color, get_contrasting_text_color
 
 
 class TopApplicationsComponent(QFrame):
-  def __init__(self, parent, activity_manager, category_manager, selected_date):
+  def __init__(self, parent, activity_manager, category_manager, period_start: datetime, period_end: Optional[datetime] = None):
     super().__init__(parent)
     self._parent = parent
     self._activity_manager = activity_manager
     self._category_manager = category_manager
-    self.selected_date = selected_date
+    self.period_start = period_start
+    self.period_end = period_end
 
   def setupUi(self):
     font = QFont()
@@ -77,8 +81,8 @@ class TopApplicationsComponent(QFrame):
 
   def top_application_setup(self):
     """ Setup the top application component for the selected date. """
-    window_class_by_total_time = self._activity_manager.get_date_entries_class_time_total(
-      self.selected_date)
+    window_class_by_total_time = self._activity_manager.get_period_entries_class_time_total(
+        self.period_start, self.period_end)
 
     breakdown_verticalLayout = QVBoxLayout()
     breakdown_verticalLayout.setSizeConstraint(
@@ -121,8 +125,8 @@ class TopApplicationsComponent(QFrame):
         continue
       if time < 10:
         continue
-      category_id = self._activity_manager.get_longest_duration_category_id_for_window_class_on_date(
-        self.selected_date, window_class)
+      category_id = self._activity_manager.get_longest_duration_category_id_for_window_class_in_period(
+          self.period_start, window_class, self.period_end)
       category = self._category_manager.get_category_by_id(category_id)
       id, name, parent_category_id, color = category
       color = get_category_color(id)

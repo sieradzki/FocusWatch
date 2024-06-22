@@ -32,7 +32,7 @@ class ActivityManager:
       category_id: Optional[int],
       project_id: Optional[int]
     ) -> bool:
-    """ Insert an activity into the database. 
+    """ Insert an activity into the database.
 
     Args:
       window_class: The class of the window.
@@ -66,7 +66,7 @@ class ActivityManager:
     return result
 
   def get_date_entries(self, date: datetime) -> List[Tuple]:
-    """ Return all entries for a given date. 
+    """ Return all entries for a given date.
 
     Args:
       date: The date to retrieve entries for.
@@ -74,6 +74,23 @@ class ActivityManager:
     formatted_date = date.strftime("%Y-%m-%d")
     query = "SELECT * FROM activity_log WHERE time_start LIKE ?"
     params = (f'{formatted_date}%',)
+    result = self._db_conn.execute_query(query, params)
+    return result
+
+  def get_period_entries(self, period_start: datetime, period_end: Optional[datetime] = None) -> List[Tuple]:
+    """ Return all entries for a given period.
+
+    Args:
+      period_start: The start date of the period.
+      period_end: The end date of the period. If None, only date_start is considered.
+    """
+    if period_end:
+      query = "SELECT * FROM activity_log WHERE time_start BETWEEN ? AND ?"
+      params = (period_start.isoformat(), period_end.isoformat())
+    else:
+      query = "SELECT * FROM activity_log WHERE date(time_start) = date(?)"
+      params = (period_start.isoformat(),)
+
     result = self._db_conn.execute_query(query, params)
     return result
 
@@ -102,6 +119,36 @@ class ActivityManager:
     result = self._db_conn.execute_query(query, params)
     return result
 
+  def get_period_entries_class_time_total(self, period_start: datetime, period_end: Optional[datetime] = None) -> List[Tuple]:
+    """ Return the total time spent on each window class for a given period.
+
+    Args:
+        period_start: The start date of the period.
+        period_end: The end date of the period. If None, only period_start is considered.
+    """
+    if period_end:
+      query = """
+        SELECT window_class, category_id,
+        SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
+        FROM activity_log
+        WHERE time_start BETWEEN ? AND ?
+        GROUP BY window_class
+        ORDER BY total_time_seconds DESC
+      """
+      params = (period_start.isoformat(), period_end.isoformat())
+    else:
+      query = """
+        SELECT window_class, category_id,
+        SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
+        FROM activity_log
+        WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
+        GROUP BY window_class
+        ORDER BY total_time_seconds DESC
+      """
+      params = (period_start.strftime("%Y-%m-%d"),)
+
+    return self._db_conn.execute_query(query, params)
+
   def get_longest_duration_category_id_for_window_class_on_date(
       self, date: datetime, window_class: str
     ) -> Optional[int]:
@@ -124,16 +171,38 @@ class ActivityManager:
     result = self._db_conn.execute_query(query, params)
     return result[0][0] if result else None
 
-  def get_period_entries(
-      self, period_start_date: datetime, period_end_date: datetime
-    ) -> List[Tuple]:
-    """ Return all entries for a given period.
+  def get_longest_duration_category_id_for_window_class_in_period(
+          self, period_start: datetime, window_class: str, period_end: Optional[datetime] = None) -> Optional[int]:
+    """ Return the category with the longest duration for a given window class in a given period.
 
     Args:
-      period_start_date: The start date of the period.
-      period_end_date: The end date of the period.
+        period_start: The start date of the period.
+        window_class: The window class to retrieve entries for.
+        period_end: The end date of the period. If None, only period_start is considered.
     """
-    query = "SELECT * FROM activity_log WHERE time_start BETWEEN ? AND ?"
-    params = (period_start_date.isoformat(), period_end_date.isoformat())
+    if period_end:
+      query = """
+        SELECT category_id
+        FROM activity_log
+        WHERE time_start BETWEEN ? AND ?
+            AND window_class = ?
+        GROUP BY category_id
+        ORDER BY SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) DESC
+        LIMIT 1
+      """
+      params = (period_start.isoformat(),
+                period_end.isoformat(), window_class)
+    else:
+      query = """
+        SELECT category_id
+        FROM activity_log
+        WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
+            AND window_class = ?
+        GROUP BY category_id
+        ORDER BY SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) DESC
+        LIMIT 1
+      """
+      params = (period_start.strftime("%Y-%m-%d"), window_class)
+
     result = self._db_conn.execute_query(query, params)
-    return result
+    return result[0][0] if result else None
