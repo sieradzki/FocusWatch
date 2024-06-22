@@ -75,6 +75,7 @@ class DatabaseManager:
       CREATE TABLE "keywords" (
           "id" INTEGER NOT NULL UNIQUE,
           "name" TEXT NOT NULL,
+          "match_case" INTEGER NOT NULL DEFAULT 0,
           "category_id" INTEGER,
           FOREIGN KEY("category_id") REFERENCES "categories"("id")
           ON DELETE CASCADE ON UPDATE CASCADE,

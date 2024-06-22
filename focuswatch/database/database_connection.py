@@ -94,7 +94,8 @@ class DatabaseConnection:
       self.conn.commit()
       return self.conn.total_changes > 0
     except sqlite3.OperationalError as e:
-      logger.error(f"Error executing update: {e}")
+      logger.error(f"Error executing update {
+                   query} with params: {params}: {e}")
       self.conn.rollback()
       return False
     finally:

@@ -36,18 +36,19 @@ class KeywordManager:
     for keyword, category_id in keywords:
       self.add_keyword(keyword, category_id)
 
-  def add_keyword(self, keyword_name: str, category_id: int) -> bool:
+  def add_keyword(self, keyword_name: str, category_id: int, match_case: Optional[bool] = False) -> bool:
     """ Add a keyword to a category. 
 
     Args:
       keyword_name: The name of the keyword.
       category_id: The id of the category.
+      match_case: Whether the keyword should be case-sensitive.
 
     Returns:
       True if the keyword was added successfully, False otherwise.
     """
-    query = 'INSERT INTO keywords (category_id, name) VALUES (?, ?)'
-    params = (category_id, keyword_name)
+    query = 'INSERT INTO keywords (category_id, name, match_case) VALUES (?, ?, ?)'
+    params = (category_id, keyword_name, match_case)
     return self._db_conn.execute_update(query, params)
 
   def delete_keyword(self, keyword_id: int) -> bool:
