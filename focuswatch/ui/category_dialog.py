@@ -40,10 +40,9 @@ class CategoryDialog(QDialog):
       self.selectColor_pushButton.setStyleSheet(
         f"background-color: {self.color};")
 
-  def delete_keyword(self):
-    sender_name = self.sender().objectName()
-    keyword_id = sender_name.split(sep='_')[-1]
-    self.sender().deleteLater()
+  def delete_keyword(self, sender):
+    keyword_id = sender.objectName().split(sep='_')[-1]
+    sender.deleteLater()
 
     for i, keyword in enumerate(self._keywords):
       if keyword[0] == int(keyword_id):
@@ -59,13 +58,21 @@ class CategoryDialog(QDialog):
   def add_keyword_to_grid(self, keyword):
     keywordButton = QPushButton(self.frame_2)
     keywordButton.setObjectName(f"keywordButton_{keyword[0]}")
-    keywordButton.clicked.connect(self.delete_keyword)
     keywordButton.setText(keyword[1])
+    keywordButton.mouseReleaseEvent = lambda event: self.keyword_mouse_release_event(
+      event, keywordButton)
     self.keywords_gridLayout.addWidget(keywordButton, self.j, self.i, 1, 1)
     self.i += 1
     if self.i == 4:
       self.i = 0
       self.j += 1
+
+  def keyword_mouse_release_event(self, event, button):
+    if event.button() == Qt.RightButton:
+      self.delete_keyword(button)
+    else:
+      # Call the original mouseReleaseEvent for other mouse buttons
+      QPushButton.mouseReleaseEvent(button, event)
 
   def setup_keyword_grid(self):
     self.i = 0
@@ -359,7 +366,7 @@ class CategoryDialog(QDialog):
     self.addKeyword_pushButton.setText(
       QCoreApplication.translate("Dialog", u"+", None))
     self.noteLabel.setText(QCoreApplication.translate(
-      "Dialog", u"Note: Click on keyword to remove it", None))
+      "Dialog", u"Note: Click on keyword to edit, right-click on keyword to remove it", None))
     if self._category is not None and self._category[1] != 'Uncategorized' and self._category[1] != 'AFK':
       self.deleteButton.setText(QCoreApplication.translate(
         "Dialog", u"Delete category", None))
