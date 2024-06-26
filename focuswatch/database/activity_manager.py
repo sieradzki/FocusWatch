@@ -51,6 +51,21 @@ class ActivityManager:
     result = self._db_conn.execute_update(query, params)
     return result
 
+  def update_category(self, activity_id: int, category_id: int) -> bool:
+    """ Update the category id of an activity.
+
+    Args:
+      activity_id: The id of the activity to update.
+      category_id: The new category id.
+
+    Returns:
+      True if the category id was updated successfully, False otherwise.
+    """
+    query = 'UPDATE activity_log SET category_id = ? WHERE id = ?'
+    params = (category_id, activity_id)
+    result = self._db_conn.execute_update(query, params)
+    return result
+
   def get_all_activities(self) -> List[Tuple]:
     """ Return all activity entries in the database. """
     query = "SELECT * FROM activity_log"

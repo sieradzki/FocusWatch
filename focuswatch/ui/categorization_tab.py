@@ -5,10 +5,12 @@ from PySide6.QtCore import QCoreApplication, QRect, QSize, Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout,
                                QPushButton, QScrollArea, QSizePolicy,
-                               QSpacerItem, QVBoxLayout, QWidget)
+                               QSpacerItem, QVBoxLayout, QWidget, QMessageBox, QProgressDialog)
 
 from focuswatch.ui.category_dialog import CategoryDialog
 from focuswatch.ui.utils import get_category_color, get_contrasting_text_color
+from focuswatch.classifier import Classifier
+from focuswatch.database.activity_manager import ActivityManager
 
 
 class CategorizationTab(QWidget):
@@ -92,12 +94,16 @@ class CategorizationTab(QWidget):
     self.categorization_button_horizontalLayout.addItem(
       self.horizontalSpacer_4)
 
-    self.pushButton_4 = QPushButton(
+    self.retroactive_categorization_button = QPushButton(
       self.categorization_scrollAreaWidgetContents)
-    self.pushButton_4.setObjectName(u"pushButton_4")
-    self.pushButton_4.setEnabled(False)
+    self.retroactive_categorization_button.setObjectName(
+      u"retroactive_categorization_button")
 
-    self.categorization_button_horizontalLayout.addWidget(self.pushButton_4)
+    self.retroactive_categorization_button.clicked.connect(
+      self.retroactive_categorization)
+
+    self.categorization_button_horizontalLayout.addWidget(
+      self.retroactive_categorization_button)
 
     self.categorization_restoreDefaults = QPushButton(
       self.categorization_scrollAreaWidgetContents)
@@ -151,8 +157,8 @@ class CategorizationTab(QWidget):
                                                                       "To re-categorize previous entries after adding or updating category, click \"Retrospective categorization\" button. (not yet implemented)", None))
     self.categorization_addCategory.setText(
       QCoreApplication.translate("Dashboard", u"Add category", None))
-    self.pushButton_4.setText(QCoreApplication.translate(
-      "Dashboard", u"Retrospective categorization", None))
+    self.retroactive_categorization_button.setText(QCoreApplication.translate(
+      "Dashboard", u"Retroactive categorization", None))
     self.categorization_restoreDefaults.setText(
       QCoreApplication.translate("Dashboard", u"Restore defaults", None))
 
@@ -312,7 +318,7 @@ class CategorizationTab(QWidget):
       category_row_layout.addWidget(category_button)
 
       keywords_label = QLabel(self.categorization_scrollAreaWidgetContents)
-      keywords_label.setText("Keywords: " + ' | '.join(vals['keywords']))
+      keywords_label.setText(' | '.join(vals['keywords']))
       keywords_label.setSizePolicy(
         QSizePolicy.Expanding, QSizePolicy.Expanding)
       keywords_label.setWordWrap(True)
@@ -330,3 +336,44 @@ class CategorizationTab(QWidget):
     self._category_manager.insert_default_categories()
     self._keyword_manager.insert_default_keywords()
     self.onShow(self.showEvent)
+
+  def retroactive_categorization(self):
+    """ Retroactively classify all entries based on current categories and keywords. """
+    # Create and show confirmation dialog
+    dialog = QMessageBox()
+    dialog.setWindowTitle("Retroactive Categorization")
+    dialog.setText(
+      "Are you sure you want to retroactively categorize all entries based on current ruleset?\nThis action cannot be undone and might take a while.")
+    dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+    dialog.setDefaultButton(QMessageBox.No)
+    result = dialog.exec_()
+
+    if result == QMessageBox.No:
+      return
+
+    # If confirmed, classify all entries
+    classifier = Classifier()
+    activity_manager = ActivityManager()
+
+    entries = activity_manager.get_all_activities()
+    total_entries = len(entries)
+
+    # Create progress dialog
+    progress_dialog = QProgressDialog(
+      "Categorizing entries...", None, 0, total_entries, self)
+    progress_dialog.setWindowModality(Qt.WindowModal)
+    progress_dialog.setMinimumDuration(0)
+    progress_dialog.setValue(0)
+    progress_dialog.setCancelButton(None)
+    progress_dialog.setWindowTitle("Progress")
+
+    for i, entry in enumerate(entries):
+      window_class, window_name = entry[2], entry[3]
+      category_id = classifier.classify_entry(window_class, window_name)
+      activity_manager.update_category(entry[0], category_id)
+      progress_dialog.setValue(i + 1)
+
+    progress_dialog.setValue(total_entries)
+    progress_dialog.close()
+    QMessageBox.information(self, "Retroactive Categorization",
+                            "Categorization completed successfully.")
