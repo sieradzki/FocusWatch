@@ -118,6 +118,8 @@ class TopCategoriesComponent(QFrame):
       category_horizontalLayout.setSizeConstraint(QLayout.SetDefaultConstraint)
       cat_id, time = vals
       category = self._category_manager.get_category_by_id(cat_id)
+      if not category:
+        continue
       id, name, parent_category_id, color = category
 
       text = ""

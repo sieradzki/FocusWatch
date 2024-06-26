@@ -29,9 +29,7 @@ class DatabaseManager:
       self._category_manager = CategoryManager()
       self._keyword_manager = KeywordManager()
 
-      logger.info("Inserting default categories.")
       self._category_manager.insert_default_categories()
-      logger.info("Inserting default keywords.")
       self._keyword_manager.insert_default_keywords()
 
   def database_exists(self) -> bool:

@@ -10,7 +10,6 @@ import logging
 
 from focuswatch.config import Config
 from focuswatch.database.database_connection import DatabaseConnection
-from focuswatch.database.keyword_manager import KeywordManager
 
 logger = logging.getLogger(__name__)
 
@@ -25,21 +24,33 @@ class CategoryManager:
 
   def insert_default_categories(self) -> None:
     """ Insert default categories into the database. """
+    logger.info("Inserting default categories.")
     self._db_conn.execute_update('DELETE FROM categories;')
     self._db_conn.execute_update('DELETE FROM keywords;')
 
     categories = [
-      ("Work", None, "#00cc00"), ("Programming", 1, None), ("Documents", 1, None),
-      ("Image", 1, None), ("Audio", 1, None),
-      ("3D", 1, None), ("Comms", None, "#33ccff"),
-      ("IM", 7, None), ("Email", 7, None), ("Media", None, "#ff0000"),
-      ("Games", 10, None), ("Video", 10, None), ("Social media", 10, None),
-      ("Music", 10, None), ("Productivity", None, "#332032"),
-      ("Uncategorized", None, "#8c8c8c"), ("AFK", None, "#3d3d3d")
+        ("Work", None, "#00cc00"), ("Programming", "Work", None),
+        ("Documents", "Work", None), ("Image", "Work", None),
+        ("Audio", "Work", None), ("3D", "Work", None),
+        ("Comms", None, "#33ccff"), ("IM", "Comms", None),
+        ("Email", "Comms", None), ("Media", None, "#ff0000"),
+        ("Games", "Media", None), ("Video", "Media", None),
+        ("Social media", "Media", None), ("Music", "Media", None),
+        ("Productivity", None, "#332032"), ("Uncategorized", None, "#8c8c8c"),
+        ("AFK", None, "#3d3d3d")
     ]
 
-    for name, parent_id, color in categories:
-      self.create_category(name, parent_id, color)
+    category_ids = {}
+    for name, parent_name, color in categories:
+      parent_id = None
+      if parent_name:
+        parent_id = category_ids.get(parent_name)
+      success = self.create_category(name, parent_id, color)
+      if success:
+        category_id = self.get_category_id_from_name(name)
+        category_ids[name] = category_id
+      else:
+        logger.warning(f"Failed to create category: {name}")
 
   def create_category(self, category_name: str, parent_id: Optional[int] = None, color: Optional[str] = None) -> bool:
     """ Create a category. 
@@ -103,8 +114,8 @@ class CategoryManager:
     else:
       if name == self.get_category_by_id(parent_id)[1]:
         return False
-      query = 'SELECT * FROM categories WHERE name=? AND parent_category=?'
-      params = (name, parent_id)
+      query = 'SELECT * FROM categories WHERE name=? AND parent_category=? AND id!=?'
+      params = (name, parent_id, category_id)
 
     if self._db_conn.execute_query(query, params):
       return False

@@ -3,9 +3,10 @@
 This module is responsible for managing the keywords in the database.
 """
 
-from typing import List, Optional
 import logging
+from typing import List, Optional
 
+from focuswatch.database.category_manager import CategoryManager
 from focuswatch.database.database_connection import DatabaseConnection
 
 logger = logging.getLogger(__name__)
@@ -21,20 +22,43 @@ class KeywordManager:
 
   def insert_default_keywords(self) -> None:
     """ Insert default keywords into the database. """
+    logger.info("Inserting default keywords.")
     keywords = [
-      ("Google Docs", 1), ("libreoffice", 1), ("GitHub", 2), ("Stack Overflow", 2),
-      ("BitBucket", 2), ("Gitlab", 2), ("vim", 2), ("Spyder", 2), ("kate", 2),
-      ("Visual Studio", 2), ("code", 2), ("QtCreator", 2), ("Gimp", 4),
-      ("Inkscape", 4), ("Audacity", 5), ("Blender", 6), ("Messenger", 8),
-      ("Signal", 8), ("WhatsApp", 8), ("Slack", 8), ("Discord", 8),
-      ("Gmail", 9), ("Thunderbird", 9), ("mutt", 9), ("alpine", 9),
-      ("Minecraft", 11), ("Steam", 11), ("YouTube", 12), ("mpv", 12),
-      ("VLC", 12), ("Twitch", 12), ("reddit", 13), ("Facebook", 13),
-      ("Instagram", 13), ("Spotify", 14), ("FocusWatch", 15), ("notion", 15),
-      ("obsidian", 15)
+        ("Google Docs", "Documents"), ("libreoffice", "Documents"),
+        ("GitHub", "Programming"), ("Stack Overflow", "Programming"),
+        ("BitBucket", "Programming"), ("Gitlab", "Programming"),
+        ("vim", "Programming"), ("Spyder", "Programming"),
+        ("kate", "Programming"), ("Visual Studio", "Programming"),
+        ("code", "Programming"), ("QtCreator", "Programming"),
+        ("Gimp", "Image"), ("Inkscape", "Image"),
+        ("Audacity", "Audio"), ("Blender", "3D"),
+        ("Messenger", "IM"), ("Signal", "IM"),
+        ("WhatsApp", "IM"), ("Slack", "IM"), ("Discord", "IM"),
+        ("Gmail", "Email"), ("Thunderbird", "Email"),
+        ("mutt", "Email"), ("alpine", "Email"),
+        ("Minecraft", "Games"), ("Steam", "Games"),
+        ("YouTube", "Video"), ("mpv", "Video"),
+        ("VLC", "Video"), ("Twitch", "Video"),
+        ("reddit", "Social media"), ("Facebook", "Social media"),
+        ("Instagram", "Social media"), ("Spotify", "Music"),
+        ("FocusWatch", "Productivity"), ("notion", "Productivity"),
+        ("obsidian", "Productivity")
     ]
-    for keyword, category_id in keywords:
-      self.add_keyword(keyword, category_id)
+
+    category_manager = CategoryManager()
+    keyword_ids = {}
+    for keyword, category_name in keywords:
+      category_id = category_manager.get_category_id_from_name(
+        category_name)
+      if category_id is not None:
+        success = self.add_keyword(keyword, category_id)
+        if success:
+          keyword_id = self.get_keyword_id(keyword, category_id)
+          keyword_ids[(keyword, category_name)] = keyword_id
+        else:
+          logger.warning(f"Failed to add keyword: {keyword}")
+      else:
+        logger.warning(f"Category '{category_name}' not found.")
 
   def get_keyword(self, keyword_id: int) -> Optional[tuple]:
     """ Retrieve a keyword from the database. 
@@ -134,3 +158,15 @@ class KeywordManager:
     params = (f'%{keyword}%',)
     result = self._db_conn.execute_query(query, params)
     return [row[0] for row in result] if result else []
+
+  def get_keyword_id(self, keyword_name: str, category_id: int) -> Optional[int]:
+    """ Return the id of a keyword given its name and category_id. 
+
+    Args:
+      keyword_name: The name of the keyword.
+      category_id: The id of the category.
+    """
+    query = 'SELECT id FROM keywords WHERE name=? AND category_id=?'
+    params = (keyword_name, category_id)
+    result = self._db_conn.execute_query(query, params)
+    return result[0][0] if result else None

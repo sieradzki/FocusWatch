@@ -136,7 +136,7 @@ class DashboardTab(QWidget):
     self.retranslateUi()
     return self.dashboard_tab
 
-  def onShow(self, event):
+  def onShow(self):
     self.update_date()
     self.component_setup()
 
@@ -216,7 +216,7 @@ class DashboardTab(QWidget):
       self.change_period(1)
 
     self.update_date()
-    self.onShow(self.showEvent)
+    self.onShow()
 
   def change_period(self, direction):
     """ Change the period based on the current view and direction """
@@ -301,4 +301,4 @@ class DashboardTab(QWidget):
 
     self.update_date()
     self.time_period_button.setText(self.current_period)
-    self.onShow(self.showEvent)
+    self.onShow()

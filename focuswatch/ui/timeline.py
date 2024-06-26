@@ -143,6 +143,8 @@ class TimelineComponent(QFrame):
         style = []
         if entry != 0 and entry != None:  # TODO disallow deleting 'Uncategorized' category or change how it works
           category = self._category_manager.get_category_by_id(entry)
+          if not category:
+            continue
           name = category[1]
           color = get_category_color(entry)
 

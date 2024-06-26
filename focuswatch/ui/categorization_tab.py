@@ -104,7 +104,7 @@ class CategorizationTab(QWidget):
     self.categorization_restoreDefaults.setObjectName(
       u"categorization_restoreDefaults")
     self.categorization_restoreDefaults.clicked.connect(self.restore_defaults)
-    self.categorization_restoreDefaults.setEnabled(False)
+    # self.categorization_restoreDefaults.setEnabled(False)
 
     self.categorization_button_horizontalLayout.addWidget(
       self.categorization_restoreDefaults)
@@ -172,14 +172,20 @@ class CategorizationTab(QWidget):
     if result:
       if not category:
         new_keywords = dialog.new_keywords
+
       new_color = dialog.color
 
       if category:
-        color = new_color if new_color != category[-1] and new_color else category[-1]
+        if new_color and new_color != category[-1]:
+          color = new_color
+        else:
+          color = category[-1]
       else:
         color = new_color
+
       new_name = dialog.name_lineEdit.text()
       parent = dialog.parent_comboBox.currentText()
+
       if parent != 'None':
         parent_id = self._category_manager.get_category_id_from_name(parent)
       else:
@@ -187,15 +193,17 @@ class CategorizationTab(QWidget):
 
       if category:
         self._category_manager.update_category(
-          category_id, new_name, parent_id, color)
+            category_id, new_name, parent_id, color)
       else:
-        self._category_manager.create_category(new_name, parent_id, color)
+        self._category_manager.create_category(
+            new_name, parent_id, color)
         category_id = self._category_manager.get_category_id_from_name(
           new_name)
 
       if not category:
         for keyw in new_keywords:
-          self._keyword_manager.add_keyword(keyw[1], category_id, keyw[3])
+          self._keyword_manager.add_keyword(
+              keyw[1], category_id, keyw[3])
 
     # self.onShow(self.showEvent)
     # self.tabWidget.setCurrentIndex(1)
@@ -211,18 +219,14 @@ class CategorizationTab(QWidget):
     return cat_key[category_id]
 
   def categories_setup(self):
-    # Get all categories and keywords
     categories = self._category_manager.get_all_categories()
-    keywords = self._keyword_manager.get_all_keywords()
-
-    # Make a dict category: keywords
     cat_key = defaultdict(list)
-    for keyword in keywords:
-      cat_key[keyword[-2]].append(keyword[1])
+    for category in categories:
+      category_keywords = self._keyword_manager.get_keywords_for_category(
+        category[0])
+      cat_key[category[0]] = [keyword[1] for keyword in category_keywords]
 
-    # Create a temporary dictionary to store categories with parent-child relationships
     temp_cat_dict = defaultdict(list)
-
     for cat_id, name, parent_cat_id, color in categories:
       category = {
         'name': name,
@@ -230,7 +234,6 @@ class CategorizationTab(QWidget):
         'keywords': cat_key[cat_id],
         'children': []
       }
-
       if parent_cat_id is None:
         temp_cat_dict[cat_id] = category
       elif parent_cat_id not in temp_cat_dict:
@@ -246,7 +249,6 @@ class CategorizationTab(QWidget):
         parent_category['children'].append(cat_id)
         temp_cat_dict[cat_id] = category
 
-    # Organize cat_dict with children next to parents
     cat_dict = defaultdict(list)
 
     def organize_categories(cat_id):
@@ -255,45 +257,30 @@ class CategorizationTab(QWidget):
       for child_id in category['children']:
         organize_categories(child_id)
 
-    # Start with categories that have no parent
     root_categories = [cat_id for cat_id, _, parent_cat_id,
                        _ in categories if parent_cat_id is None]
     for root_cat_id in root_categories:
       organize_categories(root_cat_id)
 
-    # Create layouts
-    category_name_verticalLayout = QVBoxLayout()
-    category_name_verticalLayout.setObjectName(
-      u"category_name_verticalLayout")
-    category_name_verticalLayout.setSizeConstraint(
-      QLayout.SetDefaultConstraint)
-    category_name_verticalLayout.setContentsMargins(-1, 0, 0, -1)
+    category_layout = QVBoxLayout()
+    category_layout.setObjectName(u"category_layout")
+    category_layout.setSizeConstraint(QLayout.SetDefaultConstraint)
+    category_layout.setContentsMargins(-1, 0, 0, -1)
 
-    category_keywords_verticalLayout = QVBoxLayout()
-    category_keywords_verticalLayout.setObjectName(
-      u"category_keywords_verticalLayout")
-    category_keywords_verticalLayout.setSizeConstraint(
-        QLayout.SetDefaultConstraint)
-
-    category_spacer_verticalLayout = QVBoxLayout()
-    category_spacer_verticalLayout.setObjectName(
-      u"category_spacer_verticalLayout")
-
-    # Size policies
     cat_label_sizePolicy = QSizePolicy(
       QSizePolicy.Maximum, QSizePolicy.Preferred)
     cat_label_sizePolicy.setHorizontalStretch(0)
     cat_label_sizePolicy.setVerticalStretch(0)
 
     for key, vals in cat_dict.items():
-      # Name label
-      category_name_horizontalLayout = QHBoxLayout()
-      category_name_horizontalLayout.setObjectName(
-        u"category_name_horizontalLayout")
-      category_name_horizontalLayout.setSizeConstraint(
-        QLayout.SetMinimumSize)
-      category_name_horizontalLayout.setContentsMargins(-1, 0, 0, -1)
-      category_name_horizontalLayout.setAlignment(Qt.AlignLeft)
+      # Skip Uncategorized and AFK categories
+      if vals['name'] in ['Uncategorized', 'AFK']:
+        continue
+      category_row_layout = QHBoxLayout()
+      category_row_layout.setObjectName(u"category_row_layout")
+      category_row_layout.setSizeConstraint(QLayout.SetMinimumSize)
+      category_row_layout.setContentsMargins(-1, 0, 0, -1)
+      category_row_layout.setAlignment(Qt.AlignLeft)
 
       category_button = QPushButton(
         self.categorization_scrollAreaWidgetContents)
@@ -314,49 +301,32 @@ class CategorizationTab(QWidget):
       indent = 40 * depth
 
       horizontalSpacer = QSpacerItem(
-          indent, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
-      category_name_horizontalLayout.addItem(horizontalSpacer)
-#
+        indent, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
+      category_row_layout.addItem(horizontalSpacer)
+
       category_button.setText(f"{vals['name']}")
       font = QFont()
       font.setPointSize(12)
       category_button.setFont(font)
 
-      category_name_horizontalLayout.addWidget(category_button)
-      category_name_verticalLayout.addLayout(category_name_horizontalLayout)
+      category_row_layout.addWidget(category_button)
 
-      # Keywords label
       keywords_label = QLabel(self.categorization_scrollAreaWidgetContents)
       keywords_label.setText("Keywords: " + ' | '.join(vals['keywords']))
-      keywords_label.setMinimumSize(QSize(800, 0))
+      keywords_label.setSizePolicy(
+        QSizePolicy.Expanding, QSizePolicy.Expanding)
       keywords_label.setWordWrap(True)
       font = QFont()
       font.setPointSize(12)
       keywords_label.setFont(font)
-      category_keywords_verticalLayout.addWidget(keywords_label)
 
-      # Spacer
-      horizontalSpacer = QSpacerItem(
-          60, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-      category_spacer_verticalLayout.addItem(horizontalSpacer)
+      category_row_layout.addWidget(keywords_label)
 
-    horizontalSpacer_1 = QSpacerItem(
-      60, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
-    horizontalSpacer_2 = QSpacerItem(
-      200, 20, QSizePolicy.Maximum, QSizePolicy.Minimum)
+      category_layout.addLayout(category_row_layout)
 
-    self.categorization_content_horizontalLayout.addLayout(
-      category_name_verticalLayout)
-    self.categorization_content_horizontalLayout.addItem(
-      horizontalSpacer_1)
-    self.categorization_content_horizontalLayout.addLayout(
-      category_keywords_verticalLayout)
-    self.categorization_content_horizontalLayout.addItem(
-      horizontalSpacer_2)
-    self.categorization_content_horizontalLayout.addLayout(
-        category_spacer_verticalLayout)
+    self.categorization_content_horizontalLayout.addLayout(category_layout)
 
   def restore_defaults(self):
     self._category_manager.insert_default_categories()
+    self._keyword_manager.insert_default_keywords()
     self.onShow(self.showEvent)
-    # self.tabWidget.setCurrentIndex(1)
