@@ -8,13 +8,13 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor, QFont,
 from PySide6.QtWidgets import (QAbstractButton, QApplication, QCheckBox,
                                QDialog, QDialogButtonBox, QFrame, QHBoxLayout,
                                QLabel, QLineEdit, QSizePolicy, QSpacerItem,
-                               QTextEdit, QVBoxLayout, QWidget)
+                               QTextEdit, QVBoxLayout, QWidget, QPushButton)
 
 from typing import Optional
 
 
 class KeywordDialog(QDialog):
-  def __init__(self, parent, keyword_manager, keyword_id: Optional[int] = None, keyword: Optional[list]=None):
+  def __init__(self, parent, keyword_manager, keyword_id: Optional[int] = None, keyword: Optional[list] = None):
     super().__init__(parent)
     self._keyword_manager = keyword_manager
     if keyword_id:
@@ -22,6 +22,10 @@ class KeywordDialog(QDialog):
     else:
       self._keyword = keyword
     self.setupUi(self)
+
+  def delete_keyword(self):
+    self._keyword_manager.delete_keyword(self._keyword[0])
+    self.accept()
 
   def setupUi(self, Dialog):
     if not Dialog.objectName():
@@ -83,6 +87,15 @@ class KeywordDialog(QDialog):
     self.horizontalLayout2.addItem(spacerItem)
 
     self.verticalLayout_2.addLayout(self.horizontalLayout2)
+
+    # Add delete button if editing a keyword
+    if self._keyword:
+      self.delete_button = QPushButton(self.frame)
+      self.delete_button.setObjectName(u"delete_button")
+      self.delete_button.setStyleSheet(u"background-color: red")
+      self.delete_button.setText("Delete")
+      self.delete_button.clicked.connect(self.delete_keyword)
+      self.verticalLayout_2.addWidget(self.delete_button)
 
     self.verticalLayout.addWidget(self.frame)
 
