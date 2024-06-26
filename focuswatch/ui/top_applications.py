@@ -128,6 +128,8 @@ class TopApplicationsComponent(QFrame):
       category_id = self._activity_manager.get_longest_duration_category_id_for_window_class_in_period(
           self.period_start, window_class, self.period_end)
       category = self._category_manager.get_category_by_id(category_id)
+      if not category:
+        continue
       id, name, parent_category_id, color = category
       color = get_category_color(id)
 
