@@ -1,3 +1,6 @@
+""" Category Dialog UI for FocusWatch """
+import logging
+from typing import List, Optional, Tuple
 
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
                             QMetaObject, QObject, QPoint, QRect, QSize, Qt,
@@ -12,26 +15,30 @@ from PySide6.QtWidgets import (QAbstractButton, QApplication, QColorDialog,
                                QPushButton, QSizePolicy, QSpacerItem,
                                QTextEdit, QVBoxLayout, QWidget)
 
-from focuswatch.database.category_manager import CategoryManager
 from focuswatch.ui.keyword_dialog import KeywordDialog
 from focuswatch.ui.utils import get_category_color
 
+logger = logging.getLogger(__name__)
+
 
 class CategoryDialog(QDialog):
-  def __init__(self, parent=None, category=None, keywords=None):
+  def __init__(self, parent, category_manager, keyword_manager, category=None):
     super().__init__(parent)
-    self._category_manager = CategoryManager()
+    self._category_manager = category_manager
+    self._keyword_manager = keyword_manager
+
     self._category = category
-    self._keywords = keywords
+    self.color = None
     self.i, self.j = 0, 0
 
-    self.del_keywords = []
-    self.new_keywords = []
-    self.color = None
+    # Store new keywords when creating new category
+    if not self._category:
+      self.new_keywords = []
 
     self.setupUi(self)
 
   def show_color_picker(self):
+    # TODO move to utils
     color_dialog = QColorDialog()
     color = color_dialog.getColor()
 
@@ -41,33 +48,39 @@ class CategoryDialog(QDialog):
         f"background-color: {self.color};")
 
   def delete_keyword(self, sender):
+    """ Delete keyword from database and remove from grid. """
     keyword_id = sender.objectName().split(sep='_')[-1]
+    if self._category:
+      self._keyword_manager.delete_keyword(int(keyword_id))
+    else:
+      new_keyword_id = self.new_keywords.index(
+        [keyword for keyword in self.new_keywords if keyword[0] == int(keyword_id)][0])
+      del self.new_keywords[int(new_keyword_id)]
     sender.deleteLater()
-
-    for i, keyword in enumerate(self._keywords):
-      if keyword[0] == int(keyword_id):
-        self.del_keywords.append(keyword)
-        del self._keywords[i]
-
-    for i, keyword in enumerate(self.new_keywords):
-      if keyword[0] == int(keyword_id):
-        del self.new_keywords[i]
-
     self.setup_keyword_grid()
 
   def add_keyword_to_grid(self, keyword):
+    """ Add keyword to grid layout. """
     keywordButton = QPushButton(self.frame_2)
     keywordButton.setObjectName(f"keywordButton_{keyword[0]}")
     keywordButton.setText(keyword[1])
+
+    # Edit on left-click
+    keywordButton.clicked.connect(
+      lambda checked, btn=keywordButton: self.edit_keyword(btn))
+    # Delete on right-click
     keywordButton.mouseReleaseEvent = lambda event: self.keyword_mouse_release_event(
       event, keywordButton)
+
     self.keywords_gridLayout.addWidget(keywordButton, self.j, self.i, 1, 1)
+    # Update grid position
     self.i += 1
     if self.i == 4:
       self.i = 0
       self.j += 1
 
   def keyword_mouse_release_event(self, event, button):
+    """ Override mouseReleaseEvent to handle right-click. """
     if event.button() == Qt.RightButton:
       self.delete_keyword(button)
     else:
@@ -75,21 +88,29 @@ class CategoryDialog(QDialog):
       QPushButton.mouseReleaseEvent(button, event)
 
   def setup_keyword_grid(self):
+    """ Setup keyword grid layout. """
+    # Reset grid position
     self.i = 0
     self.j = 0
+
     # Clear layout
     for i in reversed(range(self.keywords_gridLayout.count())):
       widget = self.keywords_gridLayout.itemAt(i).widget()
       if widget is not None:
         widget.deleteLater()
 
-    # Add keywords to grid
-    if len(self._keywords) > 0:
-      for keyword in self._keywords:
-        self.add_keyword_to_grid(keyword)
+    # Get keywords for category
+    keywords = []
+    if self._category:
+      keywords = self._keyword_manager.get_keywords_for_category(
+          self._category[0])
+    else:
+      keywords = self.new_keywords
 
-    for keyword in self.new_keywords:
-      self.add_keyword_to_grid(keyword)
+    # Add keywords to grid
+    if keywords:
+      for keyword in keywords:
+        self.add_keyword_to_grid(keyword)
 
     # Add '+' button
     self.addKeyword_pushButton = QPushButton(self.frame_2)
@@ -101,24 +122,51 @@ class CategoryDialog(QDialog):
       self.addKeyword_pushButton, self.j + 1, 0, 4, 4)
 
   def add_keyword(self):
-    keyword_dialog = KeywordDialog(self, self._category)
+    """ Add keyword to database and grid. """
+    keyword_dialog = KeywordDialog(self, self._keyword_manager)
     result = keyword_dialog.exec_()
 
     if result:
       keyword_name = keyword_dialog.nameEdit.text()
-      if len(self.new_keywords) == 0:
-        last_new_id = 0
-      else:
-        last_new_id = int(self.new_keywords[-1][0]) + 1
-      if len(self._keywords) == 0:
-        last_old_id = 0
-      else:
-        last_old_id = int(self._keywords[-1][0]) + 1
-      key_id = last_new_id if last_new_id > last_old_id else last_old_id
-      self.new_keywords.append([key_id, keyword_name])
-      self.setup_keyword_grid()
+      if keyword_name:
+        match_case = keyword_dialog.match_case_checkbox.isChecked()
+        if self._category:
+          self._keyword_manager.add_keyword(
+            keyword_name, self._category[0], match_case)
+        else:
+          keyword_id = self.new_keywords[-1][0] + 1 if self.new_keywords else 0
+          self.new_keywords.append(
+            (keyword_id, keyword_name, None, match_case))
+
+        self.setup_keyword_grid()
+
+  def edit_keyword(self, button):
+    """ Edit keyword in database, update grid. """
+    keyword_id = button.objectName().split(sep='_')[-1]
+    if self._category:
+      keyword_dialog = KeywordDialog(self, self._keyword_manager, keyword_id)
+    else:
+      new_keyword_id = self.new_keywords.index(
+        [keyword for keyword in self.new_keywords if keyword[0] == int(keyword_id)][0])
+      keyword_dialog = KeywordDialog(
+        self, self._keyword_manager, None, self.new_keywords[new_keyword_id])
+
+    result = keyword_dialog.exec_()
+
+    if result:
+      keyword_name = keyword_dialog.nameEdit.text()
+      if keyword_name:
+        match_case = keyword_dialog.match_case_checkbox.isChecked()
+        if self._category:
+          self._keyword_manager.update_keyword(
+            int(keyword_id), keyword_name, self._category[0], match_case)
+        else:
+          self.new_keywords[new_keyword_id] = (
+            int(keyword_id), keyword_name, None, match_case)
+        self.setup_keyword_grid()
 
   def delete_category(self):
+    """ Show confirmation dialog before deleting category. """
     category_id = self._category[0]
 
     confirmation_dialog = QDialog(self)
@@ -139,6 +187,7 @@ class CategoryDialog(QDialog):
     confirmation_dialog.exec_()
 
   def confirm_delete(self, category_id, confirmation_dialog):
+    """ Delete category from database and close dialog. """
     self._category_manager.delete_category(category_id)
     confirmation_dialog.accept()
     self.close()
@@ -322,7 +371,7 @@ class CategoryDialog(QDialog):
 
     self.verticalLayout_2.addItem(self.verticalSpacer)
 
-    if self._category is not None:
+    if self._category:
       if self._category[1] != 'Uncategorized' and self._category[1] != 'AFK':
         self.deleteButton = QPushButton(self.frame)
         self.deleteButton.setObjectName(u"deleteButton")
@@ -352,8 +401,12 @@ class CategoryDialog(QDialog):
   def retranslateUi(self, Dialog):
     Dialog.setWindowTitle(
       QCoreApplication.translate("Dialog", u"Dialog", None))
-    self.label.setText(QCoreApplication.translate(
-      "Dialog", u"Edit Category", None))
+    if self._category:
+      self.label.setText(QCoreApplication.translate(
+        "Dialog", u"Edit Category", None))
+    else:
+      self.label.setText(QCoreApplication.translate(
+        "Dialog", u"Add a Category", None))
     self.nameLabel.setText(QCoreApplication.translate("Dialog", u"Name", None))
     self.parentLabel.setText(QCoreApplication.translate(
       "Dialog", u"Parent category", None))
