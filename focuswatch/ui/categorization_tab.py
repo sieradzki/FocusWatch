@@ -104,7 +104,7 @@ class CategorizationTab(QWidget):
     self.categorization_restoreDefaults.setObjectName(
       u"categorization_restoreDefaults")
     self.categorization_restoreDefaults.clicked.connect(self.restore_defaults)
-    self.categorization_restoreDefaults.setEnabled(False)
+    # self.categorization_restoreDefaults.setEnabled(False)
 
     self.categorization_button_horizontalLayout.addWidget(
       self.categorization_restoreDefaults)
@@ -273,6 +273,9 @@ class CategorizationTab(QWidget):
     cat_label_sizePolicy.setVerticalStretch(0)
 
     for key, vals in cat_dict.items():
+      # Skip Uncategorized and AFK categories
+      if vals['name'] in ['Uncategorized', 'AFK']:
+        continue
       category_row_layout = QHBoxLayout()
       category_row_layout.setObjectName(u"category_row_layout")
       category_row_layout.setSizeConstraint(QLayout.SetMinimumSize)
@@ -325,5 +328,5 @@ class CategorizationTab(QWidget):
 
   def restore_defaults(self):
     self._category_manager.insert_default_categories()
+    self._keyword_manager.insert_default_keywords()
     self.onShow(self.showEvent)
-    # self.tabWidget.setCurrentIndex(1)
