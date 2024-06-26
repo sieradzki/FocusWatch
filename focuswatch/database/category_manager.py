@@ -103,8 +103,8 @@ class CategoryManager:
     else:
       if name == self.get_category_by_id(parent_id)[1]:
         return False
-      query = 'SELECT * FROM categories WHERE name=? AND parent_category=?'
-      params = (name, parent_id)
+      query = 'SELECT * FROM categories WHERE name=? AND parent_category=? AND id!=?'
+      params = (name, parent_id, category_id)
 
     if self._db_conn.execute_query(query, params):
       return False
