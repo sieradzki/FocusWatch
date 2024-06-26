@@ -36,7 +36,7 @@ class Classifier():
     entry_lower = entry.lower()
 
     for keyword in keywords:
-      _, name, match_case, category_id = keyword
+      _, name, category_id, match_case = keyword
       if match_case:
         if name in entry:
           keyword_depths[category_id] = self._category_manager.get_category_depth(
