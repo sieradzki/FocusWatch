@@ -32,7 +32,7 @@ if platform in ["Windows", "win32", "cygwin"]:
   kernel32 = ctypes.windll.kernel32
 
   user32.GetWindowTextW.argtypes = [
-    ctypes.c_int, ctypes.c_wchar_p, ctypes.c_intnsta
+    ctypes.c_int, ctypes.c_wchar_p, ctypes.c_int
   ]
   user32.GetClassNameW.argtypes = [
     ctypes.c_int, ctypes.c_wchar_p, ctypes.c_int]

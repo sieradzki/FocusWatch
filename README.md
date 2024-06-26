@@ -1,7 +1,7 @@
 # FocusWatch
  Activity monitoring and logging with categorization
 
-Currently supports Linux systems with xorg and Windows.
+Currently supports Linux systems with xorg.
 # Setup
 
 1. Install python 3.12
