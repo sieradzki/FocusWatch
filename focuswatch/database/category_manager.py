@@ -24,6 +24,7 @@ class CategoryManager:
 
   def insert_default_categories(self) -> None:
     """ Insert default categories into the database. """
+    logger.info("Inserting default categories.")
     self._db_conn.execute_update('DELETE FROM categories;')
     self._db_conn.execute_update('DELETE FROM keywords;')
 

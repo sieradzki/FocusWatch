@@ -22,6 +22,7 @@ class KeywordManager:
 
   def insert_default_keywords(self) -> None:
     """ Insert default keywords into the database. """
+    logger.info("Inserting default keywords.")
     keywords = [
         ("Google Docs", "Documents"), ("libreoffice", "Documents"),
         ("GitHub", "Programming"), ("Stack Overflow", "Programming"),

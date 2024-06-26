@@ -1,5 +1,5 @@
 """ Home UI """
-from PySide6.QtCore import QCoreApplication, QMetaObject, QRect
+from PySide6.QtCore import QCoreApplication, QMetaObject, QRect, QTimer
 from PySide6.QtWidgets import (QMainWindow, QMenuBar, QStatusBar, QTabWidget,
                                QVBoxLayout, QWidget)
 
@@ -18,6 +18,13 @@ class Home(QMainWindow):
     self._category_manager = CategoryManager()
     self._keyword_manager = KeywordManager()
     self.setupUi(self)
+
+    self.setupTimers()
+
+  def setupTimers(self):
+    self.refresh_timer = QTimer(self)
+    self.refresh_timer.timeout.connect(self._dashboard_tab.onShow)
+    self.refresh_timer.start(60000)  # 1 minute
 
   def setupUi(self, Home):
     if not Home.objectName():
