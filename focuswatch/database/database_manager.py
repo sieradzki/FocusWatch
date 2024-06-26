@@ -76,6 +76,7 @@ class DatabaseManager:
           "id" INTEGER NOT NULL UNIQUE,
           "name" TEXT NOT NULL,
           "category_id" INTEGER,
+          "match_case" INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY("category_id") REFERENCES "categories"("id")
           ON DELETE CASCADE ON UPDATE CASCADE,
           PRIMARY KEY("id" AUTOINCREMENT)

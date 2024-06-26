@@ -166,15 +166,16 @@ class CategorizationTab(QWidget):
     else:
       category = None
       keywords = []
-    dialog = CategoryDialog(self, category, keywords)
+    dialog = CategoryDialog(self, self._category_manager,
+                            self._keyword_manager, category)
     result = dialog.exec_()
     if result:
-      del_keywords = dialog.del_keywords
-      new_keywords = dialog.new_keywords
+      if not category:
+        new_keywords = dialog.new_keywords
       new_color = dialog.color
 
-      if category is not None:
-        color = new_color if new_color != category[-1] and new_color is not None else category[-1]
+      if category:
+        color = new_color if new_color != category[-1] and new_color else category[-1]
       else:
         color = new_color
       new_name = dialog.name_lineEdit.text()
@@ -184,7 +185,7 @@ class CategorizationTab(QWidget):
       else:
         parent_id = None
 
-      if category is not None:
+      if category:
         self._category_manager.update_category(
           category_id, new_name, parent_id, color)
       else:
@@ -192,10 +193,9 @@ class CategorizationTab(QWidget):
         category_id = self._category_manager.get_category_id_from_name(
           new_name)
 
-      for keyw in del_keywords:
-        self._keyword_manager.delete_keyword(keyw[0])
-      for keyw in new_keywords:
-        self._keyword_manager.add_keyword(keyw[1], category_id)
+      if not category:
+        for keyw in new_keywords:
+          self._keyword_manager.add_keyword(keyw[1], category_id, keyw[3])
 
     # self.onShow(self.showEvent)
     # self.tabWidget.setCurrentIndex(1)
@@ -218,7 +218,7 @@ class CategorizationTab(QWidget):
     # Make a dict category: keywords
     cat_key = defaultdict(list)
     for keyword in keywords:
-      cat_key[keyword[-1]].append(keyword[1])
+      cat_key[keyword[-2]].append(keyword[1])
 
     # Create a temporary dictionary to store categories with parent-child relationships
     temp_cat_dict = defaultdict(list)
