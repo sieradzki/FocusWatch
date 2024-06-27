@@ -109,8 +109,8 @@ class CategoryManager:
     """
     # Check if category exists withing current scope
     if parent_id is None:
-      query = 'SELECT * FROM categories WHERE name=? AND parent_category IS NULL'
-      params = (name,)
+      query = 'SELECT * FROM categories WHERE name=? AND parent_category IS NULL AND id!=?'
+      params = (name, category_id)
     else:
       if name == self.get_category_by_id(parent_id)[1]:
         return False
@@ -118,6 +118,7 @@ class CategoryManager:
       params = (name, parent_id, category_id)
 
     if self._db_conn.execute_query(query, params):
+      logger.debug(f"Category with name {name} and parent_id {parent_id} already exists.")
       return False
 
     query = 'UPDATE categories SET name=?, parent_category=?, color=? WHERE id = ?'
