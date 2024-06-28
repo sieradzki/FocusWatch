@@ -19,7 +19,7 @@ class Home(QMainWindow):
     self._keyword_manager = KeywordManager()
     self.setupUi(self)
 
-    self.setupTimers()
+    # self.setupTimers()
 
   def setupTimers(self):
     self.refresh_timer = QTimer(self)
