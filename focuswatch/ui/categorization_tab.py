@@ -1,16 +1,20 @@
 """ Categorization tab for the FocusWatch Ui. """
 from collections import defaultdict
+from typing import Optional
 
 from PySide6.QtCore import QCoreApplication, QRect, QSize, Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout,
-                               QPushButton, QScrollArea, QSizePolicy,
-                               QSpacerItem, QVBoxLayout, QWidget, QMessageBox, QProgressDialog)
+                               QMessageBox, QProgressDialog, QPushButton,
+                               QScrollArea, QSizePolicy, QSpacerItem,
+                               QVBoxLayout, QWidget)
 
-from focuswatch.ui.category_dialog import CategoryDialog
-from focuswatch.ui.utils import get_category_color, get_contrasting_text_color
 from focuswatch.classifier import Classifier
 from focuswatch.database.activity_manager import ActivityManager
+from focuswatch.ui.categorization_helper_dialog import \
+    CategorizationHelperDialog
+from focuswatch.ui.category_dialog import CategoryDialog
+from focuswatch.ui.utils import get_category_color, get_contrasting_text_color
 
 
 class CategorizationTab(QWidget):
@@ -94,6 +98,17 @@ class CategorizationTab(QWidget):
     self.categorization_button_horizontalLayout.addItem(
       self.horizontalSpacer_4)
 
+    # Categorization helper button
+    self.categorization_helper_button = QPushButton(
+      self.categorization_scrollAreaWidgetContents)
+    self.categorization_helper_button.setObjectName(
+      u"categorization_helper_button")
+    self.categorization_helper_button.clicked.connect(
+      self.show_categorization_helper)
+    self.categorization_button_horizontalLayout.addWidget(
+      self.categorization_helper_button)
+
+    # Retroactive categorization button
     self.retroactive_categorization_button = QPushButton(
       self.categorization_scrollAreaWidgetContents)
     self.retroactive_categorization_button.setObjectName(
@@ -101,17 +116,16 @@ class CategorizationTab(QWidget):
 
     self.retroactive_categorization_button.clicked.connect(
       self.retroactive_categorization)
-
     self.categorization_button_horizontalLayout.addWidget(
       self.retroactive_categorization_button)
 
+    # Restore defaults button
     self.categorization_restoreDefaults = QPushButton(
       self.categorization_scrollAreaWidgetContents)
     self.categorization_restoreDefaults.setObjectName(
       u"categorization_restoreDefaults")
     self.categorization_restoreDefaults.clicked.connect(self.restore_defaults)
     # self.categorization_restoreDefaults.setEnabled(False)
-
     self.categorization_button_horizontalLayout.addWidget(
       self.categorization_restoreDefaults)
 
@@ -133,6 +147,18 @@ class CategorizationTab(QWidget):
     self.retranslateUi()
     return self.categorization_tab
 
+  def retranslateUi(self):
+    self.categorization_info_label.setText(QCoreApplication.translate("Dashboard", u"Rules for categorizing events. An event can only have one category. If several categories match, the deepest one will be chosen.\n"
+                                                                      "To re-categorize previous entries after adding or updating category, click \"Retrospective categorization\" button", None))
+    self.categorization_addCategory.setText(
+      QCoreApplication.translate("Dashboard", u"Add category", None))
+    self.retroactive_categorization_button.setText(QCoreApplication.translate(
+      "Dashboard", u"Retroactive categorization", None))
+    self.categorization_restoreDefaults.setText(
+      QCoreApplication.translate("Dashboard", u"Restore defaults", None))
+    self.categorization_helper_button.setText(
+      QCoreApplication.translate("Dashboard", u"Categorization helper", None))
+
   def onShow(self, event):
     self.clear_layout(self.categorization_content_horizontalLayout)
     self.categories_setup()
@@ -151,16 +177,6 @@ class CategorizationTab(QWidget):
         sub_layout = item.layout()
         if sub_layout is not None:
           self.clear_layout(sub_layout)
-
-  def retranslateUi(self):
-    self.categorization_info_label.setText(QCoreApplication.translate("Dashboard", u"Rules for categorizing events. An event can only have one category. If several categories match, the deepest one will be chosen.\n"
-                                                                      "To re-categorize previous entries after adding or updating category, click \"Retrospective categorization\" button. (not yet implemented)", None))
-    self.categorization_addCategory.setText(
-      QCoreApplication.translate("Dashboard", u"Add category", None))
-    self.retroactive_categorization_button.setText(QCoreApplication.translate(
-      "Dashboard", u"Retroactive categorization", None))
-    self.categorization_restoreDefaults.setText(
-      QCoreApplication.translate("Dashboard", u"Restore defaults", None))
 
   def show_category_dialog(self):
     """ This is show edit category, add new dialog for create new? """
@@ -333,23 +349,39 @@ class CategorizationTab(QWidget):
     self.categorization_content_horizontalLayout.addLayout(category_layout)
 
   def restore_defaults(self):
-    self._category_manager.insert_default_categories()
-    self._keyword_manager.insert_default_keywords()
-    self.onShow(self.showEvent)
-
-  def retroactive_categorization(self):
-    """ Retroactively classify all entries based on current categories and keywords. """
+    # TODO temp for testing, create separate function for this
     # Create and show confirmation dialog
     dialog = QMessageBox()
-    dialog.setWindowTitle("Retroactive Categorization")
+    dialog.setWindowTitle("Restore defaults")
     dialog.setText(
-      "Are you sure you want to retroactively categorize all entries based on current ruleset?\nThis action cannot be undone and might take a while.")
+      "Are you sure you want to restore default categories?\nThis action cannot be undone and might take a while.")
     dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
     dialog.setDefaultButton(QMessageBox.No)
     result = dialog.exec_()
 
     if result == QMessageBox.No:
       return
+
+    self._category_manager.insert_default_categories()
+    self._keyword_manager.insert_default_keywords()
+    self.retroactive_categorization(True)
+    self.onShow(self.showEvent)
+
+  def retroactive_categorization(self, skip_confirmation: Optional[bool] = False):
+    """ Retroactively classify all entries based on current categories and keywords. """
+    # Create and show confirmation dialog
+    # Don't show dialog if we call the method from restore_defaults
+    if not skip_confirmation:
+      dialog = QMessageBox()
+      dialog.setWindowTitle("Retroactive Categorization")
+      dialog.setText(
+        "Are you sure you want to retroactively categorize all entries based on current ruleset?\nThis action cannot be undone and might take a while.")
+      dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+      dialog.setDefaultButton(QMessageBox.No)
+      result = dialog.exec_()
+
+      if result == QMessageBox.No:
+        return
 
     # If confirmed, classify all entries
     classifier = Classifier()
@@ -368,7 +400,7 @@ class CategorizationTab(QWidget):
     progress_dialog.setWindowTitle("Progress")
 
     for i, entry in enumerate(entries):
-      window_class, window_name = entry[2], entry[3]
+      window_class, window_name = entry[3], entry[4]
       category_id = classifier.classify_entry(window_class, window_name)
       activity_manager.update_category(entry[0], category_id)
       progress_dialog.setValue(i + 1)
@@ -377,3 +409,8 @@ class CategorizationTab(QWidget):
     progress_dialog.close()
     QMessageBox.information(self, "Retroactive Categorization",
                             "Categorization completed successfully.")
+
+  def show_categorization_helper(self):
+    """ Show categorization helper dialog. """
+    dialog = CategorizationHelperDialog(self)
+    dialog.exec()
