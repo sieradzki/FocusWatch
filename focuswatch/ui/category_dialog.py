@@ -22,12 +22,13 @@ logger = logging.getLogger(__name__)
 
 
 class CategoryDialog(QDialog):
-  def __init__(self, parent, category_manager, keyword_manager, category=None):
+  def __init__(self, parent, category_manager, keyword_manager, category: Optional[int] = None, keywords: Optional[List[str]] = None):
     super().__init__(parent)
     self._category_manager = category_manager
     self._keyword_manager = keyword_manager
 
     self._category = category
+    self._keywords = keywords
     self.color = None
     self.i, self.j = 0, 0
 
@@ -116,29 +117,32 @@ class CategoryDialog(QDialog):
     self.addKeyword_pushButton = QPushButton(self.frame_2)
     self.addKeyword_pushButton.setObjectName(u"addKeyword_pushButton")
     self.addKeyword_pushButton.setText('+')
-    self.addKeyword_pushButton.clicked.connect(self.add_keyword)
+    self.addKeyword_pushButton.clicked.connect(self.show_keyword_dialog)
 
     self.keywords_gridLayout.addWidget(
       self.addKeyword_pushButton, self.j + 1, 0, 4, 4)
 
-  def add_keyword(self):
-    """ Add keyword to database and grid. """
+  def show_keyword_dialog(self):
+    """ Show keyword dialog and return values """
     keyword_dialog = KeywordDialog(self, self._keyword_manager)
     result = keyword_dialog.exec_()
 
     if result:
       keyword_name = keyword_dialog.nameEdit.text()
-      if keyword_name:
-        match_case = keyword_dialog.match_case_checkbox.isChecked()
-        if self._category:
-          self._keyword_manager.add_keyword(
-            keyword_name, self._category[0], match_case)
-        else:
-          keyword_id = self.new_keywords[-1][0] + 1 if self.new_keywords else 0
-          self.new_keywords.append(
-            (keyword_id, keyword_name, None, match_case))
+      match_case = keyword_dialog.match_case_checkbox.isChecked()
+      self.add_keyword(keyword_name, match_case)
 
-        self.setup_keyword_grid()
+  def add_keyword(self, keyword_name, match_case: Optional[bool] = False):
+    """ Add keyword to database if category exists, else store in new_keywords. """
+    if self._category:
+      self._keyword_manager.add_keyword(
+        keyword_name, self._category[0], match_case)
+    else:
+      keyword_id = self.new_keywords[-1][0] + 1 if self.new_keywords else 0
+      self.new_keywords.append(
+        (keyword_id, keyword_name, None, match_case))
+
+    self.setup_keyword_grid()
 
   def edit_keyword(self, button):
     """ Edit keyword in database, update grid. """
@@ -341,8 +345,11 @@ class CategoryDialog(QDialog):
     self.keywords_gridLayout = QGridLayout()
     self.keywords_gridLayout.setObjectName(u"keywords_gridLayout")
 
-    # Add categorie's keywords
+    # Add category keywords to grid
     self.addKeyword_pushButton = QPushButton()  # dummy
+    if self._keywords:
+      for keyword in self._keywords:
+        self.add_keyword(keyword)
     self.setup_keyword_grid()
 
     self.horizontalLayout_5.addLayout(self.keywords_gridLayout)

@@ -18,8 +18,9 @@ from focuswatch.ui.utils import get_category_color, get_contrasting_text_color
 
 
 class CategorizationTab(QWidget):
-  def __init__(self, category_manager, keyword_manager, parent=None):
+  def __init__(self, activity_manager, category_manager, keyword_manager, parent=None):
     super().__init__(parent)
+    self._activity_manager = activity_manager
     self._category_manager = category_manager
     self._keyword_manager = keyword_manager
     self._parent = parent
@@ -149,7 +150,7 @@ class CategorizationTab(QWidget):
 
   def retranslateUi(self):
     self.categorization_info_label.setText(QCoreApplication.translate("Dashboard", u"Rules for categorizing events. An event can only have one category. If several categories match, the deepest one will be chosen.\n"
-                                                                      "To re-categorize previous entries after adding or updating category, click \"Retrospective categorization\" button", None))
+                                                                      "To re-categorize previous entries after adding or updating category, click \"Retroactive categorization\" button", None))
     self.categorization_addCategory.setText(
       QCoreApplication.translate("Dashboard", u"Add category", None))
     self.retroactive_categorization_button.setText(QCoreApplication.translate(
@@ -295,8 +296,8 @@ class CategorizationTab(QWidget):
     cat_label_sizePolicy.setVerticalStretch(0)
 
     for key, vals in cat_dict.items():
-      # Skip Uncategorized and AFK categories
-      if vals['name'] in ['Uncategorized', 'AFK']:
+      # Skip Uncategorized
+      if vals['name'] in ['Uncategorized']:
         continue
       category_row_layout = QHBoxLayout()
       category_row_layout.setObjectName(u"category_row_layout")
@@ -412,5 +413,7 @@ class CategorizationTab(QWidget):
 
   def show_categorization_helper(self):
     """ Show categorization helper dialog. """
-    dialog = CategorizationHelperDialog(self)
+    dialog = CategorizationHelperDialog(
+      self, self._activity_manager, self._category_manager, self._keyword_manager)
     dialog.exec()
+    self.onShow(self.showEvent)
