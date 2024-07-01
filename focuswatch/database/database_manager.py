@@ -52,13 +52,15 @@ class DatabaseManager:
     create_table_queries = [
       '''
       CREATE TABLE "activity_log" (
+          "id" INTEGER NOT NULL UNIQUE,
           "time_start" TEXT NOT NULL,
           "time_stop" TEXT NOT NULL,
           "window_class" TEXT NOT NULL,
           "window_name" TEXT NOT NULL,
           "category_id" INTEGER,
           "project_id" INTEGER,
-          FOREIGN KEY("category_id") REFERENCES "categories"("id")
+          FOREIGN KEY("category_id") REFERENCES "categories"("id"),
+          PRIMARY KEY("id" AUTOINCREMENT)
       );''',
       '''
       CREATE TABLE "categories" (

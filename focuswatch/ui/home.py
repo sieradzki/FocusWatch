@@ -19,7 +19,7 @@ class Home(QMainWindow):
     self._keyword_manager = KeywordManager()
     self.setupUi(self)
 
-    self.setupTimers()
+    # self.setupTimers()
 
   def setupTimers(self):
     self.refresh_timer = QTimer(self)
@@ -54,7 +54,7 @@ class Home(QMainWindow):
 
     # Categorization tab
     self._categorization_tab = CategorizationTab(
-        self._category_manager, self._keyword_manager)
+        self._activity_manager, self._category_manager, self._keyword_manager)
     self.categorization_tab = self._categorization_tab.setupUi()
 
     self.tabWidget.addTab(self.categorization_tab, "")

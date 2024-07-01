@@ -85,6 +85,16 @@ class KeywordManager:
     Returns:
       True if the keyword was added successfully, False otherwise.
     """
+    # Check if the keyword already exists in the category
+    query = 'SELECT * FROM keywords WHERE category_id = ? AND name = ?'
+    params = (category_id, keyword_name)
+
+    if self._db_conn.execute_query(query, params):
+      logger.debug(f"Keyword with name {
+          keyword_name} already exists in category {category_id}.")
+      return False
+
+    # Insert the keyword into the category
     query = 'INSERT INTO keywords (category_id, name, match_case) VALUES (?, ?, ?)'
     params = (category_id, keyword_name, match_case)
     return self._db_conn.execute_update(query, params)

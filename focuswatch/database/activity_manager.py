@@ -51,10 +51,36 @@ class ActivityManager:
     result = self._db_conn.execute_update(query, params)
     return result
 
+  def update_category(self, activity_id: int, category_id: int) -> bool:
+    """ Update the category id of an activity.
+
+    Args:
+      activity_id: The id of the activity to update.
+      category_id: The new category id.
+
+    Returns:
+      True if the category id was updated successfully, False otherwise.
+    """
+    query = 'UPDATE activity_log SET category_id = ? WHERE id = ?'
+    params = (category_id, activity_id)
+    result = self._db_conn.execute_update(query, params)
+    return result
+
   def get_all_activities(self) -> List[Tuple]:
     """ Return all activity entries in the database. """
     query = "SELECT * FROM activity_log"
     result = self._db_conn.execute_query(query)
+    return result if result else []
+
+  def get_by_category_id(self, category_id: int) -> List[Tuple]:
+    """ Return all activity entries with a given category id.
+
+    Args:
+      category_id: The category id to retrieve entries for.
+    """
+    query = "SELECT * FROM activity_log WHERE category_id = ?"
+    params = (category_id,)
+    result = self._db_conn.execute_query(query, params)
     return result if result else []
 
   def get_todays_entries(self) -> List[Tuple]:
@@ -206,3 +232,47 @@ class ActivityManager:
 
     result = self._db_conn.execute_query(query, params)
     return result[0][0] if result else None
+
+  def get_top_uncategorized_window_classes(self, limit: int = 10) -> List[Tuple]:
+    """ Return the top uncategorized window classes sorted by total time spent.
+
+    Args:
+        limit: The maximum number of window classes to return.
+
+    Returns:
+        A list of tuples containing (id, window_class, total_time_seconds).
+    """
+    query = """
+        SELECT id, window_class,
+        SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
+        FROM activity_log
+        WHERE category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized')
+        GROUP BY window_class
+        ORDER BY total_time_seconds DESC
+        LIMIT ?
+    """
+    params = (limit,)
+    result = self._db_conn.execute_query(query, params)
+    return result if result else []
+
+  def get_top_uncategorized_window_names(self, limit: int = 10) -> List[Tuple]:
+    """ Return the top uncategorized window names sorted by total time spent. 
+
+    Args:
+      limit: The maximum number of window names to return.
+
+    Returns:
+      A list of tuples containing (id, window_name, total_time_seconds).
+    """
+    query = """
+        SELECT id, window_name,
+        SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
+        FROM activity_log
+        WHERE category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized')
+        GROUP BY window_name
+        ORDER BY total_time_seconds DESC
+        LIMIT ?
+    """
+    params = (limit,)
+    result = self._db_conn.execute_query(query, params)
+    return result if result else []

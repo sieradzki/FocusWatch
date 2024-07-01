@@ -79,8 +79,8 @@ class TimelineComponent(QFrame):
 
     # Parse the entries into quarters
     for entry in period_entries:
-      timestamp_start = datetime.strptime(entry[0], "%Y-%m-%dT%H:%M:%S.%f")
-      timestamp_stop = datetime.strptime(entry[1], "%Y-%m-%dT%H:%M:%S.%f")
+      timestamp_start = datetime.strptime(entry[1], "%Y-%m-%dT%H:%M:%S.%f")
+      timestamp_stop = datetime.strptime(entry[2], "%Y-%m-%dT%H:%M:%S.%f")
       category_id = entry[-2]  # TODO named tuple?
 
       while timestamp_start < timestamp_stop:
