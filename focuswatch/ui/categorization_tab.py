@@ -7,7 +7,7 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout,
                                QMessageBox, QProgressDialog, QPushButton,
                                QScrollArea, QSizePolicy, QSpacerItem,
-                               QVBoxLayout, QWidget)
+                               QVBoxLayout, QWidget, QLineEdit)
 
 from focuswatch.classifier import Classifier
 from focuswatch.database.activity_manager import ActivityManager
@@ -24,6 +24,8 @@ class CategorizationTab(QWidget):
     self._category_manager = category_manager
     self._keyword_manager = keyword_manager
     self._parent = parent
+
+    self._filter_text = ""
     # self.setupUi()
 
   def setupUi(self):
@@ -142,6 +144,18 @@ class CategorizationTab(QWidget):
 
     self.verticalLayout_5.addWidget(self.categorization_main_frame)
 
+    # Add filter layout
+    self.filter_layout = QHBoxLayout()
+    self.filter_input = QLineEdit(self.categorization_main_frame)
+    self.filter_input.setPlaceholderText(
+        "Filter categories and keywords...")
+    self.filter_input.textChanged.connect(self.filter_categories)
+
+    self.filter_layout.addWidget(self.filter_input)
+
+    # Insert filter layout at the top of the main layout
+    self.verticalLayout_12.insertLayout(0, self.filter_layout)
+
     self.showEvent = self.onShow
 
     self.categories_setup()
@@ -161,6 +175,14 @@ class CategorizationTab(QWidget):
       QCoreApplication.translate("Dashboard", u"Categorization helper", None))
 
   def onShow(self, event):
+    self.clear_layout(self.categorization_content_horizontalLayout)
+    self.categories_setup()
+
+  def filter_categories(self):
+    self._filter_text = self.filter_input.text().lower()
+    self.update_categories_display()
+
+  def update_categories_display(self):
     self.clear_layout(self.categorization_content_horizontalLayout)
     self.categories_setup()
 
@@ -291,7 +313,7 @@ class CategorizationTab(QWidget):
     category_layout.setContentsMargins(-1, 0, 0, -1)
 
     cat_label_sizePolicy = QSizePolicy(
-      QSizePolicy.Maximum, QSizePolicy.Preferred)
+      QSizePolicy.Maximum, QSizePolicy.Fixed)
     cat_label_sizePolicy.setHorizontalStretch(0)
     cat_label_sizePolicy.setVerticalStretch(0)
 
@@ -299,6 +321,12 @@ class CategorizationTab(QWidget):
       # Skip Uncategorized
       if vals['name'] in ['Uncategorized']:
         continue
+
+      # Apply filter
+      if self._filter_text:
+        if self._filter_text not in vals['name'].lower() and not any(self._filter_text in keyword.lower() for keyword in vals['keywords']):
+          continue
+
       category_row_layout = QHBoxLayout()
       category_row_layout.setObjectName(u"category_row_layout")
       category_row_layout.setSizeConstraint(QLayout.SetMinimumSize)
