@@ -39,15 +39,8 @@ class CategoryDialog(QDialog):
     self.setupUi(self)
 
   def show_color_picker(self):
-    # TODO move to utils
-    current_style = self.selectColor_pushButton.styleSheet()
-    if current_style:
-      color_name = current_style.split(':')[-1].strip().strip(';')
-      initial_color = QColor(color_name)
-    else:
-      initial_color = QColor(Qt.white)
-
-    color = QColorDialog.getColor(initial_color, self, "Select Color")
+    color = QColorDialog.getColor(
+      QColor(self.color or Qt.white), self, "Select Color")
 
     if color.isValid():
       self.color = color.name()
@@ -225,6 +218,8 @@ class CategoryDialog(QDialog):
 
     self.horizontalLayout_2 = QHBoxLayout()
     self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+
+    # Name label
     self.nameLabel = QLabel(self.frame)
     self.nameLabel.setObjectName(u"nameLabel")
     sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
@@ -237,6 +232,7 @@ class CategoryDialog(QDialog):
 
     self.horizontalLayout_2.addWidget(self.nameLabel)
 
+    # Name line edit
     self.name_lineEdit = QLineEdit(self.frame)
     self.name_lineEdit.setObjectName(u"name_lineEdit")
     sizePolicy1 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
@@ -258,6 +254,7 @@ class CategoryDialog(QDialog):
 
     self.verticalLayout_2.addLayout(self.horizontalLayout_2)
 
+    # Parent label
     self.horizontalLayout_4 = QHBoxLayout()
     self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
     self.parentLabel = QLabel(self.frame)
@@ -265,6 +262,7 @@ class CategoryDialog(QDialog):
 
     self.horizontalLayout_4.addWidget(self.parentLabel)
 
+    # Parent category combobox
     # Display all categories except self and Uncategorized in ComboBox
     self.parent_comboBox = QComboBox(self.frame)
     categories = self._category_manager.get_all_categories()
@@ -298,6 +296,7 @@ class CategoryDialog(QDialog):
 
     self.verticalLayout_2.addLayout(self.horizontalLayout_4)
 
+    # Color label and button
     self.horizontalLayout = QHBoxLayout()
     self.horizontalLayout.setObjectName(u"horizontalLayout")
     self.colorLabel = QLabel(self.frame)
@@ -322,6 +321,7 @@ class CategoryDialog(QDialog):
       color = get_category_color(self._category[0])
       self.selectColor_pushButton.setStyleSheet(
           f"background-color: {color};")
+      self.color = color
     self.selectColor_pushButton.clicked.connect(self.show_color_picker)
 
     self.horizontalLayout.addWidget(self.selectColor_pushButton)
