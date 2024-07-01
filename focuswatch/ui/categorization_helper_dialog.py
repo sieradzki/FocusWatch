@@ -154,7 +154,8 @@ class CategorizationHelperDialog(QDialog):
 
     for activity in activities:
       activity_id, name, total_time_seconds = activity
-      if total_time_seconds < 60:
+      # Don't show None entries # TODO - should we even log this in the watcher?
+      if total_time_seconds < 60 or name == "None":
         continue
 
       # Create horizontal layout for each entry
@@ -206,6 +207,10 @@ class CategorizationHelperDialog(QDialog):
       separator.setFrameShape(QFrame.HLine)
       separator.setFrameShadow(QFrame.Sunken)
       layout.addWidget(separator)
+
+    # Check if there are any entries and if not display a "Good job" message
+    if layout.count() == 0:
+      layout.addWidget(QLabel("No uncategorized activities found. Good job!"))
 
     # Add vertical spacer at the end
     layout.addItem(QSpacerItem(
@@ -277,4 +282,4 @@ class CategorizationHelperDialog(QDialog):
       keyword = name_label.text()
       match_case = match_case_checkbox.isChecked()
       self._keyword_manager.add_keyword(
-      keyword, category_id, match_case)
+          keyword, category_id, match_case)
