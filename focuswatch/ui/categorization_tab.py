@@ -14,7 +14,7 @@ from focuswatch.database.activity_manager import ActivityManager
 from focuswatch.ui.categorization_helper_dialog import \
     CategorizationHelperDialog
 from focuswatch.ui.category_dialog import CategoryDialog
-from focuswatch.ui.utils import get_category_color, get_contrasting_text_color
+from focuswatch.ui.utils import get_category_color_or_parent, get_contrasting_text_color
 
 
 class CategorizationTab(QWidget):
@@ -341,7 +341,7 @@ class CategorizationTab(QWidget):
         category_button.sizePolicy().hasHeightForWidth())
       category_button.setSizePolicy(cat_label_sizePolicy)
 
-      color = get_category_color(key)
+      color = get_category_color_or_parent(key)
       font_color = get_contrasting_text_color(color)
 
       if color:

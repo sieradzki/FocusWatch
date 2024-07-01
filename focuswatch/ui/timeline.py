@@ -7,7 +7,7 @@ from PySide6.QtCore import QRect, QSize, Qt, QTimer
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout,
                                QScrollArea, QSizePolicy, QVBoxLayout, QWidget)
 
-from focuswatch.ui.utils import get_category_color, get_contrasting_text_color
+from focuswatch.ui.utils import get_category_color_or_parent, get_contrasting_text_color
 
 
 class TimelineComponent(QFrame):
@@ -146,7 +146,7 @@ class TimelineComponent(QFrame):
           if not category:
             continue
           name = category[1]
-          color = get_category_color(entry)
+          color = get_category_color_or_parent(entry)
 
           if i > 0:
             if entry != entries[i - 1]:

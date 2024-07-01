@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout,
                                QProgressBar, QScrollArea, QSizePolicy,
                                QSpacerItem, QVBoxLayout, QWidget)
 
-from focuswatch.ui.utils import get_category_color, get_contrasting_text_color
+from focuswatch.ui.utils import get_category_color_or_parent, get_contrasting_text_color
 
 
 class TopApplicationsComponent(QFrame):
@@ -131,7 +131,7 @@ class TopApplicationsComponent(QFrame):
       if not category:
         continue
       id, name, parent_category_id, color = category
-      color = get_category_color(id)
+      color = get_category_color_or_parent(id)
 
       text = ""
 
