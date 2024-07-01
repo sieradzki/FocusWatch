@@ -40,8 +40,14 @@ class CategoryDialog(QDialog):
 
   def show_color_picker(self):
     # TODO move to utils
-    color_dialog = QColorDialog()
-    color = color_dialog.getColor()
+    current_style = self.selectColor_pushButton.styleSheet()
+    if current_style:
+      color_name = current_style.split(':')[-1].strip().strip(';')
+      initial_color = QColor(color_name)
+    else:
+      initial_color = QColor(Qt.white)
+
+    color = QColorDialog.getColor(initial_color, self, "Select Color")
 
     if color.isValid():
       self.color = color.name()
