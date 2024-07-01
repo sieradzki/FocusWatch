@@ -136,9 +136,42 @@ class DashboardTab(QWidget):
     self.retranslateUi()
     return self.dashboard_tab
 
+  def retranslateUi(self):
+    self.date_prev_button.setText(
+      QCoreApplication.translate("Dashboard", u"<", None))
+    self.date_next_button.setText(
+      QCoreApplication.translate("Dashboard", u">", None))
+    self.time_period_button.setText(
+      QCoreApplication.translate("Dashboard", self.current_period, None))
+    self.refreshButton.setText(
+      QCoreApplication.translate("Dashboard", u"Refresh", None))
+
   def onShow(self):
+    self.clearComponents()
     self.update_date()
     self.component_setup()
+
+  def clearLayout(self, layout):
+    """ Clear the layout """
+    if layout is not None:
+      while layout.count():
+        item = layout.takeAt(0)
+        widget = item.widget()
+        if widget is not None:
+          widget.deleteLater()
+        else:
+          self.clearLayout(item.layout())
+
+  def clearComponents(self):
+    """ Clear the components related to timeline, top categories, and top applications """
+    if hasattr(self, '_timeline_frame') and self._timeline_frame.layout():
+      self.clearLayout(self._timeline_frame.layout())
+
+    if hasattr(self, '_top_categories_frame') and self._top_categories_frame.layout():
+      self.clearLayout(self._top_categories_frame.layout())
+
+    if hasattr(self, '_top_applications_frame') and self._top_applications_frame.layout():
+      self.clearLayout(self._top_applications_frame.layout())
 
   def component_setup(self):
     """ Setup the components """
@@ -177,32 +210,6 @@ class DashboardTab(QWidget):
       self.date_button.setText(self.period_start.strftime("%B %Y"))
     elif self.current_period == "Year":
       self.date_button.setText(self.period_start.strftime("%Y"))
-
-  def clearLayout(self, layout):
-    """ Clear the layout """
-    for i in reversed(range(layout.count())):
-      item = layout.itemAt(i)
-
-      if isinstance(item, QSpacerItem):
-        continue
-
-      widget = item.widget()
-
-      if widget is not None:
-        widget.deleteLater()
-      else:
-        self.clearLayout(item)
-
-  def retranslateUi(self):
-    # Date nav
-    self.date_prev_button.setText(
-      QCoreApplication.translate("Dashboard", u"<", None))
-    self.date_next_button.setText(
-      QCoreApplication.translate("Dashboard", u">", None))
-    self.time_period_button.setText(
-      QCoreApplication.translate("Dashboard", self.current_period, None))
-    self.refreshButton.setText(
-      QCoreApplication.translate("Dashboard", u"Refresh", None))
 
   def select_date(self):
     """ Select date for dashboard """
