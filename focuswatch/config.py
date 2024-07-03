@@ -12,24 +12,53 @@ class Config:
   """ Configuration class for FocusWatch """
 
   def __init__(self, config_file_path: Optional[str] = None):
-    if getattr(sys, 'frozen', False):
-      # Running as compiled executable
-      self.project_root = "/opt/focuswatch"
-      self.default_config_path = "/etc/focuswatch/config.ini"
-      self.default_database_path = "/var/lib/focuswatch/focuswatch.sqlite"
-      self.default_logger_config_path = "/etc/focuswatch/logging.json"
-      self.default_log_path = "/var/log/focuswatch/focuswatch.log.jsonl"
+    if sys.platform.startswith('linux'):
+      if getattr(sys, 'frozen', False):
+        # Running as compiled executable
+        self.project_root = "/opt/focuswatch"
+        self.default_config_path = "/etc/focuswatch/config.ini"
+        self.default_database_path = "/var/lib/focuswatch/focuswatch.sqlite"
+        self.default_logger_config_path = "/etc/focuswatch/logging.json"
+        self.default_log_path = "/var/log/focuswatch/focuswatch.log.jsonl"
+      else:
+        # Running in a normal Python environment
+        self.project_root = os.path.dirname(
+          os.path.dirname(os.path.abspath(__file__)))
+        self.default_config_path = os.path.join(
+          self.project_root, "config.ini")
+        self.default_database_path = os.path.join(
+          self.project_root, "focuswatch.sqlite")
+        self.default_logger_config_path = os.path.join(
+          self.project_root, "logging.json")
+        self.default_log_path = os.path.join(
+          self.project_root, "logs", "focuswatch.log.jsonl")
+    elif sys.platform.startswith('win'):
+      if getattr(sys, 'frozen', False):
+        # Running as compiled executable
+        self.project_root = os.environ.get(
+          'ProgramFiles', 'C:\\Program Files') + '\\FocusWatch'
+        self.default_config_path = os.environ.get(
+          'ProgramData', 'C:\\ProgramData') + '\\FocusWatch\\config.ini'
+        self.default_database_path = os.environ.get(
+          'ProgramData', 'C:\\ProgramData') + '\\FocusWatch\\focuswatch.sqlite'
+        self.default_logger_config_path = os.environ.get(
+          'ProgramData', 'C:\\ProgramData') + '\\FocusWatch\\logging.json'
+        self.default_log_path = os.environ.get(
+          'ProgramData', 'C:\\ProgramData') + '\\FocusWatch\\focuswatch.log.jsonl'
+      else:
+        # Running in a normal Python environment
+        self.project_root = os.path.dirname(
+          os.path.dirname(os.path.abspath(__file__)))
+        self.default_config_path = os.path.join(
+          self.project_root, "config.ini")
+        self.default_database_path = os.path.join(
+          self.project_root, "focuswatch.sqlite")
+        self.default_logger_config_path = os.path.join(
+          self.project_root, "logging.json")
+        self.default_log_path = os.path.join(
+          self.project_root, "logs", "focuswatch.log.jsonl")
     else:
-      # Running in a normal Python environment
-      self.project_root = os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__)))
-      self.default_config_path = os.path.join(self.project_root, "config.ini")
-      self.default_database_path = os.path.join(
-        self.project_root, "focuswatch.sqlite")
-      self.default_logger_config_path = os.path.join(
-        self.project_root, "logging.json")
-      self.default_log_path = os.path.join(
-        self.project_root, "logs", "focuswatch.log.jsonl")
+      raise EnvironmentError("Unsupported platform")
 
     self.config_file_path = config_file_path or self.default_config_path
     self.config = configparser.ConfigParser()
