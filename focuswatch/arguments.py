@@ -2,6 +2,7 @@
 import argparse
 import sys
 
+from focuswatch import __version__
 from focuswatch.config import Config
 from focuswatch.database.category_manager import CategoryManager
 from focuswatch.database.keyword_manager import KeywordManager
@@ -68,6 +69,9 @@ def parse_arguments():
     prog="focuswatch",
     description="Activity logging with categorization"
   )
+
+  parser.add_argument('--version', action='version',
+                      version=f'%(prog)s {__version__}')
 
   general_parser = parser.add_argument_group("General")
   categories_parser = parser.add_argument_group("Categories")
