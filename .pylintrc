@@ -131,6 +131,8 @@ disable=R,
         zip-builtin-not-iterating,
         W1203, # lazy formatting in logging functions
         W0105,
+        C0114, # module docstring
+        W0212
 
 [REPORTS]
 

@@ -3,6 +3,7 @@ import configparser
 import logging
 import os
 from typing import Optional
+import sys
 
 logger = logging.getLogger(__name__)
 
@@ -11,14 +12,42 @@ class Config:
   """ Configuration class for FocusWatch """
 
   def __init__(self, config_file_path: Optional[str] = None):
-    self.project_root = os.path.dirname(
-      os.path.dirname(os.path.abspath(__file__)))
-    self.default_config_path = os.path.join(
-      self.project_root, "config.ini")
+    self.is_frozen = getattr(sys, "frozen", False)
+
+    if self.is_frozen:
+      if sys.platform.startswith("linux"):
+        self.project_root = os.path.expanduser("~/.focuswatch")
+      elif sys.platform.startswith("win"):
+        self.project_root = os.path.join(
+          os.getenv("LOCALAPPDATA"), "FocusWatch")
+      else:
+        raise EnvironmentError("Unsupported platform")
+
+      self.default_config_path = os.path.join(
+        self.project_root, "config.ini")
+      self.default_database_path = os.path.join(
+        self.project_root, "focuswatch.sqlite")
+      self.default_logger_config_path = os.path.join(
+        sys._MEIPASS, "logging.json")
+      self.default_log_path = os.path.join(
+        self.project_root, "logs", "focuswatch.log.jsonl")
+    else:
+      self.project_root = os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__)))
+      self.default_config_path = os.path.join(
+        self.project_root, "config.ini")
+      self.default_database_path = os.path.join(
+        self.project_root, "focuswatch.sqlite")
+      self.default_logger_config_path = os.path.join(
+        self.project_root, "logging.json")
+      self.default_log_path = os.path.join(
+        self.project_root, "logs", "focuswatch.log.jsonl")
+
+    os.makedirs(os.path.dirname(self.default_log_path), exist_ok=True)
+
     self.config_file_path = config_file_path or self.default_config_path
     self.config = configparser.ConfigParser()
     self.load_config()
-    # self.config.read(self.config_file_path)
 
   def initialize_config(self):
     """ Initialize the configuration file with default values """
@@ -31,13 +60,13 @@ class Config:
       }
     if "Database" not in self.config:
       self.config["Database"] = {
-        "location": os.path.join(self.project_root, "focuswatch.sqlite"),
+        "location": self.default_database_path,
       }
 
     if "Logging" not in self.config:
       self.config["Logging"] = {
-        "location": os.path.join(self.project_root, "logs", "focuswatch.log.jsonl"),
-        "logger_config": os.path.join(self.project_root, "logging.json"),
+        "location": self.default_log_path,
+        "logger_config": self.default_logger_config_path,
         "log_level": "DEBUG",
       }
 

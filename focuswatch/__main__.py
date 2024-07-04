@@ -3,6 +3,8 @@ import atexit
 import json
 import logging.config
 import logging.handlers
+import os
+import shutil
 import sys
 import threading
 
@@ -28,18 +30,55 @@ def start_watcher(watcher):
 def setup_logging():
   # Get logging file path from config
   config = Config()
-  config_file = config.get_value("Logging", "logger_config")
-  with open(config_file, encoding="utf-8") as f_in:
-    config = json.load(f_in)
 
-  logging.config.dictConfig(config)
+  if getattr(sys, "frozen", False):
+    # If the application is frozen (packaged)
+    config_file = config.default_logger_config_path
+  else:
+    # If running in development mode
+    config_file = config.get_value("Logging", "logger_config")
+
+  if not os.path.exists(config_file):
+    raise FileNotFoundError(
+      f"Logging configuration file not found: {config_file}")
+
+  with open(config_file, encoding="utf-8") as f_in:
+    log_config = json.load(f_in)
+
+  # Replace the placeholder with the actual log file path
+  log_file_path = config.default_log_path
+  log_config["handlers"]["file_json"]["filename"] = log_file_path
+
+  logging.config.dictConfig(log_config)
   queue_handler = logging.getHandlerByName("queue_handler")
   if queue_handler is not None:
     queue_handler.listener.start()
     atexit.register(queue_handler.listener.stop)
 
 
+def get_icon_path():
+  if getattr(sys, "frozen", False):
+    # If the application is frozen (packaged)
+    return os.path.join(sys._MEIPASS, "icon.png")
+  else:
+    # If running in development mode
+    return "icon.png"
+
+
+def check_dependencies():
+  # Linux dependencies
+  if sys.platform.startswith("linux"):
+    dependencies = ["xdotool", "xprintidle"]
+    for dep in dependencies:
+      if not shutil.which(dep):
+        print(f"Error: {dep} is not installed.", file=sys.stderr)
+        sys.exit(1)
+
+
 def main():
+  # Check dependencies
+  check_dependencies()
+
   # Setup logging
   setup_logging()
 
@@ -61,7 +100,8 @@ def main():
   app.setQuitOnLastWindowClosed(False)
 
   # Create the icon
-  icon = QIcon("icon.png")  # TODO change the icon
+  icon_path = get_icon_path()
+  icon = QIcon(icon_path)  # TODO change the icon
 
   # Create the system tray
   tray = QSystemTrayIcon()
