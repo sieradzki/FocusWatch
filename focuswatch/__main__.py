@@ -68,7 +68,7 @@ def get_icon_path():
 def check_dependencies():
   # Linux dependencies
   if sys.platform.startswith("linux"):
-    dependencies = ['xdotool', 'xprintidle']
+    dependencies = ["xdotool", "xprintidle"]
     for dep in dependencies:
       if not shutil.which(dep):
         print(f"Error: {dep} is not installed.", file=sys.stderr)

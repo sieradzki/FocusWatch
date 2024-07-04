@@ -70,8 +70,8 @@ def parse_arguments():
     description="Activity logging with categorization"
   )
 
-  parser.add_argument('--version', action='version',
-                      version=f'%(prog)s {__version__}')
+  parser.add_argument("--version", action="version",
+                      version=f"%(prog)s {__version__}")
 
   general_parser = parser.add_argument_group("General")
   categories_parser = parser.add_argument_group("Categories")
