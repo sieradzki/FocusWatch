@@ -30,7 +30,7 @@ class Config:
       self.default_logger_config_path = os.path.join(
         sys._MEIPASS, "logging.json")
       self.default_log_path = os.path.join(
-        self.project_root, "focuswatch.log.jsonl")
+        self.project_root, "logs", "focuswatch.log.jsonl")
     else:
       self.project_root = os.path.dirname(
         os.path.dirname(os.path.abspath(__file__)))

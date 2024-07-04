@@ -30,7 +30,7 @@ def setup_logging():
   # Get logging file path from config
   config = Config()
 
-  if getattr(sys, 'frozen', False):
+  if getattr(sys, "frozen", False):
     # If the application is frozen (packaged)
     config_file = config.default_logger_config_path
   else:
@@ -46,7 +46,7 @@ def setup_logging():
 
   # Replace the placeholder with the actual log file path
   log_file_path = config.default_log_path
-  log_config['handlers']['file_json']['filename'] = log_file_path
+  log_config["handlers"]["file_json"]["filename"] = log_file_path
 
   logging.config.dictConfig(log_config)
   queue_handler = logging.getHandlerByName("queue_handler")
@@ -56,7 +56,7 @@ def setup_logging():
 
 
 def get_icon_path():
-  if getattr(sys, 'frozen', False):
+  if getattr(sys, "frozen", False):
     # If the application is frozen (packaged)
     return os.path.join(sys._MEIPASS, "icon.png")
   else:
