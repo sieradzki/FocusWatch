@@ -37,7 +37,7 @@
       "class": "logging.handlers.RotatingFileHandler",
       "level": "DEBUG",
       "formatter": "json",
-      "filename": "logs/focuswatch.log.jsonl",
+      "filename": "{{LOG_FILE_PATH}}",
       "maxBytes": 5000000,
       "backupCount": 3
     },

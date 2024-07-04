@@ -3,6 +3,7 @@ import atexit
 import json
 import logging.config
 import logging.handlers
+import os
 import sys
 import threading
 
@@ -28,11 +29,26 @@ def start_watcher(watcher):
 def setup_logging():
   # Get logging file path from config
   config = Config()
-  config_file = config.get_value("Logging", "logger_config")
-  with open(config_file, encoding="utf-8") as f_in:
-    config = json.load(f_in)
 
-  logging.config.dictConfig(config)
+  if getattr(sys, 'frozen', False):
+    # If the application is frozen (packaged)
+    config_file = config.default_logger_config_path
+  else:
+    # If running in development mode
+    config_file = config.get_value("Logging", "logger_config")
+
+  if not os.path.exists(config_file):
+    raise FileNotFoundError(
+      f"Logging configuration file not found: {config_file}")
+
+  with open(config_file, encoding="utf-8") as f_in:
+    log_config = json.load(f_in)
+
+  # Replace the placeholder with the actual log file path
+  log_file_path = config.default_log_path
+  log_config['handlers']['file_json']['filename'] = log_file_path
+
+  logging.config.dictConfig(log_config)
   queue_handler = logging.getHandlerByName("queue_handler")
   if queue_handler is not None:
     queue_handler.listener.start()
