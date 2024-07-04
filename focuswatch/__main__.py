@@ -4,6 +4,7 @@ import json
 import logging.config
 import logging.handlers
 import os
+import shutil
 import sys
 import threading
 
@@ -64,7 +65,20 @@ def get_icon_path():
     return "icon.png"
 
 
+def check_dependencies():
+  # Linux dependencies
+  if sys.platform.startswith("linux"):
+    dependencies = ['xdotool', 'xprintidle']
+    for dep in dependencies:
+      if not shutil.which(dep):
+        print(f"Error: {dep} is not installed.", file=sys.stderr)
+        sys.exit(1)
+
+
 def main():
+  # Check dependencies
+  check_dependencies()
+
   # Setup logging
   setup_logging()
 
