@@ -55,6 +55,15 @@ def setup_logging():
     atexit.register(queue_handler.listener.stop)
 
 
+def get_icon_path():
+  if getattr(sys, 'frozen', False):
+    # If the application is frozen (packaged)
+    return os.path.join(sys._MEIPASS, "icon.png")
+  else:
+    # If running in development mode
+    return "icon.png"
+
+
 def main():
   # Setup logging
   setup_logging()
@@ -77,7 +86,8 @@ def main():
   app.setQuitOnLastWindowClosed(False)
 
   # Create the icon
-  icon = QIcon("icon.png")  # TODO change the icon
+  icon_path = get_icon_path()
+  icon = QIcon(icon_path)  # TODO change the icon
 
   # Create the system tray
   tray = QSystemTrayIcon()
