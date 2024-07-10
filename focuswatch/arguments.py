@@ -148,7 +148,6 @@ def parse_arguments():
         print("Failed to add the application to autostart.")
     else:
       print("Application is already in autostart.")
-    sys.exit()
 
   if args.remove_autostart:
     if is_in_autostart():
@@ -158,7 +157,6 @@ def parse_arguments():
         print("Failed to remove the application from autostart.")
     else:
       print("Application is not in autostart.")
-    sys.exit()
 
   # Config
   if args.config_wi:

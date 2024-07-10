@@ -1,13 +1,12 @@
 import ctypes
 import logging
 import os
-import platform
 import sys
 import textwrap
 
 from focuswatch.utils import is_frozen, is_linux, is_windows
 
-if platform.system().startswith("win"):
+if is_windows:
   import winreg as reg
 
 logger = logging.getLogger(__name__)
