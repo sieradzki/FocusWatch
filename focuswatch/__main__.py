@@ -18,7 +18,6 @@ from focuswatch.autostart_manager import (add_to_autostart, is_in_autostart,
 from focuswatch.config import Config
 from focuswatch.database.database_manager import DatabaseManager
 from focuswatch.ui.home import Home
-from focuswatch.ui.tray_settings import TraySettings
 from focuswatch.watcher import Watcher
 
 # from qt_material import apply_stylesheet
@@ -79,11 +78,6 @@ def check_dependencies():
 
 
 def main():
-  # DEBUG 
-  print(f"Is in autostart: {is_in_autostart()}")
-  print(f"Executable path: {sys.executable}")
-  print(f"autostart path: {os.path.expanduser('~/.config/autostart')}")
-
   # Check dependencies
   check_dependencies()
 
@@ -132,13 +126,6 @@ def main():
   tray.activated.connect(
     lambda reason: dashboard_window.hide() if reason == QSystemTrayIcon.Trigger and dashboard_window.isVisible(
     ) else dashboard_window.show() if reason == QSystemTrayIcon.Trigger else None)
-
-  # Settings action
-  tray_settings = TraySettings()
-
-  open_settings = QAction("Settings")
-  open_settings.triggered.connect(tray_settings.show)
-  menu.addAction(open_settings)
 
   # Logs action (TODO logs not implemented)
   logs = QAction("Log")
