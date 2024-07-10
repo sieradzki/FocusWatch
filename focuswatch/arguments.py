@@ -6,6 +6,8 @@ from focuswatch import __version__
 from focuswatch.config import Config
 from focuswatch.database.category_manager import CategoryManager
 from focuswatch.database.keyword_manager import KeywordManager
+from focuswatch.autostart_manager import (add_to_autostart, is_in_autostart,
+                                          remove_from_autostart)
 
 
 def display_config():
@@ -80,11 +82,15 @@ def parse_arguments():
 
   # General arguments
   general_parser.add_argument("--show-config", action="store_true",
-                              help="Display current configuraton an exit")
+                              help="Display current configuraton and exit")
   general_parser.add_argument("-w", "--watch-interval", default=None,
                               help="Watcher interval", type=float)
   general_parser.add_argument("-v", "--verbose", action="store_true",
                               help="Verbose output", default=False)
+  general_parser.add_argument("--add-autostart", action="store_true",
+                              help="Add the application to autostart")
+  general_parser.add_argument("--remove-autostart", action="store_true",
+                              help="Remove the application from autostart")
 
   # Categories arguments
   categories_parser.add_argument("-c", "--categories", action="store_true",
@@ -132,6 +138,26 @@ def parse_arguments():
 
   if args.add_keyword:
     add_keyword(args.add_keyword)
+    sys.exit()
+
+  if args.add_autostart:
+    if not is_in_autostart():
+      if add_to_autostart():
+        print("Application added to autostart.")
+      else:
+        print("Failed to add the application to autostart.")
+    else:
+      print("Application is already in autostart.")
+    sys.exit()
+
+  if args.remove_autostart:
+    if is_in_autostart():
+      if remove_from_autostart():
+        print("Application removed from autostart.")
+      else:
+        print("Failed to remove the application from autostart.")
+    else:
+      print("Application is not in autostart.")
     sys.exit()
 
   # Config
