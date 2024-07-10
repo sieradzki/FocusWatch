@@ -6,7 +6,7 @@ import textwrap
 
 from focuswatch.utils import is_frozen, is_linux, is_windows
 
-if is_windows:
+if is_windows():
   import winreg as reg
 
 logger = logging.getLogger(__name__)
@@ -66,6 +66,11 @@ def add_to_autostart():
     logger.warning("Autostart can only be set for the packaged application.")
     return False
 
+  # Check if the app is already in autostart
+  if is_in_autostart():
+    logger.info(f"{APP_NAME} is already in autostart.")
+    return True
+
   if is_windows():
     return run_as_admin(add_to_autostart_windows)
   elif is_linux():
@@ -93,6 +98,16 @@ def add_to_autostart():
 
 def remove_from_autostart():
   """ Removes the application from the autostart. """
+  # Check if the application is frozen (packaged)
+  if not is_frozen():
+    logger.warning("Autostart can only be set for the packaged application.")
+    return False
+
+  # Check if the app is in autostart
+  if not is_in_autostart():
+    logger.info(f"{APP_NAME} is not in autostart.")
+    return True
+
   if is_windows():
     key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
     try:

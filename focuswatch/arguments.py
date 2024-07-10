@@ -87,10 +87,6 @@ def parse_arguments():
                               help="Watcher interval", type=float)
   general_parser.add_argument("-v", "--verbose", action="store_true",
                               help="Verbose output", default=False)
-  general_parser.add_argument("--add-autostart", action="store_true",
-                              help="Add the application to autostart")
-  general_parser.add_argument("--remove-autostart", action="store_true",
-                              help="Remove the application from autostart")
 
   # Categories arguments
   categories_parser.add_argument("-c", "--categories", action="store_true",
@@ -139,24 +135,6 @@ def parse_arguments():
   if args.add_keyword:
     add_keyword(args.add_keyword)
     sys.exit()
-
-  if args.add_autostart:
-    if not is_in_autostart():
-      if add_to_autostart():
-        print("Application added to autostart.")
-      else:
-        print("Failed to add the application to autostart.")
-    else:
-      print("Application is already in autostart.")
-
-  if args.remove_autostart:
-    if is_in_autostart():
-      if remove_from_autostart():
-        print("Application removed from autostart.")
-      else:
-        print("Failed to remove the application from autostart.")
-    else:
-      print("Application is not in autostart.")
 
   # Config
   if args.config_wi:
