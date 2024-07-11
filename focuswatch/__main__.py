@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 def start_watcher(watcher):
+  logger.info("Starting the watcher")
   watcher.monitor()
 
 
@@ -74,10 +75,13 @@ def check_dependencies():
     for dep in dependencies:
       if not shutil.which(dep):
         print(f"Error: {dep} is not installed.", file=sys.stderr)
+        logger.error(f"Error: {dep} is not installed.")
         sys.exit(1)
+  logger.info("Dependencies are met.")
 
 
 def main():
+  logger.info("Starting FocusWatch")
   # Check dependencies
   check_dependencies()
 
@@ -90,12 +94,14 @@ def main():
   # Instantiate the DatabaseManager and check if the database exists
   _ = DatabaseManager()
 
-  """ System tray """
+  logger.info("Creating QApplication")
   app = QApplication([])
 
+  """ System tray """
   if not QSystemTrayIcon.isSystemTrayAvailable():
     QMessageBox.critical(
       None, "Systray", "Couldn't detect any system tray on this system.")
+    logger.error("Couldn't detect any system tray on this system.")
     sys.exit(1)
 
   # Don't quit the application when the window is closed
@@ -106,6 +112,7 @@ def main():
   icon = QIcon(icon_path)  # TODO change the icon
 
   # Create the system tray
+  logger.info("Creating the system tray")
   tray = QSystemTrayIcon()
   tray.setIcon(icon)
   tray.setVisible(True)
