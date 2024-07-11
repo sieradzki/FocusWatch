@@ -11,4 +11,4 @@ def is_linux():
 
 
 def is_frozen():
-  return getattr(sys, 'frozen', False)
+  return getattr(sys, "frozen", False)

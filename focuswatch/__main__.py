@@ -1,5 +1,4 @@
 """ Main file for the FocusWatch application. """
-import argparse
 import atexit
 import json
 import logging.config
@@ -13,8 +12,6 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QSystemTrayIcon
 
 from focuswatch.arguments import parse_arguments
-from focuswatch.autostart_manager import (add_to_autostart, is_in_autostart,
-                                          remove_from_autostart)
 from focuswatch.config import Config
 from focuswatch.database.database_manager import DatabaseManager
 from focuswatch.ui.home import Home

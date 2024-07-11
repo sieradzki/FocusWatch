@@ -6,8 +6,6 @@ from focuswatch import __version__
 from focuswatch.config import Config
 from focuswatch.database.category_manager import CategoryManager
 from focuswatch.database.keyword_manager import KeywordManager
-from focuswatch.autostart_manager import (add_to_autostart, is_in_autostart,
-                                          remove_from_autostart)
 
 
 def display_config():
