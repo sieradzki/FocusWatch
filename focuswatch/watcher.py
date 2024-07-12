@@ -40,6 +40,10 @@ if platform in ["Windows", "win32", "cygwin"]:
   user32.GetWindowThreadProcessId.argtypes = [
     ctypes.c_int, ctypes.POINTER(ctypes.c_uint)]
 
+  class LASTINPUTINFO(ctypes.Structure):
+    # pylint: disable=invalid-name
+    _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_ulong)]
+
 
 class Watcher():
   """ Watcher class for FocusWatch. 
@@ -188,9 +192,6 @@ class Watcher():
     """
     try:
       # https://stackoverflow.com/a/912223
-      class LASTINPUTINFO(ctypes.Structure):
-        # pylint: disable=invalid-name
-        _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_ulong)]
 
       last_input_info = LASTINPUTINFO()
       last_input_info.cbSize = ctypes.sizeof(LASTINPUTINFO)
