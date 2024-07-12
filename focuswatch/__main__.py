@@ -15,7 +15,6 @@ from focuswatch.arguments import parse_arguments
 from focuswatch.config import Config
 from focuswatch.database.database_manager import DatabaseManager
 from focuswatch.ui.home import Home
-from focuswatch.ui.tray_settings import TraySettings
 from focuswatch.watcher import Watcher
 
 # from qt_material import apply_stylesheet
@@ -24,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 def start_watcher(watcher):
+  logger.info("Starting the watcher")
   watcher.monitor()
 
 
@@ -72,10 +72,13 @@ def check_dependencies():
     for dep in dependencies:
       if not shutil.which(dep):
         print(f"Error: {dep} is not installed.", file=sys.stderr)
+        logger.error(f"Error: {dep} is not installed.")
         sys.exit(1)
+  logger.info("Dependencies are met.")
 
 
 def main():
+  logger.info("Starting FocusWatch")
   # Check dependencies
   check_dependencies()
 
@@ -88,12 +91,14 @@ def main():
   # Instantiate the DatabaseManager and check if the database exists
   _ = DatabaseManager()
 
-  """ System tray """
+  logger.info("Creating QApplication")
   app = QApplication([])
 
+  """ System tray """
   if not QSystemTrayIcon.isSystemTrayAvailable():
     QMessageBox.critical(
       None, "Systray", "Couldn't detect any system tray on this system.")
+    logger.error("Couldn't detect any system tray on this system.")
     sys.exit(1)
 
   # Don't quit the application when the window is closed
@@ -104,6 +109,7 @@ def main():
   icon = QIcon(icon_path)  # TODO change the icon
 
   # Create the system tray
+  logger.info("Creating the system tray")
   tray = QSystemTrayIcon()
   tray.setIcon(icon)
   tray.setVisible(True)
@@ -124,13 +130,6 @@ def main():
   tray.activated.connect(
     lambda reason: dashboard_window.hide() if reason == QSystemTrayIcon.Trigger and dashboard_window.isVisible(
     ) else dashboard_window.show() if reason == QSystemTrayIcon.Trigger else None)
-
-  # Settings action
-  tray_settings = TraySettings()
-
-  open_settings = QAction("Settings")
-  open_settings.triggered.connect(tray_settings.show)
-  menu.addAction(open_settings)
 
   # Logs action (TODO logs not implemented)
   logs = QAction("Log")

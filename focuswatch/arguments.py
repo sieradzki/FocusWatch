@@ -80,7 +80,7 @@ def parse_arguments():
 
   # General arguments
   general_parser.add_argument("--show-config", action="store_true",
-                              help="Display current configuraton an exit")
+                              help="Display current configuraton and exit")
   general_parser.add_argument("-w", "--watch-interval", default=None,
                               help="Watcher interval", type=float)
   general_parser.add_argument("-v", "--verbose", action="store_true",
