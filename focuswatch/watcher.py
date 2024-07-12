@@ -136,7 +136,9 @@ class Watcher():
         process = psutil.Process(active_window_pid.value)
         app_name = process.exe().split("\\")[-1].split(".")[0]
       except psutil.NoSuchProcess:
-        app_name = "Unknown (Process not found)"
+        app_name = "None"
+      except psutil.AccessDenied:
+        app_name = "None"
       return app_name
     else:
       logger.error("This platform is not supported")
@@ -187,7 +189,7 @@ class Watcher():
     try:
       # https://stackoverflow.com/a/912223
       class LASTINPUTINFO(ctypes.Structure):
-        # hold the last input information
+        # pylint: disable=invalid-name
         _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_ulong)]
 
       last_input_info = LASTINPUTINFO()
