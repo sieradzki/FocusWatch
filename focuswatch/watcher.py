@@ -185,10 +185,21 @@ class Watcher():
       OSError: If there is an OS error.
     """
     try:
-      last_input_info = ctypes.c_ulong()
-      user32.GetLastInputInfo(ctypes.byref(last_input_info))
-      idle_time = kernel32.GetTickCount() - last_input_info.value
-      return idle_time / 1000
+      # https://stackoverflow.com/a/912223
+      class LASTINPUTINFO(ctypes.Structure):
+        # hold the last input information
+        _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_ulong)]
+
+      last_input_info = LASTINPUTINFO()
+      last_input_info.cbSize = ctypes.sizeof(LASTINPUTINFO)
+
+      if not user32.GetLastInputInfo(ctypes.byref(last_input_info)):
+        raise ctypes.WinError()
+
+      idle_time_ms = kernel32.GetTickCount() - last_input_info.dwTime
+      idle_time_sec = int(idle_time_ms / 1000)
+
+      return idle_time_sec
     except (ctypes.ArgumentError, OSError) as e:
       logger.error(f"Error getting idle time: {e}")
       return 0
