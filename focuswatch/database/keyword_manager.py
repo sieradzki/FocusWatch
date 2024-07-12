@@ -42,7 +42,7 @@ class KeywordManager:
         ("reddit", "Social media"), ("Facebook", "Social media"),
         ("Instagram", "Social media"), ("Spotify", "Music"),
         ("FocusWatch", "Productivity"), ("notion", "Productivity"),
-        ("obsidian", "Productivity")
+        ("obsidian", "Productivity"), ("afk", "AFK")
     ]
 
     category_manager = CategoryManager()
