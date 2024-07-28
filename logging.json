@@ -25,7 +25,7 @@
       "class": "logging.StreamHandler",
       "formatter": "simple",
       "stream": "ext://sys.stdout",
-      "level": "DEBUG"
+      "level": "INFO"
     },
     "stderr": {
       "class": "logging.StreamHandler",

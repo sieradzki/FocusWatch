@@ -6,11 +6,11 @@ from dataclasses import dataclass
 @dataclass
 class Activity:
   """ Represents an activity. """
-  id: Optional[int] = None
   window_class: str
   window_name: str
   time_start: datetime
   time_stop: datetime
+  id: Optional[int] = None
   category_id: Optional[int] = None
   project_id: Optional[int] = None
 

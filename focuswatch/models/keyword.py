@@ -5,9 +5,9 @@ from typing import Optional
 class Keyword:
   """ Represents a keyword. """
   
-  id: Optional[int] = None
   name: str
   category_id: int
+  id: Optional[int] = None
   match_case: bool = False
 
   def __post_init__(self):

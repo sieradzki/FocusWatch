@@ -141,7 +141,7 @@ class KeywordService:
     query = "SELECT * FROM keywords"
     try:
       results = self._db_conn.execute_query(query)
-      return [Keyword(*row) for row in results]
+      return [Keyword(id=row[0], name=row[1], category_id=row[2], match_case=bool(row[3])) for row in results]
     except Exception as e:
       logger.error(f"Failed to retrieve keywords: {e}")
       return []

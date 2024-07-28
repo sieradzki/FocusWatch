@@ -5,8 +5,8 @@ from typing import Optional
 @dataclass
 class Category:
   """ Represents a category. """
-  id: Optional[int] = None
   name: str
+  id: Optional[int] = None
   parent_category_id: Optional[int] = None
   color: Optional[str] = None
 

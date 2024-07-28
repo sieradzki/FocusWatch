@@ -15,7 +15,7 @@ from focuswatch.arguments import parse_arguments
 from focuswatch.config import Config
 from focuswatch.database.database_manager import DatabaseManager
 from focuswatch.ui.home import Home
-from focuswatch.watcher import Watcher
+from focuswatch.services.watcher_service import WatcherService
 
 # from qt_material import apply_stylesheet
 
@@ -145,8 +145,8 @@ def main():
   tray.setContextMenu(menu)
 
   # Create the watcher
-  watcher = Watcher(args.watch_interval if args.watch_interval else None,
-                    args.verbose if args.verbose else None)
+  watcher = WatcherService(args.watch_interval if args.watch_interval else None,
+                           args.verbose if args.verbose else None)
 
   # Create separate thread for the watcher
   watcher_thread = threading.Thread(target=start_watcher, args=(watcher,))
