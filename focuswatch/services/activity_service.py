@@ -33,7 +33,7 @@ class ActivityService:
     '''
     params = (
       activity.time_start.isoformat(),
-      activity.time_stop.isoformat(),
+      activity.time_stop.isoformat() if activity.time_stop else None,
       activity.window_class,
       activity.window_name,
       activity.category_id,

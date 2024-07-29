@@ -160,7 +160,7 @@ class WatcherService():
       window_class=self._window_class,
       window_name=self._window_name,
       time_start=datetime.fromtimestamp(self._time_start),
-      time_stop=datetime.fromtimestamp(self._time_stop),
+      time_stop=datetime.fromtimestamp(self._time_stop) if self._time_stop else None,
       category_id=self._category,
       project_id=None  # TODO: Implement project functionality
     )

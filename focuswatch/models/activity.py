@@ -16,7 +16,7 @@ class Activity:
 
   def __post_init__(self):
     """ Validate the activity data after initialization. """
-    if self.time_start > self.time_stop:
+    if self.time_stop is not None and self.time_start > self.time_stop:
       raise ValueError("time_start must be before time_stop")
     if not self.window_class:
       raise ValueError("window_class cannot be empty")
