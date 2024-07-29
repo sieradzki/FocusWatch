@@ -5,15 +5,11 @@ from PySide6.QtWidgets import (QCheckBox, QDialogButtonBox, QDoubleSpinBox,
                                QSpacerItem, QSpinBox, QTabWidget, QVBoxLayout,
                                QWidget)
 
-from focuswatch.autostart_manager import (add_to_autostart, is_frozen,
-                                          is_in_autostart, remove_from_autostart)
-from focuswatch.config import Config
 
-
-class SettingsTab(QWidget):
-  def __init__(self, parent=None):
+class SettingsView(QWidget):
+  def __init__(self, viewmodel, parent=None):
     super().__init__(parent)
-    self.config = Config()
+    self.viewmodel = viewmodel
     self.setupUi()
 
   def setupUi(self):
@@ -34,8 +30,8 @@ class SettingsTab(QWidget):
     # Autostart groupbox
     self.autostart_groupbox = QGroupBox(self.general_tab)
     self.autostart_groupbox.setObjectName(u"autostart_groupbox")
-    self.autostart_groupbox.setTitle(QCoreApplication.translate(
-        "Dashboard", u"Autostart", None))
+    self.autostart_groupbox.setTitle(
+        QCoreApplication.translate("Dashboard", u"Autostart", None))
     self.verticalLayout_autostart = QVBoxLayout(self.autostart_groupbox)
     self.verticalLayout_autostart.setObjectName(
         u"verticalLayout_autostart")
@@ -44,9 +40,10 @@ class SettingsTab(QWidget):
     self.autostart_checkbox.setObjectName(u"autostart_checkbox")
     self.autostart_checkbox.setText(QCoreApplication.translate(
         "Dashboard", u"Start FocusWatch on system startup", None))
-    self.autostart_checkbox.setChecked(is_in_autostart())
+    self.autostart_checkbox.setChecked(self.viewmodel.autostart_enabled)
     self.autostart_checkbox.setEnabled(
-        is_frozen())  # Disable if not packaged
+        self.viewmodel.is_autostart_available())
+    self.autostart_checkbox.stateChanged.connect(self.on_autostart_changed)
     self.verticalLayout_autostart.addWidget(self.autostart_checkbox)
 
     self.verticalLayout_general.addWidget(self.autostart_groupbox)
@@ -55,8 +52,8 @@ class SettingsTab(QWidget):
     self.verticalLayout_general.addItem(QSpacerItem(
         20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
-    self.tab_settings_watcher.addTab(self.general_tab, QCoreApplication.translate(
-        "Dashboard", u"General", None))
+    self.tab_settings_watcher.addTab(
+        self.general_tab, QCoreApplication.translate("Dashboard", u"General", None))
 
     # Watcher tab
     self.watcher_tab = QWidget()
@@ -74,41 +71,42 @@ class SettingsTab(QWidget):
     self.verticalLayout_watcher.addWidget(self.watch_label)
 
     self.watch_interval = QDoubleSpinBox(self.watcher_tab)
-    self.watch_interval.setValue(
-        float(self.config.get_value('General', 'watch_interval')))
+    self.watch_interval.setValue(self.viewmodel.watch_interval)
     self.watch_interval.setObjectName(u"watch_interval")
     self.watch_interval.setDecimals(1)
     self.watch_interval.setMinimum(1.0)
     self.watch_interval.setMaximum(60.0)
     self.watch_interval.setSingleStep(0.5)
-    self.watch_interval.setSuffix(QCoreApplication.translate(
-        "Dashboard", u" s", None))
+    self.watch_interval.setSuffix(
+        QCoreApplication.translate("Dashboard", u" s", None))
+    self.watch_interval.valueChanged.connect(
+        self.on_watch_interval_changed)
     self.verticalLayout_watcher.addWidget(self.watch_interval)
 
     self.watch_afk = QCheckBox(self.watcher_tab)
-    self.watch_afk.setChecked(
-        self.config.get_value('General', 'watch_afk') == 'True')
+    self.watch_afk.setChecked(self.viewmodel.watch_afk)
     self.watch_afk.setObjectName(u"watch_afk")
     self.watch_afk.setText(QCoreApplication.translate(
         "Dashboard", u"Watch AFK", None))
+    self.watch_afk.stateChanged.connect(self.on_watch_afk_changed)
     self.verticalLayout_watcher.addWidget(self.watch_afk)
 
     self.afk_label = QLabel(self.watcher_tab)
     self.afk_label.setObjectName(u"afk_label")
-    self.afk_label.setEnabled(self.watch_afk.isChecked())
+    self.afk_label.setEnabled(self.viewmodel.watch_afk)
     self.afk_label.setText(QCoreApplication.translate(
         "Dashboard", u"AFK timeout", None))
     self.verticalLayout_watcher.addWidget(self.afk_label)
 
     self.afk_timeout = QSpinBox(self.watcher_tab)
     self.afk_timeout.setObjectName(u"afk_timeout")
-    self.afk_timeout.setEnabled(self.watch_afk.isChecked())
+    self.afk_timeout.setEnabled(self.viewmodel.watch_afk)
     self.afk_timeout.setMinimum(1)
     self.afk_timeout.setMaximum(60)
-    self.afk_timeout.setValue(
-        float(self.config.get_value('General', 'afk_timeout')))
-    self.afk_timeout.setSuffix(QCoreApplication.translate(
-        "Dashboard", u" m", None))
+    self.afk_timeout.setValue(self.viewmodel.afk_timeout)
+    self.afk_timeout.setSuffix(
+        QCoreApplication.translate("Dashboard", u" m", None))
+    self.afk_timeout.valueChanged.connect(self.on_afk_timeout_changed)
     self.verticalLayout_watcher.addWidget(self.afk_timeout)
 
     self.label_note = QLabel(self.watcher_tab)
@@ -120,8 +118,8 @@ class SettingsTab(QWidget):
     self.verticalLayout_watcher.addItem(QSpacerItem(
         20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
-    self.tab_settings_watcher.addTab(self.watcher_tab, QCoreApplication.translate(
-        "Dashboard", u"Watcher", None))
+    self.tab_settings_watcher.addTab(
+        self.watcher_tab, QCoreApplication.translate("Dashboard", u"Watcher", None))
 
     self.verticalLayout_9.addWidget(self.tab_settings_watcher)
 
@@ -132,33 +130,30 @@ class SettingsTab(QWidget):
         self.apply_settings)
     self.verticalLayout_9.addWidget(self.buttonBox)
 
-    self.retranslateUi()
+    # Connect ViewModel signals
+    self.viewmodel.property_changed.connect(
+        self.on_viewmodel_property_changed)
+
     return self.settings_tab
 
-  def retranslateUi(self):
-    self.watch_label.setText(QCoreApplication.translate(
-        "Dashboard", u"Watch interval", None))
-    self.watch_afk.setText(QCoreApplication.translate(
-        "Dashboard", u"Watch AFK", None))
-    self.afk_label.setText(QCoreApplication.translate(
-        "Dashboard", u"AFK timeout", None))
-    self.label_note.setText(QCoreApplication.translate(
-        "Dashboard", u"Note: Changes will apply on next restart", None))
+  def on_autostart_changed(self, state):
+    self.viewmodel.autostart_enabled = state == Qt.Checked
+
+  def on_watch_interval_changed(self, value):
+    self.viewmodel.watch_interval = value
+
+  def on_watch_afk_changed(self, state):
+    self.viewmodel.watch_afk = state == Qt.Checked
+    self.afk_timeout.setEnabled(self.viewmodel.watch_afk)
+    self.afk_label.setEnabled(self.viewmodel.watch_afk)
+
+  def on_afk_timeout_changed(self, value):
+    self.viewmodel.afk_timeout = value
 
   def apply_settings(self):
-    watch_interval = self.watch_interval.value()
-    watch_afk = self.watch_afk.isChecked()
-    afk_timeout = self.afk_timeout.value()
-    autostart_enabled = self.autostart_checkbox.isChecked()
+    self.viewmodel.apply_settings()
 
-    self.config.set_value(
-        section='General', option='watch_interval', value=watch_interval)
-    self.config.set_value(
-        section='General', option='watch_afk', value=watch_afk)
-    self.config.set_value(
-        section='General', option='afk_timeout', value=afk_timeout)
-
-    if autostart_enabled:
-      add_to_autostart()
-    else:
-      remove_from_autostart()
+  def on_viewmodel_property_changed(self, property_name):
+    if property_name == 'settings_applied':
+      # You could show a message box here to inform the user that settings have been applied
+      pass

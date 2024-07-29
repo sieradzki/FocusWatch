@@ -2,10 +2,10 @@ from PySide6.QtCore import QCoreApplication, QMetaObject, QRect, QTimer
 from PySide6.QtWidgets import (QMainWindow, QMenuBar, QStatusBar, QTabWidget,
                                QVBoxLayout, QWidget)
 
-from focuswatch.ui.dashboard_tab import DashboardTab
 from focuswatch.ui.categorization_tab import CategorizationTab
-from focuswatch.ui.settings_tab import SettingsTab
+from focuswatch.ui.dashboard_tab import DashboardTab
 from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
+from focuswatch.views.settings_view import SettingsView
 
 
 class MainWindowView(QMainWindow):
@@ -70,8 +70,9 @@ class MainWindowView(QMainWindow):
     self.tabWidget.addTab(self.categorization_tab, "")
 
     # Settings tab
-    self._settings_tab = SettingsTab()
-    self.settings_tab = self._settings_tab.setupUi()
+    self._settings_view = SettingsView(
+        self._viewmodel.get_settings_viewmodel())
+    self.settings_tab = self._settings_view.setupUi()
     self.tabWidget.addTab(self.settings_tab, "")
 
     self.verticalLayout.addWidget(self.tabWidget)
