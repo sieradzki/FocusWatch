@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
+import re
 
 
 @dataclass
@@ -14,7 +15,7 @@ class Category:
     """ Validate the category data after initialization. """
     if not self.name:
       raise ValueError("name cannot be empty")
-    if self.color and not self.color.startswith("#"):
+    if self.color and not re.match(r'^#[0-9A-Fa-f]{6}$', self.color):
       raise ValueError("color must start with #")
     if self.parent_category_id == self.id:
       raise ValueError("category cannot be its own parent")
