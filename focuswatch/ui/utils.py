@@ -15,6 +15,8 @@ def get_category_color_or_parent(category_id):
   category_manager = CategoryManager()
   current_id = category_id
   category = category_manager.get_category_by_id(current_id)
+  if category is None:
+    return None
   color = category[-1]
   while color == None:
     category = category_manager.get_category_by_id(current_id)

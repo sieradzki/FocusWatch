@@ -66,13 +66,14 @@ class CategoryService:
     Returns:
       Optional[Category]: A Category object if found, None otherwise.
     """
-    query = "SELECT * FROM categories WHERE id = ?"
+    query = "SELECT id, name, parent_category, color FROM categories WHERE id = ?"
     params = (category_id,)
 
     try:
       result = self._db_conn.execute_query(query, params)
       if result:
-        return Category(*result[0])
+        # name and id are swapped in the category model
+        return Category(name=result[0][1], id=result[0][0], parent_category_id=result[0][2], color=result[0][3])
       return None
     except Exception as e:
       logger.error(f"Failed to retrieve category: {e}")
@@ -82,13 +83,13 @@ class CategoryService:
     """Retrieve all categories from the database.
 
     Returns:
-      List[Category]: A list of all Category objects in the database.
+        List[Category]: A list of all Category objects in the database.
     """
-    query = "SELECT * FROM categories"
+    query = "SELECT id, name, parent_category, color FROM categories"
 
     try:
       results = self._db_conn.execute_query(query)
-      return [Category(*row) for row in results]
+      return [Category(name=row[1], id=row[0], parent_category_id=row[2], color=row[3]) for row in results]
     except Exception as e:
       logger.error(f"Failed to retrieve categories: {e}")
       return []

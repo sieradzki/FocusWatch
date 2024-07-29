@@ -52,16 +52,18 @@ class KeywordService:
     """Retrieve a keyword from the database.
 
     Args:
-      keyword_id: The id of the keyword.
+        keyword_id: The id of the keyword.
 
     Returns:
-      Optional[Keyword]: A Keyword object if found, None otherwise.
+        Optional[Keyword]: A Keyword object if found, None otherwise.
     """
-    query = 'SELECT * FROM keywords WHERE id = ?'
+    query = 'SELECT name, category_id, id, match_case FROM keywords WHERE id = ?'
     params = (keyword_id,)
     try:
       result = self._db_conn.execute_query(query, params)
-      return Keyword(*result[0]) if result else None
+      if result:
+        return Keyword(*result[0])
+      return None
     except Exception as e:
       logger.error(f"Failed to retrieve keyword: {e}")
       return None
@@ -136,12 +138,12 @@ class KeywordService:
     """Return all keyword entries in the database.
 
     Returns:
-      List[Keyword]: A list of all Keyword objects in the database.
+        List[Keyword]: A list of all Keyword objects in the database.
     """
-    query = "SELECT * FROM keywords"
+    query = "SELECT name, category_id, id, match_case FROM keywords"
     try:
       results = self._db_conn.execute_query(query)
-      return [Keyword(id=row[0], name=row[1], category_id=row[2], match_case=bool(row[3])) for row in results]
+      return [Keyword(*row) for row in results]
     except Exception as e:
       logger.error(f"Failed to retrieve keywords: {e}")
       return []
@@ -150,19 +152,19 @@ class KeywordService:
     """Return all keywords for a category.
 
     Args:
-      category_id: The id of the category.
+        category_id: The id of the category.
 
     Returns:
-      List[Keyword]: A list of Keyword objects for the specified category.
+        List[Keyword]: A list of Keyword objects for the specified category.
     """
-    query = "SELECT * FROM keywords WHERE category_id = ?"
+    query = "SELECT name, category_id, id, match_case FROM keywords WHERE category_id = ?"
     params = (category_id,)
     try:
       results = self._db_conn.execute_query(query, params)
       return [Keyword(*row) for row in results]
     except Exception as e:
       logger.error(f"Failed to retrieve keywords for category {
-                   category_id}: {e}")
+          category_id}: {e}")
       return []
 
   def get_categories_from_keyword(self, keyword: str) -> List[int]:
