@@ -51,24 +51,23 @@ class CategorizationViewModel(BaseViewModel):
     cat_key = defaultdict(list)
     for category in self._categories:
       category_keywords = self._keyword_service.get_keywords_for_category(
-          category.id)
-      cat_key[category.id] = [
-          keyword.name for keyword in category_keywords]
+        category.id)
+      cat_key[category.id] = [keyword.name for keyword in category_keywords]
 
     temp_cat_dict = defaultdict(dict)
     for category in self._categories:
       category_dict = {
-          'category': category,
-          'keywords': cat_key[category.id],
-          'children': []
+        'category': category,
+        'keywords': cat_key[category.id],
+        'children': []
       }
       if category.parent_category_id is None:
         temp_cat_dict[category.id] = category_dict
       elif category.parent_category_id not in temp_cat_dict:
         temp_cat_dict[category.parent_category_id] = {
-            'category': None,
-            'keywords': [],
-            'children': [category.id],
+          'category': None,
+          'keywords': [],
+          'children': [category.id],
         }
         temp_cat_dict[category.id] = category_dict
       else:
@@ -85,7 +84,7 @@ class CategorizationViewModel(BaseViewModel):
         organize_categories_recursive(child_id)
 
     root_categories = [
-        category.id for category in self._categories if category.parent_category_id is None]
+      category.id for category in self._categories if category.parent_category_id is None]
     for root_cat_id in root_categories:
       organize_categories_recursive(root_cat_id)
 

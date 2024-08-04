@@ -1,14 +1,17 @@
 from PySide6.QtCore import QCoreApplication, QRect, QSize, Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout,
+from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout, QLineEdit,
                                QMessageBox, QProgressDialog, QPushButton,
                                QScrollArea, QSizePolicy, QSpacerItem,
-                               QVBoxLayout, QWidget, QLineEdit)
+                               QVBoxLayout, QWidget)
 
-from focuswatch.ui.categorization_helper_dialog import CategorizationHelperDialog
-from focuswatch.ui.category_dialog import CategoryDialog
-from focuswatch.ui.utils import get_category_color_or_parent, get_contrasting_text_color
-from focuswatch.viewmodels.categorization_viewmodel import CategorizationViewModel
+from focuswatch.ui.categorization_helper_dialog import \
+    CategorizationHelperDialog
+from focuswatch.ui.utils import (get_category_color_or_parent,
+                                 get_contrasting_text_color)
+from focuswatch.viewmodels.categorization_viewmodel import \
+    CategorizationViewModel
+from focuswatch.views.dialogs.category_dialog_view import CategoryDialog
 
 
 class CategorizationView(QWidget):
@@ -253,15 +256,11 @@ class CategorizationView(QWidget):
 
     self.categorization_content_horizontalLayout.addLayout(category_layout)
 
-  def show_category_dialog(self, category=None):
-    dialog = CategoryDialog(
-        self, self._viewmodel._category_service, self._viewmodel._keyword_service, category)
-    result = dialog.exec_()
-    if result:
-      if category:
-        self._viewmodel.update_category(dialog.get_updated_category())
-      else:
-        self._viewmodel.add_category(dialog.get_new_category())
+  def show_category_dialog(self, category_id):
+    dialog = CategoryDialog(self, self._viewmodel._category_service,
+                            self._viewmodel._keyword_service, category_id)
+    if dialog.exec_():
+      self._viewmodel.load_categories()
 
   def restore_defaults(self):
     dialog = QMessageBox()

@@ -333,6 +333,7 @@ class CategoryDialog(QDialog):
 
     self.verticalLayout_2.addLayout(self.horizontalLayout)
 
+    # Keywords label and grid
     self.frame_2 = QFrame(self.frame)
     self.frame_2.setObjectName(u"frame_2")
     self.frame_2.setFrameShape(QFrame.StyledPanel)
@@ -372,6 +373,7 @@ class CategoryDialog(QDialog):
 
     self.verticalLayout_3.addItem(self.verticalSpacer_2)
 
+    # note
     self.noteLabel = QLabel(self.frame_2)
     self.noteLabel.setObjectName(u"noteLabel")
 
