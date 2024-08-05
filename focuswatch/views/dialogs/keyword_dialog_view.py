@@ -1,9 +1,13 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-                               QCheckBox, QPushButton, QDialogButtonBox, QFrame, QSizePolicy, QSpacerItem)
-from PySide6.QtGui import QFont
-from PySide6.QtCore import Qt, QSize, QCoreApplication
-from focuswatch.viewmodels.dialogs.keyword_dialog_viewmodel import KeywordDialogViewModel
 import logging
+
+from PySide6.QtCore import QCoreApplication, QSize, Qt, Signal
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import (QCheckBox, QDialog, QDialogButtonBox, QFrame,
+                               QHBoxLayout, QLabel, QLineEdit, QPushButton,
+                               QSizePolicy, QSpacerItem, QVBoxLayout, QMessageBox)
+
+from focuswatch.viewmodels.dialogs.keyword_dialog_viewmodel import \
+    KeywordDialogViewModel
 
 logger = logging.getLogger(__name__)
 
@@ -133,18 +137,17 @@ class KeywordDialog(QDialog):
     self._viewmodel.match_case = state == Qt.Checked
 
   def accept(self):
-    if self._viewmodel.save_keyword():
+    # Only validate the input, don't save
+    if self._viewmodel.name:  # Add any other validation as needed
       super().accept()
     else:
-      # Show error message
-      pass
+      QMessageBox.warning(self, "Error", "Keyword name cannot be empty")
 
   def delete_keyword(self):
     if self._viewmodel.delete_keyword():
       self.accept()
     else:
-      # Show error message
-      pass
+      QMessageBox.warning(self, "Error", "Failed to delete keyword")
 
   def closeEvent(self, event):
     self._viewmodel.property_changed.disconnect(self.on_property_changed)

@@ -252,7 +252,6 @@ class CategoryDialog(QDialog):
     # Clear existing buttons
     for i in reversed(range(self.keywords_gridLayout.count())):
       self.keywords_gridLayout.itemAt(i).widget().setParent(None)
-      self.keywords_gridLayout.itemAt(i).widget().deleteLater()
 
     row, col = 0, 0
     for keyword in self._viewmodel.keywords:
@@ -283,16 +282,16 @@ class CategoryDialog(QDialog):
   def edit_keyword(self, keyword):
     dialog = KeywordDialog(self, self._viewmodel._keyword_service,
                            self._viewmodel._category.id, keyword.id)
-    if dialog.exec_():
-      self._viewmodel.update_keyword(
-        keyword.id, dialog.nameEdit.text(), dialog.match_case_checkbox.isChecked())
+    if dialog.exec_() == QDialog.Accepted:
+      keyword_data = dialog._viewmodel.get_keyword_data()
+      self._viewmodel.add_or_update_keyword(keyword_data)
 
   def show_keyword_dialog(self):
     dialog = KeywordDialog(
-      self, self._viewmodel._keyword_service, self._viewmodel._category.id)
-    if dialog.exec_():
-      self._viewmodel.add_keyword(
-        dialog.nameEdit.text(), dialog.match_case_checkbox.isChecked())
+        self, self._viewmodel._keyword_service, self._viewmodel._category.id)
+    if dialog.exec_() == QDialog.Accepted:
+      keyword_data = dialog._viewmodel.get_keyword_data()
+      self._viewmodel.add_or_update_keyword(keyword_data)
 
   def accept(self):
     if self._viewmodel.save_category():

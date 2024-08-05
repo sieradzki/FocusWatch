@@ -7,7 +7,7 @@ from focuswatch.services.category_service import CategoryService
 from focuswatch.services.keyword_service import KeywordService
 from focuswatch.ui.utils import get_category_color
 from focuswatch.viewmodels.base_viewmodel import BaseViewModel
-
+import itertools
 logger = logging.getLogger(__name__)
 
 
@@ -23,6 +23,7 @@ class CategoryDialogViewModel(BaseViewModel):
     self._color = get_category_color(
         category_id) if self._category else None
     self._keywords: List[Keyword] = []
+    self._temp_keywords: List[Keyword] = []
     self.load_keywords()
 
   @Property(str, notify=BaseViewModel.property_changed)
@@ -59,11 +60,64 @@ class CategoryDialogViewModel(BaseViewModel):
           self._category.id)
     self._set_property('_keywords', self._keywords)
 
+  @Slot(Keyword, result=bool)
+  def add_or_update_keyword(self, keyword: Keyword) -> bool:
+    if keyword.id is None:
+      # New keyword
+      if self._keyword_service.add_keyword(keyword):
+        new_keywords = self._keywords + [keyword]
+        self._set_property('_keywords', new_keywords)
+        return True
+    else:
+      # Existing keyword
+      if self._keyword_service.update_keyword(keyword):
+        new_keywords = [k if k.id !=
+                        keyword.id else keyword for k in self._keywords]
+        self._set_property('_keywords', new_keywords)
+        return True
+    return False
+
+  @Slot(Keyword, result=bool)
+  def add_or_update_keyword(self, keyword: Keyword) -> bool:
+    if keyword.id is None or keyword.id < 0:
+      # New keyword
+      if keyword.id is None:
+        # Assign a temporary negative ID
+        keyword.id = next(self._temp_id_counter)
+      new_keywords = self._keywords + [keyword]
+      self._set_property('_keywords', new_keywords)
+      return True
+    else:
+      # Existing keyword
+      new_keywords = [k if k.id !=
+                      keyword.id else keyword for k in self._keywords]
+      self._set_property('_keywords', new_keywords)
+      return True
+
   @Slot(str, bool, result=bool)
   def add_keyword(self, name: str, match_case: bool = False) -> bool:
+    logger.debug(f"Attempting to add keyword: {
+                 name}, match_case: {match_case}")
+
+    # Check if the keyword already exists in our local list
+    if any(k.name == name and k.match_case == match_case for k in self._keywords):
+      logger.debug(
+        f"Keyword '{name}' already exists locally. Skipping addition.")
+      return False
+
     keyword = Keyword(
-        name=name, category_id=self._category.id if self._category else None, match_case=match_case)
-    if self._keyword_service.add_keyword(keyword):
+      name=name, category_id=self._category.id if self._category else None, match_case=match_case)
+
+    if self._category:
+      res = self._keyword_service.add_keyword(keyword)
+      logger.info(f"Keyword service add_keyword result: {res}")
+      if res:
+        new_keywords = self._keywords + [keyword]
+        self._set_property('_keywords', new_keywords)
+        return True
+    else:
+      # Store keyword temporarily
+      self._temp_keywords.append(keyword)
       new_keywords = self._keywords + [keyword]
       self._set_property('_keywords', new_keywords)
       return True
@@ -95,11 +149,19 @@ class CategoryDialogViewModel(BaseViewModel):
       self._category.name = self._name
       self._category.parent_category_id = self._parent_category_id
       self._category.color = self._color
-      return self._category_service.update_category(self._category)
+      success = self._category_service.update_category(self._category)
     else:
       new_category = Category(
-          name=self._name, parent_category_id=self._parent_category_id, color=self._color)
-      return self._category_service.create_category(new_category)
+        name=self._name, parent_category_id=self._parent_category_id, color=self._color)
+      success = self._category_service.create_category(new_category)
+      if success:
+        self._category = new_category
+        # Add temporary keywords to the database
+        for keyword in self._temp_keywords:
+          keyword.category_id = self._category.id
+          self._keyword_service.add_keyword(keyword)
+        self._temp_keywords.clear()
+    return success
 
   def get_all_categories(self) -> List[Category]:
     return self._category_service.get_all_categories()

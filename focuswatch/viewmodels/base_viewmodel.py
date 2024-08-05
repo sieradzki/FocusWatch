@@ -15,15 +15,15 @@ class BaseViewModel(QObject):
 
   def _set_property(self, name: str, value: Any) -> None:
     current_value = getattr(self, name, None)
-    if name == "_keywords":
-      logger.info(f"Setting property '{name}' to {value}")
-      logger.info(f"Current value: {current_value}")
-      logger.info(f"old==new: {current_value == value}")
-      logger.info(f"len(old)==len(new): {len(current_value) == len(value)}")
+    # if name == "_keywords":
+    # logger.info(f"Setting property '{name}' to {value}")
+    # logger.info(f"Current value: {current_value}")
+    # logger.info(f"old==new: {current_value == value}")
+    # logger.info(f"len(old)==len(new): {len(current_value) == len(value)}")
     if self._values_differ(current_value, value):
       setattr(self, name, value)
-      logger.info(f"Property '{name}' changed from {
-                  current_value} to {value}")
+      # logger.info(f"Property '{name}' changed from {
+      # current_value} to {value}")
       self.property_changed.emit(name)
       self._notify_observers(name)
 
@@ -51,5 +51,5 @@ class BaseViewModel(QObject):
     observers = self._property_observers.get(property_name, [])
     for callback in observers:
       callback()
-    logger.info(
-        f"Property '{property_name}' changed, notifying observers: {observers}")
+    # logger.info(
+      # f"Property '{property_name}' changed, notifying observers: {observers}")

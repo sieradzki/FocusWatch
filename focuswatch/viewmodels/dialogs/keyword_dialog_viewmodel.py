@@ -31,22 +31,30 @@ class KeywordDialogViewModel(BaseViewModel):
   def match_case(self, value: bool):
     self._set_property('_match_case', value)
 
-  @Slot(result=bool)
-  def save_keyword(self) -> bool:
-    if self._keyword:
-      self._keyword.name = self._name
-      self._keyword.match_case = self._match_case
-      return self._keyword_service.update_keyword(self._keyword)
-    else:
-      new_keyword = Keyword(
-          name=self._name, match_case=self._match_case, category_id=self._category_id)
-      return self._keyword_service.add_keyword(new_keyword)
+  def get_keyword(self) -> Keyword:
+    return Keyword(
+      name=self._name,
+      match_case=self._match_case,
+      category_id=self._category_id,
+      id=self._keyword.id if self._keyword else None
+    )
 
-  @Slot(result=bool)
-  def delete_keyword(self) -> bool:
-    if self._keyword:
-      return self._keyword_service.delete_keyword(self._keyword.id)
-    return False
+  # @Slot(result=bool)
+  # def save_keyword(self) -> bool:
+  #   if self._keyword:
+  #     self._keyword.name = self._name
+  #     self._keyword.match_case = self._match_case
+  #     return self._keyword_service.update_keyword(self._keyword)
+  #   else:
+  #     new_keyword = Keyword(
+  #         name=self._name, match_case=self._match_case, category_id=self._category_id)
+  #     return self._keyword_service.add_keyword(new_keyword)
+
+  # @Slot(result=bool)
+  # def delete_keyword(self) -> bool:
+  #   if self._keyword:
+  #     return self._keyword_service.delete_keyword(self._keyword.id)
+  #   return False
 
   def can_delete_keyword(self) -> bool:
     return self._keyword is not None
