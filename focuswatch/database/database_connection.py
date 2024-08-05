@@ -76,7 +76,7 @@ class DatabaseConnection:
       cur.close()
     return result
 
-  def execute_update(self, query: str, params: tuple = ()) -> bool:
+  def execute_update(self, query: str, params: tuple = ()) -> int:
     """ Execute an update query on the database. 
 
     Args:
@@ -84,7 +84,7 @@ class DatabaseConnection:
       params (tuple): The parameters to pass to the query.
 
     Returns:
-      bool: True if the update was successful, False otherwise.
+      int: The number of rows affected by the update, or -1 if an error occurred.
     """
     if not self.conn:
       raise ConnectionError("Database connection is not established.")
@@ -92,11 +92,14 @@ class DatabaseConnection:
     try:
       cur.execute(query, params)
       self.conn.commit()
-      return self.conn.total_changes > 0
+      rows_affected = cur.rowcount
+      logger.debug(
+        f"Execute update - Query: {query}, Params: {params}, Rows affected: {rows_affected}")
+      return rows_affected
     except sqlite3.OperationalError as e:
       logger.error(f"Error executing update {
                    query} with params: {params}: {e}")
       self.conn.rollback()
-      return False
+      return -1
     finally:
       cur.close()

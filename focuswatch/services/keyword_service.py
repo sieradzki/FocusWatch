@@ -69,30 +69,40 @@ class KeywordService:
       return None
 
   def add_keyword(self, keyword: Keyword) -> bool:
-    """Add a keyword to a category.
+    """ Add a keyword to a category. 
 
     Args:
-      keyword: The Keyword object to be added.
+      keyword: The Keyword object to add.
 
     Returns:
       bool: True if the keyword was added successfully, False otherwise.
     """
-    query = 'SELECT * FROM keywords WHERE category_id = ? AND name = ?'
-    params = (keyword.category_id, keyword.name)
+    logger.debug(f"Attempting to add keyword: {keyword}")
 
-    if self._db_conn.execute_query(query, params):
+    query = 'SELECT * FROM keywords WHERE category_id = ? AND name = ? AND match_case = ?'
+    params = (keyword.category_id, keyword.name, keyword.match_case)
+
+    existing_keywords = self._db_conn.execute_query(query, params)
+    logger.debug(f"Existing keywords query result: {existing_keywords}")
+
+    if existing_keywords:
       logger.debug(f"Keyword with name {keyword.name} already exists in category {
-                   keyword.category_id}.")
-      return False
+                  keyword.category_id}.")
+      return True  # Consider it a success if the keyword already exists
 
     insert_query = 'INSERT INTO keywords (category_id, name, match_case) VALUES (?, ?, ?)'
     insert_params = (keyword.category_id, keyword.name, keyword.match_case)
-    try:
-      self._db_conn.execute_update(insert_query, insert_params)
+
+    logger.debug(f"Executing insert query: {
+                insert_query} with params: {insert_params}")
+    rows_affected = self._db_conn.execute_update(insert_query, insert_params)
+    logger.debug(f"Rows affected by insert: {rows_affected}")
+
+    if rows_affected > 0:
       logger.info(f"Added new keyword: {keyword.name}")
       return True
-    except Exception as e:
-      logger.error(f"Failed to add keyword: {e}")
+    else:
+      logger.error(f"Failed to add keyword: {keyword.name}. No rows affected.")
       return False
 
   def update_keyword(self, keyword: Keyword) -> bool:
