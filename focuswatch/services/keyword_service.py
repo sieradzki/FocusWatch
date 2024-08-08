@@ -114,15 +114,26 @@ class KeywordService:
     Returns:
       bool: True if the keyword was updated successfully, False otherwise.
     """
+    logger.debug(f"Attempting to update keyword: {keyword}")
+
     query = 'UPDATE keywords SET category_id = ?, name = ?, match_case = ? WHERE id = ?'
     params = (keyword.category_id, keyword.name,
               keyword.match_case, keyword.id)
-    try:
-      self._db_conn.execute_update(query, params)
+
+    logger.debug(f"Executing update query: {query} with params: {params}")
+    rows_affected = self._db_conn.execute_update(query, params)
+    logger.debug(f"Rows affected by update: {rows_affected}")
+
+    if rows_affected > 0:
       logger.info(f"Updated keyword: {keyword.name}")
       return True
-    except Exception as e:
-      logger.error(f"Failed to update keyword: {e}")
+    elif rows_affected == 0:
+      logger.warning(f"No changes made to keyword: {
+                     keyword.name}. It might not exist or no values were changed.")
+      return True  # Consider it a success if no changes were needed
+    else:
+      logger.error(f"Failed to update keyword: {
+                   keyword.name}. Unexpected number of rows affected: {rows_affected}")
       return False
 
   def delete_keyword(self, keyword_id: int) -> bool:
@@ -134,14 +145,25 @@ class KeywordService:
     Returns:
       bool: True if the keyword was deleted successfully, False otherwise.
     """
+    logger.debug(f"Attempting to delete keyword with ID: {keyword_id}")
+
     query = 'DELETE FROM keywords WHERE id = ?'
     params = (keyword_id,)
-    try:
-      self._db_conn.execute_update(query, params)
+
+    logger.debug(f"Executing delete query: {query} with params: {params}")
+    rows_affected = self._db_conn.execute_update(query, params)
+    logger.debug(f"Rows affected by delete: {rows_affected}")
+
+    if rows_affected > 0:
       logger.info(f"Deleted keyword with ID: {keyword_id}")
       return True
-    except Exception as e:
-      logger.error(f"Failed to delete keyword: {e}")
+    elif rows_affected == 0:
+      logger.warning(f"No keyword found with ID: {
+                     keyword_id}. Nothing was deleted.")
+      return True  # Consider it a success if the keyword didn't exist
+    else:
+      logger.error(f"Failed to delete keyword with ID: {
+                   keyword_id}. Unexpected number of rows affected: {rows_affected}")
       return False
 
   def get_all_keywords(self) -> List[Keyword]:

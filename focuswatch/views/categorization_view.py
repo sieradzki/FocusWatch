@@ -11,7 +11,7 @@ from focuswatch.ui.utils import (get_category_color_or_parent,
                                  get_contrasting_text_color)
 from focuswatch.viewmodels.categorization_viewmodel import \
     CategorizationViewModel
-from focuswatch.views.dialogs.category_dialog_view import CategoryDialog
+from focuswatch.views.dialogs.category_dialog_view import CategoryDialogView
 
 
 class CategorizationView(QWidget):
@@ -257,7 +257,7 @@ class CategorizationView(QWidget):
     self.categorization_content_horizontalLayout.addLayout(category_layout)
 
   def show_category_dialog(self, category_id):
-    dialog = CategoryDialog(self, self._viewmodel._category_service,
+    dialog = CategoryDialogView(self, self._viewmodel._category_service,
                             self._viewmodel._keyword_service, category_id)
     if dialog.exec_():
       self._viewmodel.load_categories()

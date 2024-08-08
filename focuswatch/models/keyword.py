@@ -6,17 +6,17 @@ from typing import Optional
 class Keyword:
   """ Represents a keyword. """
 
-  name: str
-  category_id: int
+  name: str = ""
+  category_id: int = None
   id: Optional[int] = None
   match_case: bool = False
 
-  def __post_init__(self):
-    """ Validate the keyword data after initialization. """
-    if not self.name:
-      raise ValueError("Keyword name cannot be empty")
-    if self.category_id is None:
-      raise ValueError("Category ID must be provided")
+  # def __post_init__(self):
+  #   """ Validate the keyword data after initialization. """
+  #   if not self.name:
+  #     raise ValueError("Keyword name cannot be empty")
+  #   if self.category_id is None:
+  #     raise ValueError("Category ID must be provided")
 
   def __eq__(self, other):
     if not isinstance(other, Keyword):
