@@ -68,18 +68,15 @@ class CategoryDialogViewModel(BaseViewModel):
   def add_keyword(self, keyword: Keyword):
     if self._category.id:  # editing existing category
       keyword.category_id = self._category.id
-      # TODO next task: why multiple calls to delete keyword?
       if self._keyword_service.add_keyword(keyword):
         keyword_id = self._keyword_service.get_keyword_id(
           keyword.name, self._category.id)
         keyword = self._keyword_service.get_keyword(keyword_id)
         self._keywords.append(keyword)
-        self.property_changed.emit('keywords')
     else:  # creating new category
-      # we need to set id or we can't edit it, use
-
       self._temp_keywords.append(keyword)
-      self.property_changed.emit('keywords')
+
+    self.property_changed.emit('keywords')
 
   @Slot(Keyword)
   def update_keyword(self, keyword: Keyword):
@@ -110,12 +107,14 @@ class CategoryDialogViewModel(BaseViewModel):
 
   @Slot(result=bool)
   def save_category(self) -> bool:
-    if self._category.id:
+    if self._category.id: # editing existing category
       success = self._category_service.update_category(self._category)
-    else:
+    else: # creating new category
       success = self._category_service.create_category(self._category)
       if success:
         for keyword in self._temp_keywords:
+          # get the id of the newly created category
+          self._category.id = self._category_service.get_category_id_from_name(self._category.name)
           keyword.category_id = self._category.id
           self._keyword_service.add_keyword(keyword)
         self._keywords.extend(self._temp_keywords)

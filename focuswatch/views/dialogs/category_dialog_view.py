@@ -212,7 +212,7 @@ class CategoryDialogView(QDialog):
       "Dialog", u"Note: Click on keyword to edit, right-click on keyword to remove it", None))
 
   def connectSignals(self):
-      # Connect ViewModel properties to UI elements
+    # Connect ViewModel properties to UI elements
     self._viewmodel.property_changed.connect(self.on_property_changed)
 
     # Connect UI elements to ViewModel
@@ -231,7 +231,7 @@ class CategoryDialogView(QDialog):
     if property_name == 'name':
       self.name_lineEdit.setText(self._viewmodel.name)
     elif property_name == 'parent_category_id':
-      self.update_parent_combo()
+      self.populate_parent_combo()
     elif property_name == 'color':
       self.update_color_button()
     elif property_name == 'keywords':
@@ -278,9 +278,9 @@ class CategoryDialogView(QDialog):
       keywordButton.clicked.connect(
         lambda checked, k=keyword: self.edit_keyword(k))
       self.keywords_gridLayout.addWidget(keywordButton, row, col)
-      # Delete on right-click # TODO temporaryliy temporarily
+      # Delete on right-click # TODO temporarily disabled
       # keywordButton.mouseReleaseEvent = lambda event: self.keyword_mouse_release_event(
-        # event, keywordButton)
+      # event, keywordButton)
 
       col += 1
       if col >= 4:
