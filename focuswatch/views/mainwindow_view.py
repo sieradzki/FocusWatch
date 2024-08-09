@@ -58,9 +58,8 @@ class MainWindowView(QMainWindow):
 
     # Categorization tab
     self._categorization_view = CategorizationView(
-      self._viewmodel.get_categorization_viewmodel())
-    self.categorization_tab = self._categorization_view.setupUi()
-    self.tabWidget.addTab(self.categorization_tab, "")
+        self._viewmodel.get_categorization_viewmodel())
+    self.tabWidget.addTab(self._categorization_view, "")
 
     # Settings tab
     self._settings_view = SettingsView(

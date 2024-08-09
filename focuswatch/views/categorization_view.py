@@ -1,3 +1,5 @@
+import logging
+
 from PySide6.QtCore import QCoreApplication, QRect, QSize, Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout, QLineEdit,
@@ -13,25 +15,34 @@ from focuswatch.viewmodels.categorization_viewmodel import \
     CategorizationViewModel
 from focuswatch.views.dialogs.category_dialog_view import CategoryDialogView
 
+logger = logging.getLogger(__name__)
+
 
 class CategorizationView(QWidget):
   def __init__(self, viewmodel: CategorizationViewModel, parent=None):
     super().__init__(parent)
     self._viewmodel = viewmodel
     self.setupUi()
+    self.connect_signals()
 
   def setupUi(self):
-    self.categorization_tab = QWidget()
-    self.categorization_tab.setObjectName(u"categorization_tab")
+    self.setObjectName(u"categorization_view")
 
-    self.verticalLayout_5 = QVBoxLayout(self.categorization_tab)
+    # Main layout for the CategorizationView
+    self.verticalLayout_5 = QVBoxLayout(self)
     self.verticalLayout_5.setObjectName(u"verticalLayout_5")
-    self.categorization_main_frame = QFrame(self.categorization_tab)
+
+    # Categorization main frame
+    self.categorization_main_frame = QFrame(self)
     self.categorization_main_frame.setObjectName(u"categorization_main_frame")
     self.categorization_main_frame.setFrameShape(QFrame.StyledPanel)
     self.categorization_main_frame.setFrameShadow(QFrame.Raised)
+
+    # Categorization main frame layout
     self.verticalLayout_12 = QVBoxLayout(self.categorization_main_frame)
     self.verticalLayout_12.setObjectName(u"verticalLayout_12")
+
+    # Categorization info label
     self.categorization_info_label = QLabel(self.categorization_main_frame)
     self.categorization_info_label.setObjectName(u"categorization_info_label")
     font1 = QFont()
@@ -42,6 +53,7 @@ class CategorizationView(QWidget):
 
     self.verticalLayout_12.addWidget(self.categorization_info_label)
 
+    # Categorization scroll area
     self.categorization_scrollArea = QScrollArea(
       self.categorization_main_frame)
     self.categorization_scrollArea.setObjectName(u"categorization_scrollArea")
@@ -82,7 +94,6 @@ class CategorizationView(QWidget):
       self.categorization_scrollAreaWidgetContents)
     self.categorization_addCategory.setObjectName(
       u"categorization_addCategory")
-    self.categorization_addCategory.clicked.connect(self.show_category_dialog)
 
     self.categorization_button_horizontalLayout.addWidget(
       self.categorization_addCategory)
@@ -98,8 +109,6 @@ class CategorizationView(QWidget):
       self.categorization_scrollAreaWidgetContents)
     self.categorization_helper_button.setObjectName(
       u"categorization_helper_button")
-    self.categorization_helper_button.clicked.connect(
-      self.show_categorization_helper)
     self.categorization_button_horizontalLayout.addWidget(
       self.categorization_helper_button)
 
@@ -109,8 +118,6 @@ class CategorizationView(QWidget):
     self.retroactive_categorization_button.setObjectName(
       u"retroactive_categorization_button")
 
-    self.retroactive_categorization_button.clicked.connect(
-      self.retroactive_categorization)
     self.categorization_button_horizontalLayout.addWidget(
       self.retroactive_categorization_button)
 
@@ -119,8 +126,6 @@ class CategorizationView(QWidget):
       self.categorization_scrollAreaWidgetContents)
     self.categorization_restoreDefaults.setObjectName(
       u"categorization_restoreDefaults")
-    self.categorization_restoreDefaults.clicked.connect(self.restore_defaults)
-    # self.categorization_restoreDefaults.setEnabled(False)
     self.categorization_button_horizontalLayout.addWidget(
       self.categorization_restoreDefaults)
 
@@ -140,23 +145,15 @@ class CategorizationView(QWidget):
     self.filter_layout = QHBoxLayout()
     self.filter_input = QLineEdit(self.categorization_main_frame)
     self.filter_input.setPlaceholderText(
-        "Filter categories and keywords...")
+      "Filter categories and keywords...")
 
     self.filter_layout.addWidget(self.filter_input)
 
     # Insert filter layout at the top of the main layout
     self.verticalLayout_12.insertLayout(0, self.filter_layout)
 
-    # Update filter input connection
-    self.filter_input.textChanged.connect(self.on_filter_changed)
-
-    # Connect ViewModel signals
-    self._viewmodel.property_changed.connect(
-        self.on_viewmodel_property_changed)
-
     self.categories_setup()
     self.retranslateUi()
-    return self.categorization_tab
 
   def retranslateUi(self):
     self.categorization_info_label.setText(QCoreApplication.translate("Dashboard", u"Rules for categorizing events. An event can only have one category. If several categories match, the deepest one will be chosen.\n"
@@ -170,11 +167,24 @@ class CategorizationView(QWidget):
     self.categorization_helper_button.setText(
       QCoreApplication.translate("Dashboard", u"Categorization helper", None))
 
+  def connect_signals(self):
+    self._viewmodel.property_changed.connect(
+      self.on_viewmodel_property_changed)
+
+    self.filter_input.textChanged.connect(self.on_filter_changed)
+    self.categorization_addCategory.clicked.connect(self.show_category_dialog)
+
+    self.categorization_helper_button.clicked.connect(
+      self.show_categorization_helper)
+    self.retroactive_categorization_button.clicked.connect(
+      self.retroactive_categorization)
+    self.categorization_restoreDefaults.clicked.connect(self.restore_defaults)
+
   def on_filter_changed(self, text):
     self._viewmodel.filter_text = text
 
   def on_viewmodel_property_changed(self, property_name):
-    if property_name in ['_filter_text', '_organized_categories']:
+    if property_name in ['filter_text', 'organized_categories']:
       self.update_categories_display()
 
   def update_categories_display(self):
@@ -258,7 +268,7 @@ class CategorizationView(QWidget):
 
   def show_category_dialog(self, category_id):
     dialog = CategoryDialogView(self, self._viewmodel._category_service,
-                            self._viewmodel._keyword_service, category_id)
+                                self._viewmodel._keyword_service, category_id)
     if dialog.exec_():
       self._viewmodel.load_categories()
 
@@ -329,3 +339,8 @@ class CategorizationView(QWidget):
     progress_dialog.setValue(0)
     progress_dialog.setCancelButton(None)
     return progress_dialog
+
+  def closeEvent(self, event):
+    self._viewmodel.property_changed.disconnect(
+      self.on_viewmodel_property_changed)
+    super().closeEvent(event)
