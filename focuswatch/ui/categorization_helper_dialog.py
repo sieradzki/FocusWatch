@@ -6,8 +6,6 @@ from PySide6.QtWidgets import (QComboBox, QDialog, QDialogButtonBox, QFrame,
                                QScrollArea, QSizePolicy, QSpacerItem,
                                QVBoxLayout, QWidget, QLineEdit, QCheckBox, QMessageBox)
 
-from focuswatch.ui.category_dialog import CategoryDialog
-
 
 class CategorizationHelperDialog(QDialog):
   def __init__(self, parent, activity_manager, category_manager, keyword_manager):

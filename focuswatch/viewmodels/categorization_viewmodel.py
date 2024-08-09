@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from typing import Dict, List
 
-from PySide6.QtCore import Property, Slot
+from PySide6.QtCore import Property, Slot, Signal
 
 from focuswatch.models.category import Category
 from focuswatch.models.keyword import Keyword
@@ -10,16 +10,20 @@ from focuswatch.services.activity_service import ActivityService
 from focuswatch.services.category_service import CategoryService
 from focuswatch.services.keyword_service import KeywordService
 from focuswatch.viewmodels.base_viewmodel import BaseViewModel
+from focuswatch.services.classifier_service import ClassifierService
 
 logger = logging.getLogger(__name__)
 
 
 class CategorizationViewModel(BaseViewModel):
+  retroactive_categorization_progress = Signal(int, int)
+
   def __init__(self, activity_service: ActivityService, category_service: CategoryService, keyword_service: KeywordService):
     super().__init__()
     self._activity_service = activity_service
     self._category_service = category_service
     self._keyword_service = keyword_service
+    self._classifier = ClassifierService(self._category_service)
 
     self._categories = []
     self._filter_text = ""
@@ -123,8 +127,28 @@ class CategorizationViewModel(BaseViewModel):
     self.load_categories()
     return True
 
-  def retroactive_categorization(self):
-    pass
+  @Slot(result=bool)
+  def retroactive_categorization(self) -> bool:
+    try:
+      activities = self._activity_service.get_all_activities()
+      total_activities = len(activities)
+
+      for i, activity in enumerate(activities):
+        category_id = self._classifier.classify_entry(
+          activity.window_class, activity.window_name)
+
+        if category_id != activity.category_id:
+          print(f"DEBUG: Updating category for activity {
+                activity.id} from {activity.category_id} to {category_id}")
+          self._activity_service.update_category(activity.id, category_id)
+
+        # Emit progress signal
+        self.retroactive_categorization_progress.emit(i + 1, total_activities)
+
+      return True
+    except Exception as e:
+      logger.error(f"Error during retroactive categorization: {str(e)}")
+      return False
 
   def get_top_uncategorized_window_classes(self, limit: int = 10) -> List[tuple]:
     return self._activity_service.get_top_uncategorized_window_classes(limit)

@@ -289,7 +289,8 @@ class CategorizationView(QWidget):
       dialog = QMessageBox()
       dialog.setWindowTitle("Retroactive Categorization")
       dialog.setText(
-        "Are you sure you want to retroactively categorize all entries based on current ruleset?\nThis action cannot be undone and might take a while.")
+        "Are you sure you want to retroactively categorize all entries based on current ruleset?\n"
+        "This action cannot be undone and might take a while.")
       dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
       dialog.setDefaultButton(QMessageBox.No)
       result = dialog.exec_()
@@ -297,17 +298,45 @@ class CategorizationView(QWidget):
       if result == QMessageBox.No:
         return
 
-    progress_dialog = self.show_progress_dialog(
+    self.progress_dialog = self.show_progress_dialog(
       "Progress", "Categorizing entries...")
 
-    def update_progress(current, total):
-      progress_dialog.setValue(int(current / total * 100))
+    # Connect the progress signal before starting the categorization
+    self._viewmodel.retroactive_categorization_progress.connect(
+      self.update_progress_dialog)
 
-    self._viewmodel.retroactive_categorization(update_progress)
-    progress_dialog.close()
+    # Start the categorization process
+    success = self._viewmodel.retroactive_categorization()
 
-    QMessageBox.information(
-      self, "Retroactive Categorization", "Categorization completed successfully.")
+    # Disconnect the signal after the process is complete
+    self._viewmodel.retroactive_categorization_progress.disconnect(
+      self.update_progress_dialog)
+
+    self.progress_dialog.close()
+
+    if success:
+      QMessageBox.information(
+        self, "Retroactive Categorization", "Categorization completed successfully.")
+    else:
+      QMessageBox.critical(
+        self, "Retroactive Categorization", "An error occurred during categorization.")
+
+  def update_progress_dialog(self, current: int, total: int):
+    if hasattr(self, 'progress_dialog'):
+      progress = int((current / total) * 100)
+      self.progress_dialog.setValue(progress)
+      QCoreApplication.processEvents()
+
+  def show_progress_dialog(self, title, message):
+    progress_dialog = QProgressDialog(message, None, 0, 100, self)
+    progress_dialog.setWindowTitle(title)
+    progress_dialog.setWindowModality(Qt.WindowModal)
+    progress_dialog.setMinimumDuration(0)
+    progress_dialog.setValue(0)
+    progress_dialog.setCancelButton(None)
+    progress_dialog.show()
+    QCoreApplication.processEvents()
+    return progress_dialog
 
   def show_categorization_helper(self):
     dialog = CategorizationHelperDialog(self, self._viewmodel._activity_service,
@@ -330,15 +359,6 @@ class CategorizationView(QWidget):
   def update_ui(self):
     self.clear_layout(self.categorization_content_horizontalLayout)
     self.categories_setup()
-
-  def show_progress_dialog(self, title, message):
-    progress_dialog = QProgressDialog(message, None, 0, 100, self)
-    progress_dialog.setWindowTitle(title)
-    progress_dialog.setWindowModality(Qt.WindowModal)
-    progress_dialog.setMinimumDuration(0)
-    progress_dialog.setValue(0)
-    progress_dialog.setCancelButton(None)
-    return progress_dialog
 
   def closeEvent(self, event):
     self._viewmodel.property_changed.disconnect(
