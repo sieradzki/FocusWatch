@@ -11,6 +11,7 @@ from focuswatch.services.category_service import CategoryService
 from focuswatch.services.keyword_service import KeywordService
 from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 from focuswatch.services.classifier_service import ClassifierService
+from focuswatch.viewmodels.dialogs.categorization_helper_dialog_viewmodel import CategorizationHelperViewModel
 
 logger = logging.getLogger(__name__)
 
@@ -138,8 +139,6 @@ class CategorizationViewModel(BaseViewModel):
           activity.window_class, activity.window_name)
 
         if category_id != activity.category_id:
-          print(f"DEBUG: Updating category for activity {
-                activity.id} from {activity.category_id} to {category_id}")
           self._activity_service.update_category(activity.id, category_id)
 
         # Emit progress signal
