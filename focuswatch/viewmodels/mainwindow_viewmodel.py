@@ -7,6 +7,8 @@ from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 from focuswatch.viewmodels.main_viewmodel import MainViewModel
 from focuswatch.viewmodels.settings_viewmodel import SettingsViewModel
 from focuswatch.viewmodels.categorization_viewmodel import CategorizationViewModel
+from focuswatch.viewmodels.dashboard_viewmodel import DashboardViewModel
+
 
 class MainWindowViewModel(BaseViewModel):
   """ ViewModel for the main application window. """
@@ -23,6 +25,8 @@ class MainWindowViewModel(BaseViewModel):
     self._settings_viewmodel = SettingsViewModel()
     self._categorization_viewmodel = CategorizationViewModel(
       activity_service, category_service, keyword_service)
+    self._dashboard_viewmodel = DashboardViewModel(
+      activity_service, category_service)
 
     self._current_tab_index = 0
     self._tab_names = ["Dashboard", "Categorization", "Settings"]
@@ -68,6 +72,9 @@ class MainWindowViewModel(BaseViewModel):
 
   def get_categorization_viewmodel(self) -> CategorizationViewModel:
     return self._categorization_viewmodel
+
+  def get_dashboard_viewmodel(self) -> DashboardViewModel:
+    return self._dashboard_viewmodel
 
   def switch_tab(self, index: int) -> None:
     """Switch to a different tab."""

@@ -123,7 +123,8 @@ def main():
   category_service = CategoryService()
   keyword_service = KeywordService()
 
-  main_viewmodel = MainViewModel(watcher_service, activity_service, category_service, keyword_service)
+  main_viewmodel = MainViewModel(
+    watcher_service, activity_service, category_service, keyword_service)
   mainwindow_viewmodel = MainWindowViewModel(
       main_viewmodel, activity_service, category_service, keyword_service)
   main_window = MainWindowView(mainwindow_viewmodel)
