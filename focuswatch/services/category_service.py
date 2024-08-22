@@ -73,7 +73,7 @@ class CategoryService:
       result = self._db_conn.execute_query(query, params)
       if result:
         # name and id are swapped in the category model
-        return Category(name=result[0][1], id=result[0][0], parent_category_id=result[0][2], color=result[0][3])
+        return Category(*result[0])
       return None
     except Exception as e:
       logger.error(f"Failed to retrieve category: {e}")
@@ -89,7 +89,7 @@ class CategoryService:
 
     try:
       results = self._db_conn.execute_query(query)
-      return [Category(name=row[1], id=row[0], parent_category_id=row[2], color=row[3]) for row in results]
+      return [Category(*result) for result in results]
     except Exception as e:
       logger.error(f"Failed to retrieve categories: {e}")
       return []
