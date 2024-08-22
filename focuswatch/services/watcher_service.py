@@ -1,4 +1,4 @@
-""" Watcher module for FocusWatch. 
+""" Watcher service for FocusWatch. 
 
 This module is responsible for monitoring the user's activity and logging it to the database.
 """
@@ -13,10 +13,11 @@ from typing import Optional
 
 import psutil
 
-from focuswatch.classifier import Classifier
 from focuswatch.config import Config
-from focuswatch.database.activity_manager import ActivityManager
-from focuswatch.database.category_manager import CategoryManager
+from focuswatch.models.activity import Activity
+from focuswatch.services.activity_service import ActivityService
+from focuswatch.services.category_service import CategoryService
+from focuswatch.services.classifier_service import ClassifierService
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ if platform in ["Windows", "win32", "cygwin"]:
     _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_ulong)]
 
 
-class Watcher():
+class WatcherService():
   """ Watcher class for FocusWatch. 
 
   This class is responsible for monitoring the user's activity and logging it to the database. 
@@ -65,11 +66,12 @@ class Watcher():
     self._afk_timeout = float(
       self._config.get_value("General", "afk_timeout"))
 
-    # Initialize database managers
-    self._category_manager = CategoryManager()
-    self._activity_manager = ActivityManager()
+    # Initialize services
+    self._category_service = CategoryService()
+    self._activity_service = ActivityService()
 
-    self._classifier = Classifier()
+    self._classifier_service = ClassifierService(
+      self._category_service)
 
     # Initialize activity variables
     self._window_name = self.get_active_window_name()
@@ -149,19 +151,20 @@ class Watcher():
       raise NotImplementedError("This platform is not supported")
 
   def save_entry(self) -> None:
-    """ Save the current activity entry to the database. """
+    """Save the current activity entry to the database."""
     if self._verbose:
-      print(
-          f"[{self._time_stop - self._time_start:.3f}] [{self._window_class}] {self._window_name[:32]} {self._category}")
+      print(f"[{self._time_stop - self._time_start:.3f}] [{self._window_class}] {
+            self._window_name[:32]} {self._category}")
 
-    self._activity_manager.insert_activity(
-      self._window_class,
-      self._window_name,
-      datetime.fromtimestamp(self._time_start),
-      datetime.fromtimestamp(self._time_stop),
-      self._category,
-      None  # TODO add project id when the feature is implemented
+    activity = Activity(
+      window_class=self._window_class,
+      window_name=self._window_name,
+      time_start=datetime.fromtimestamp(self._time_start),
+      time_stop=datetime.fromtimestamp(self._time_stop) if self._time_stop else None,
+      category_id=self._category,
+      project_id=None  # TODO: Implement project functionality
     )
+    self._activity_service.insert_activity(activity)
 
   def _get_linux_idle_time(self) -> int:
     """ Get the idle time on Linux using xprintidle. 
@@ -226,7 +229,7 @@ class Watcher():
 
     if afk_time > self._afk_timeout * 60:
       self._time_stop = time.time()
-      self._category = self._category_manager.get_category_id_from_name(
+      self._category = self._category_service.get_category_id_from_name(
         "AFK")
       self._window_class = "afk"
       self._window_name = "afk"
@@ -245,7 +248,7 @@ class Watcher():
   def _log_activity_change(self) -> None:
     """ Log the activity change to the database. """
     self._time_stop = time.time()
-    self._category = self._classifier.classify_entry(
+    self._category = self._classifier_service.classify_entry(
         window_class=self._window_class, window_name=self._window_name)
     self.save_entry()
 
@@ -271,5 +274,5 @@ class Watcher():
 
 
 if __name__ == "__main__":
-  watcher = Watcher()
+  watcher = WatcherService()
   watcher.monitor()

@@ -118,7 +118,8 @@ class CategoryManager:
       params = (name, parent_id, category_id)
 
     if self._db_conn.execute_query(query, params):
-      logger.debug(f"Category with name {name} and parent_id {parent_id} already exists.")
+      logger.debug(f"Category with name {name} and parent_id {
+                   parent_id} already exists.")
       return False
 
     query = 'UPDATE categories SET name=?, parent_category=?, color=? WHERE id = ?'

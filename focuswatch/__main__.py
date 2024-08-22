@@ -14,8 +14,13 @@ from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QSystemTrayIcon
 from focuswatch.arguments import parse_arguments
 from focuswatch.config import Config
 from focuswatch.database.database_manager import DatabaseManager
-from focuswatch.ui.home import Home
-from focuswatch.watcher import Watcher
+from focuswatch.services.activity_service import ActivityService
+from focuswatch.services.category_service import CategoryService
+from focuswatch.services.keyword_service import KeywordService
+from focuswatch.services.watcher_service import WatcherService
+from focuswatch.viewmodels.main_viewmodel import MainViewModel
+from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
+from focuswatch.views.mainwindow_view import MainWindowView
 
 # from qt_material import apply_stylesheet
 
@@ -79,13 +84,8 @@ def check_dependencies():
 
 def main():
   logger.info("Starting FocusWatch")
-  # Check dependencies
   check_dependencies()
-
-  # Setup logging
   setup_logging()
-
-  # Parse the arguments
   args = parse_arguments()
 
   # Instantiate the DatabaseManager and check if the database exists
@@ -94,7 +94,6 @@ def main():
   logger.info("Creating QApplication")
   app = QApplication([])
 
-  """ System tray """
   if not QSystemTrayIcon.isSystemTrayAvailable():
     QMessageBox.critical(
       None, "Systray", "Couldn't detect any system tray on this system.")
@@ -117,21 +116,31 @@ def main():
   # Create the menu
   menu = QMenu()
 
-  # apply_stylesheet(app, theme='dark_blue.xml')
+  # Create Services, ViewModels and MainWindowView
+  watcher_service = WatcherService(args.watch_interval if args.watch_interval else None,
+                                   args.verbose if args.verbose else None)
+  activity_service = ActivityService()
+  category_service = CategoryService()
+  keyword_service = KeywordService()
+
+  main_viewmodel = MainViewModel(
+    watcher_service, activity_service, category_service, keyword_service)
+  mainwindow_viewmodel = MainWindowViewModel(
+      main_viewmodel, activity_service, category_service, keyword_service)
+  main_window = MainWindowView(mainwindow_viewmodel)
 
   # Add actions to the menu
-  dashboard_window = Home()
-  # apply_stylesheet(app, theme='dark_red.xml')
   open_dashboard = QAction("Open")
-  open_dashboard.triggered.connect(dashboard_window.show)
+  open_dashboard.triggered.connect(main_window.show)
   menu.addAction(open_dashboard)
 
   # Open or hide dashboard on double-click
   tray.activated.connect(
-    lambda reason: dashboard_window.hide() if reason == QSystemTrayIcon.Trigger and dashboard_window.isVisible(
-    ) else dashboard_window.show() if reason == QSystemTrayIcon.Trigger else None)
+      lambda reason: main_window.hide() if reason == QSystemTrayIcon.Trigger and main_window.isVisible()
+      else main_window.show() if reason == QSystemTrayIcon.Trigger else None
+  )
 
-  # Logs action (TODO logs not implemented)
+  # Logs action
   logs = QAction("Log")
   logs.setEnabled(False)
   menu.addAction(logs)
@@ -144,12 +153,9 @@ def main():
   # Add menu to the system tray
   tray.setContextMenu(menu)
 
-  # Create the watcher
-  watcher = Watcher(args.watch_interval if args.watch_interval else None,
-                    args.verbose if args.verbose else None)
-
   # Create separate thread for the watcher
-  watcher_thread = threading.Thread(target=start_watcher, args=(watcher,))
+  watcher_thread = threading.Thread(
+    target=start_watcher, args=(watcher_service,))
   watcher_thread.daemon = True  # This makes the thread exit when the main program exits
   watcher_thread.start()
 
