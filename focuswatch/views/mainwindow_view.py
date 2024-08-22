@@ -45,7 +45,7 @@ class MainWindowView(QMainWindow):
     keyword_manager = KeywordManager()
 
     self._dashboard_view = DashboardView(
-        self._viewmodel.get_dashboard_viewmodel())
+        self._viewmodel.get_dashboard_viewmodel(), self._viewmodel._activity_service, self._viewmodel._category_service)
     self.tabWidget.addTab(self._dashboard_view, "")
 
     # Categorization tab

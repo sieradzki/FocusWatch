@@ -6,11 +6,11 @@ from dataclasses import dataclass
 @dataclass
 class Activity:
   """ Represents an activity. """
-  window_class: str
-  window_name: str
-  time_start: datetime
-  time_stop: datetime
   id: Optional[int] = None
+  time_start: Optional[datetime] = None
+  time_stop: Optional[datetime] = None
+  window_class: str = ""
+  window_name: str = ""
   category_id: Optional[int] = None
   project_id: Optional[int] = None
 
@@ -18,10 +18,6 @@ class Activity:
     """ Validate the activity data after initialization. """
     if self.time_stop is not None and self.time_start > self.time_stop:
       raise ValueError("time_start must be before time_stop")
-    if not self.window_class:
-      raise ValueError("window_class cannot be empty")
-    if not self.window_name:
-      raise ValueError("window_name cannot be empty")
 
   @property
   def duration(self) -> float:
