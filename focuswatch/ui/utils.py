@@ -1,5 +1,5 @@
 from PySide6.QtGui import QColor
-from focuswatch.database.category_manager import CategoryManager
+from focuswatch.services.category_service import CategoryService
 
 
 def get_contrasting_text_color(background_color):
@@ -12,19 +12,19 @@ def get_contrasting_text_color(background_color):
 
 def get_category_color_or_parent(category_id):
   """ Returns the color of a category. If the category does not have a color, return parent category's color. """
-  category_manager = CategoryManager()
+  category_service = CategoryService()
   current_id = category_id
-  category = category_manager.get_category_by_id(current_id)
+  category = category_service.get_category_by_id(current_id)
   if category is None:
     return None
-  color = category[-1]
+  color = category.color
   while color == None:
-    category = category_manager.get_category_by_id(current_id)
-    parent_category_id = category[-2]
+    category = category_service.get_category_by_id(current_id)
+    parent_category_id = category.parent_category_id
     if parent_category_id:
-      parent_category = category_manager.get_category_by_id(
+      parent_category = category_service.get_category_by_id(
         parent_category_id)
-      color = parent_category[-1]
+      color = parent_category.color
       current_id = parent_category_id
     else:
       return None
@@ -33,7 +33,7 @@ def get_category_color_or_parent(category_id):
 
 def get_category_color(category_id):
   """ Returns the color of a category. If the category does not have a color, return None. """
-  category_manager = CategoryManager()
-  category = category_manager.get_category_by_id(category_id)
-  color = category[-1]
+  category_service = CategoryService()
+  category = category_service.get_category_by_id(category_id)
+  color = category.color
   return color

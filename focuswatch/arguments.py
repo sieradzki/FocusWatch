@@ -4,8 +4,8 @@ import sys
 
 from focuswatch import __version__
 from focuswatch.config import Config
-from focuswatch.database.category_manager import CategoryManager
-from focuswatch.database.keyword_manager import KeywordManager
+from focuswatch.services.category_service import CategoryService
+from focuswatch.services.keyword_service import KeywordService
 
 
 def display_config():
@@ -21,8 +21,8 @@ def display_config():
 
 def display_categories():
   """ Display all categories from the database """
-  category_manager = CategoryManager()
-  categories = category_manager.get_all_categories()
+  category_service = CategoryService()
+  categories = category_service.get_all_categories()
   print(f"{"id".ljust(4)}{"name".ljust(15)}{"parent category".ljust(4)}")
   for category in categories:
     id_str = str(category[0]).ljust(4)
@@ -35,8 +35,8 @@ def add_category(category):
   """ Add a category to the database """
   category_name, parent_category = category[0], int(category[1]) if len(
     category) > 1 else None
-  category_manager = CategoryManager()
-  if category_manager.create_category(category_name, parent_category):
+  category_service = CategoryService()
+  if category_service.create_category(category_name, parent_category):
     display_categories()
   else:
     print("Error creating a category")
@@ -44,8 +44,8 @@ def add_category(category):
 
 def display_keywords():
   """ Display all keywords from the database """
-  keyword_manager = KeywordManager()
-  keywords = keyword_manager.get_all_keywords()
+  keyword_service = KeywordService()
+  keywords = keyword_service.get_all_keywords()
   print(f"{"id".ljust(4)}{"name".ljust(15)}{"category_id".ljust(4)}")
   for keyword in keywords:
     id_str = str(keyword[0]).ljust(4)
@@ -56,8 +56,8 @@ def display_keywords():
 
 def add_keyword(keyword):
   """ Add a keyword to the database """
-  keyword_manager = KeywordManager()
-  if keyword_manager.add_keyword(keyword[0], keyword[1]):
+  keyword_service = KeywordService()
+  if keyword_service.add_keyword(keyword[0], keyword[1]):
     display_keywords()
   else:
     print("Error adding a keyword")

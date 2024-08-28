@@ -35,15 +35,6 @@ class MainWindowView(QMainWindow):
     self.tabWidget.setTabBarAutoHide(False)
 
     # Dashboard tab
-    # Temporarily use managers instead of services # TODO
-    from focuswatch.database.activity_manager import ActivityManager
-    from focuswatch.database.category_manager import CategoryManager
-    from focuswatch.database.keyword_manager import KeywordManager
-
-    acitivity_manager = ActivityManager()
-    category_manager = CategoryManager()
-    keyword_manager = KeywordManager()
-
     self._dashboard_view = DashboardView(
         self._viewmodel.get_dashboard_viewmodel(), self._viewmodel._activity_service, self._viewmodel._category_service)
     self.tabWidget.addTab(self._dashboard_view, "")

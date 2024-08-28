@@ -2,25 +2,22 @@ import logging
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt, QCoreApplication, Slot, QSize, QTimer
+from PySide6.QtCore import QCoreApplication, QSize, Qt, QTimer, Slot
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QWidget, QGridLayout, QFrame, QHBoxLayout,
-                               QPushButton, QSizePolicy, QSpacerItem,
-                               QVBoxLayout, QCalendarWidget, QDialog, QMenu)
+from PySide6.QtWidgets import (QCalendarWidget, QDialog, QFrame, QGridLayout,
+                               QHBoxLayout, QMenu, QPushButton, QSizePolicy,
+                               QSpacerItem, QVBoxLayout, QWidget)
 
-from focuswatch.viewmodels.components.timeline_viewmodel import TimelineViewModel
-from focuswatch.views.components.timeline_view import TimelineView
 from focuswatch.ui.top_applications import TopApplicationsComponent
 from focuswatch.ui.top_categories import TopCategoriesComponent
-
-from focuswatch.database.activity_manager import ActivityManager
-from focuswatch.database.category_manager import CategoryManager
-from focuswatch.database.keyword_manager import KeywordManager
+from focuswatch.viewmodels.components.timeline_viewmodel import \
+    TimelineViewModel
+from focuswatch.views.components.timeline_view import TimelineView
 
 if TYPE_CHECKING:
-  from focuswatch.viewmodels.dashboard_viewmodel import DashboardViewModel
   from focuswatch.services.activity_service import ActivityService
   from focuswatch.services.category_service import CategoryService
+  from focuswatch.viewmodels.dashboard_viewmodel import DashboardViewModel
 
 logger = logging.getLogger(__name__)
 
@@ -34,10 +31,6 @@ class DashboardView(QWidget):
     self._timeline_viewmodel = TimelineViewModel(
         activity_service, category_service)
     self._timeline_view = None
-
-    self._activity_manager = ActivityManager()
-    self._category_manager = CategoryManager()
-    self._keyword_manager = KeywordManager()
 
     self.setupUi()
     self.retranslateUi()
