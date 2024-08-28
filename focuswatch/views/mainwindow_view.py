@@ -13,6 +13,7 @@ class MainWindowView(QMainWindow):
     super().__init__(parent)
     self._viewmodel = viewmodel
     self.setupUi()
+    self.connect_signals()
 
   def setupUi(self):
     if not self.objectName():
@@ -36,17 +37,17 @@ class MainWindowView(QMainWindow):
 
     # Dashboard tab
     self._dashboard_view = DashboardView(
-        self._viewmodel.get_dashboard_viewmodel(), self._viewmodel._activity_service, self._viewmodel._category_service)
+        self._viewmodel.dashboard_viewmodel, self._viewmodel._activity_service, self._viewmodel._category_service)
     self.tabWidget.addTab(self._dashboard_view, "")
 
     # Categorization tab
     self._categorization_view = CategorizationView(
-        self._viewmodel.get_categorization_viewmodel())
+        self._viewmodel.categorization_viewmodel)
     self.tabWidget.addTab(self._categorization_view, "")
 
     # Settings tab
     self._settings_view = SettingsView(
-        self._viewmodel.get_settings_viewmodel())
+        self._viewmodel.settings_viewmodel)
     self.settings_tab = self._settings_view.setupUi()
     self.tabWidget.addTab(self.settings_tab, "")
 
@@ -79,3 +80,9 @@ class MainWindowView(QMainWindow):
   def closeEvent(self, event):
     self._viewmodel.exit_application()
     super().closeEvent(event)
+
+  def connect_signals(self):
+    self._viewmodel.property_changed.connect(self.on_property_changed)
+
+  def on_property_changed(self, property_name):
+    print(f"Property changed: {property_name}")

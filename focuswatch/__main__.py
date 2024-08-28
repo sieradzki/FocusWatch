@@ -99,6 +99,7 @@ def main():
   apply_stylesheet(app, "mainwindow.qss")
 
   if not QSystemTrayIcon.isSystemTrayAvailable():
+    # TODO retry - in wms like dwm tray might be not immediately available
     QMessageBox.critical(
       None, "Systray", "Couldn't detect any system tray on this system.")
     logger.error("Couldn't detect any system tray on this system.")
@@ -129,6 +130,7 @@ def main():
 
   main_viewmodel = MainViewModel(
     watcher_service, activity_service, category_service, keyword_service)
+
   mainwindow_viewmodel = MainWindowViewModel(
       main_viewmodel, activity_service, category_service, keyword_service)
   main_window = MainWindowView(mainwindow_viewmodel)
