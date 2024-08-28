@@ -18,6 +18,7 @@ from focuswatch.services.activity_service import ActivityService
 from focuswatch.services.category_service import CategoryService
 from focuswatch.services.keyword_service import KeywordService
 from focuswatch.services.watcher_service import WatcherService
+from focuswatch.utils.style_utils import apply_stylesheet
 from focuswatch.viewmodels.main_viewmodel import MainViewModel
 from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 from focuswatch.views.mainwindow_view import MainWindowView
@@ -93,6 +94,9 @@ def main():
 
   logger.info("Creating QApplication")
   app = QApplication([])
+
+  # TODO theme.qss ?
+  apply_stylesheet(app, "mainwindow.qss")
 
   if not QSystemTrayIcon.isSystemTrayAvailable():
     QMessageBox.critical(
