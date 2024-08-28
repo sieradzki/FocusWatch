@@ -1,8 +1,11 @@
 import os
-
+import sys
 from PySide6.QtCore import QDir, QFile
+from PySide6.QtGui import QIcon
 
-BASE_STYLES_DIR = "focuswatch/views/styles/"
+BASE_RESOURCES_DIR = "resources"
+BASE_STYLES_DIR = f"{BASE_RESOURCES_DIR}/styles"
+BASE_ICONS_DIR = f"{BASE_RESOURCES_DIR}/icons"
 
 
 def apply_stylesheet(target, style_path: str) -> None:
@@ -22,3 +25,17 @@ def apply_stylesheet(target, style_path: str) -> None:
   if file.open(QFile.ReadOnly | QFile.Text):
     stylesheet = str(file.readAll(), 'utf-8')
     target.setStyleSheet(stylesheet)
+
+
+def load_icon(icon_name: str) -> QIcon:
+  """
+  Loads an icon from the resources/icons directory.
+
+  Args:
+    icon_name (str): The name of the icon file to load.
+
+  Returns:
+    QIcon: The loaded icon.
+  """
+  icon_path = os.path.join(BASE_ICONS_DIR, icon_name)
+  return QIcon(icon_path)
