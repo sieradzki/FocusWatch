@@ -18,10 +18,6 @@ class CategoryDialogView(QDialog):
       category_service, keyword_service, category_id)
     self.setupUi()
     self.connectSignals()
-    self._viewmodel.add_property_observer('keywords', self.setup_keyword_grid)
-
-    # Let's see if it's necessary
-    self._viewmodel.add_property_observer('_color', self.update_color_button)
 
   def setupUi(self):
     if not self.objectName():
