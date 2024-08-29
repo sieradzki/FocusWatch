@@ -1,0 +1,41 @@
+QMainWindow {
+    background-color: #161616;
+}
+
+QLabel {
+    color: #F9F9F9;
+}
+
+QFrame#sidebar {
+    background-color: #101010;
+    border: none;
+    width: 100px;
+}
+
+QStackedWidget {
+    background-color: #1e1e1e;
+}
+
+QPushButton {
+    background-color: #1b1c1e;
+    border-radius: 4px;
+    border: 1px solid #363739;
+    color: #f9f9f9;
+    font-family: Arial;
+    font-size: 14px;
+    padding: 3px 7px;
+    text-decoration: none;
+}
+
+QPushButton:hover {
+    background-color: #252628;
+}
+
+QPushButton:active {
+    position: relative;
+    top: 1px;
+}
+
+QWidget.card {
+    background-color: black;
+}

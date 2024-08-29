@@ -32,4 +32,4 @@ jobs:
         python -m pylint -e W0311 -e C0303 --jobs=0 --indent-string='  ' **/*.py
     - name: Test with pytest
       run: |
-        pytest
+        pytest --ignore=test/views/

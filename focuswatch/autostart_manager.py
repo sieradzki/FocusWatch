@@ -5,12 +5,12 @@ import sys
 import subprocess
 import textwrap
 
-from focuswatch.utils import is_frozen, is_linux, is_windows
+from focuswatch.utils.platform_utils import is_frozen, is_linux, is_windows
 
 if is_windows():
   import winreg as reg
 else:
-  reg = None # E0606
+  reg = None  # E0606
 
 logger = logging.getLogger(__name__)
 APP_NAME = "focuswatch"
