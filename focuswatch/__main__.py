@@ -22,6 +22,7 @@ from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.viewmodels.main_viewmodel import MainViewModel
 from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 from focuswatch.views.mainwindow_view import MainWindowView
+from focuswatch.services.classifier_service import ClassifierService
 
 # from qt_material import apply_stylesheet
 
@@ -122,17 +123,23 @@ def main():
   menu = QMenu()
 
   # Create Services, ViewModels and MainWindowView
-  watcher_service = WatcherService(args.watch_interval if args.watch_interval else None,
-                                   args.verbose if args.verbose else None)
   activity_service = ActivityService()
   category_service = CategoryService()
   keyword_service = KeywordService()
+  classifier_service = ClassifierService(category_service, keyword_service)
+
+  watcher_service = WatcherService(
+    activity_service,
+    category_service,
+    classifier_service,
+    args.watch_interval if args.watch_interval else None,
+    args.verbose if args.verbose else None, )
 
   main_viewmodel = MainViewModel(
     watcher_service, activity_service, category_service, keyword_service)
 
   mainwindow_viewmodel = MainWindowViewModel(
-      main_viewmodel, activity_service, category_service, keyword_service)
+      main_viewmodel, activity_service, category_service, keyword_service, classifier_service)
   main_window = MainWindowView(mainwindow_viewmodel)
 
   # Add actions to the menu
