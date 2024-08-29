@@ -9,7 +9,8 @@ from PySide6.QtCore import QSize
 @pytest.fixture(scope="session")
 def qt_app():
   """ Fixture to initialize QApplication for Qt tests. """
-  app = QApplication.instance()  # Check if QApplication already exists - avoid creating multiple instances and crashing the tests
+  app = QApplication.instance(
+  )  # Check if QApplication already exists - avoid creating multiple instances and crashing the tests
   if app is None:
     app = QApplication([])
   yield app
@@ -24,11 +25,14 @@ def viewmodel():
   mock_category_service = MagicMock()
   mock_keyword_service = MagicMock()
   mock_main_viewmodel = MagicMock()
+  mock_classifier_service = MagicMock()
+
   return MainWindowViewModel(
       main_viewmodel=mock_main_viewmodel,
       activity_service=mock_activity_service,
       category_service=mock_category_service,
-      keyword_service=mock_keyword_service
+      keyword_service=mock_keyword_service,
+      classifier_service=mock_classifier_service
   )
 
 

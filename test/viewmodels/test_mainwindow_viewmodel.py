@@ -4,6 +4,7 @@ from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 from focuswatch.viewmodels.settings_viewmodel import SettingsViewModel
 from focuswatch.viewmodels.categorization_viewmodel import CategorizationViewModel
 from focuswatch.viewmodels.dashboard_viewmodel import DashboardViewModel
+from focuswatch.services.classifier_service import ClassifierService
 
 
 class TestMainWindowViewModel(unittest.TestCase):
@@ -14,12 +15,14 @@ class TestMainWindowViewModel(unittest.TestCase):
     self.mock_category_service = MagicMock()
     self.mock_keyword_service = MagicMock()
     self.mock_main_viewmodel = MagicMock()
+    self.mock_classifier_service = MagicMock()
 
     self.viewmodel = MainWindowViewModel(
         main_viewmodel=self.mock_main_viewmodel,
         activity_service=self.mock_activity_service,
         category_service=self.mock_category_service,
-        keyword_service=self.mock_keyword_service
+        keyword_service=self.mock_keyword_service,
+        classifier_service=self.mock_classifier_service
     )
 
   def test_initialization(self) -> None:
