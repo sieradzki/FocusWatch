@@ -31,7 +31,7 @@ class HomeView(QWidget):
 
     self.setupUi()
     self.retranslateUi()
-    # self.connect_signals()
+    self.connect_signals()
 
   def setupUi(self):
     self.setObjectName(u"page_home")
@@ -70,34 +70,34 @@ class HomeView(QWidget):
     self.horizontalLayout_5.setContentsMargins(0, 0, 0, 0)
 
     # Navigation Buttons
-    self.pushButton_datePrev = QPushButton(self.home_nav_frame)
-    self.pushButton_datePrev.setObjectName(u"pushButton_datePrev")
-    self.horizontalLayout_5.addWidget(self.pushButton_datePrev)
+    self.date_prev_button = QPushButton(self.home_nav_frame)
+    self.date_prev_button.setObjectName(u"date_prev_button")
+    self.horizontalLayout_5.addWidget(self.date_prev_button)
 
-    self.pushButton_date = QPushButton(self.home_nav_frame)
-    self.pushButton_date.setObjectName(u"pushButton_date")
-    self.horizontalLayout_5.addWidget(self.pushButton_date)
+    self.date_button = QPushButton(self.home_nav_frame)
+    self.date_button.setObjectName(u"date_button")
+    self.horizontalLayout_5.addWidget(self.date_button)
 
-    self.pushButton_dateNext = QPushButton(self.home_nav_frame)
-    self.pushButton_dateNext.setObjectName(u"pushButton_dateNext")
-    self.horizontalLayout_5.addWidget(self.pushButton_dateNext)
+    self.date_next_button = QPushButton(self.home_nav_frame)
+    self.date_next_button.setObjectName(u"date_next_button")
+    self.horizontalLayout_5.addWidget(self.date_next_button)
 
     self.horizontalSpacer_period = QSpacerItem(
       20, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
     self.horizontalLayout_5.addItem(self.horizontalSpacer_period)
 
-    self.pushButton_period = QPushButton(self.home_nav_frame)
-    self.pushButton_period.setObjectName(u"pushButton_period")
-    self.pushButton_period.setMinimumSize(QSize(70, 0))
-    self.horizontalLayout_5.addWidget(self.pushButton_period)
+    self.period_type_button = QPushButton(self.home_nav_frame)
+    self.period_type_button.setObjectName(u"period_type_button")
+    self.period_type_button.setMinimumSize(QSize(70, 0))
+    self.horizontalLayout_5.addWidget(self.period_type_button)
 
     self.horizontalSpacer_ref = QSpacerItem(
       40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
     self.horizontalLayout_5.addItem(self.horizontalSpacer_ref)
 
-    self.pushButton_refresh = QPushButton(self.home_nav_frame)
-    self.pushButton_refresh.setObjectName(u"pushButton_refresh")
-    self.horizontalLayout_5.addWidget(self.pushButton_refresh)
+    self.refreshButton = QPushButton(self.home_nav_frame)
+    self.refreshButton.setObjectName(u"refreshButton")
+    self.horizontalLayout_5.addWidget(self.refreshButton)
 
     self.home_nav_horizontalLayout.addWidget(self.home_nav_frame)
     self.home_verticalLayout.addLayout(self.home_nav_horizontalLayout)
@@ -150,50 +150,52 @@ class HomeView(QWidget):
     self.main_layout.addWidget(self.content_frame)
 
   def retranslateUi(self):
-    self.pushButton_datePrev.setText(
+    self.date_prev_button.setText(
       QCoreApplication.translate("Home", "<", None))
-    self.pushButton_dateNext.setText(
+    self.date_next_button.setText(
       QCoreApplication.translate("Home", ">", None))
-    self.pushButton_period.setText(QCoreApplication.translate(
+    self.period_type_button.setText(QCoreApplication.translate(
       "Home", self._viewmodel.period_type, None))
-    self.pushButton_refresh.setText(
+    self.refreshButton.setText(
       QCoreApplication.translate("Home", "Refresh", None))
-    # self.update_date_button_text()
+    self.update_date_button_text()
 
-  # def update_date_button_text(self):
-  #   period_start = self._viewmodel.period_start
-  #   period_end = self._viewmodel.period_end
-  #   period_type = self._viewmodel.period_type
+  def connect_signals(self):
+    self._viewmodel.property_changed.connect(
+      self.on_viewmodel_property_changed)
+    self.date_prev_button.clicked.connect(self.on_date_prev_clicked)
+    self.date_next_button.clicked.connect(self.on_date_next_clicked)
+    self.date_button.clicked.connect(self.show_calendar)
+    self.period_type_button.clicked.connect(self.show_period_menu)
+    # self.refreshButton.clicked.connect(self.refresh_data)
 
-  #   if period_type == "Day":
-  #     if period_start == datetime.today().date():
-  #       self.date_button.setText("Today")
-  #     else:
-  #       self.date_button.setText(period_start.strftime("%d-%m-%Y"))
-  #   elif period_type == "Week":
-  #     self.date_button.setText(f"{period_start.strftime(
-  #       '%b %d')} - {period_end.strftime('%b %d, %Y')}")
-  #   elif period_type == "Month":
-  #     self.date_button.setText(period_start.strftime("%B %Y"))
-  #   elif period_type == "Year":
-  #     self.date_button.setText(period_start.strftime("%Y"))
+  def update_date_button_text(self):
+    period_start = self._viewmodel.period_start
+    period_end = self._viewmodel.period_end
+    period_type = self._viewmodel.period_type
 
-  # def connect_signals(self):
-  #   self._viewmodel.property_changed.connect(
-  #     self.on_viewmodel_property_changed)
-  #   self.date_prev_button.clicked.connect(self.on_date_prev_clicked)
-  #   self.date_next_button.clicked.connect(self.on_date_next_clicked)
-  #   self.date_button.clicked.connect(self.show_calendar)
-  #   self.period_type_button.clicked.connect(self.show_period_menu)
-  #   self.refreshButton.clicked.connect(self.refresh_data)
+    if period_type == "Day":
+      if period_start == datetime.today().date():
+        self.date_button.setText("Today")
+      else:
+        self.date_button.setText(period_start.strftime("%d-%m-%Y"))
+        self.period_type_button.setText("Day")
+    elif period_type == "Week":
+      self.date_button.setText(f"{period_start.strftime(
+        '%b %d')} - {period_end.strftime('%b %d, %Y')}")
+      self.period_type_button.setText("Week")
+    elif period_type == "Month":
+      self.date_button.setText(period_start.strftime("%B %Y"))
+      self.period_type_button.setText("Month")
+    elif period_type == "Year":
+      self.date_button.setText(period_start.strftime("%Y"))
+      self.period_type_button.setText("Year")
 
-  #   self._viewmodel.property_changed.connect(self.update_timeline_period)
-
-  # @Slot(str)
-  # def on_viewmodel_property_changed(self, property_name: str):
-  #   logger.debug(f"HomeView property changed: {property_name}")
-  #   if property_name in ['period_start', 'period_end', 'period_type']:
-  #     self.update_date_button_text()
+  @Slot(str)
+  def on_viewmodel_property_changed(self, property_name: str):
+    logger.info(f"Property changed: {property_name}")
+    if property_name in ['period_start', 'period_end', 'period_type']:
+      self.update_date_button_text()
   #     self.update_components()
 
   # @Slot(str)
@@ -202,42 +204,42 @@ class HomeView(QWidget):
   #     self._timeline_viewmodel.period_start = self._viewmodel.period_start
   #     self._timeline_viewmodel.period_end = self._viewmodel.period_end
 
-  # def on_date_prev_clicked(self):
-  #   self._viewmodel.shift_period(-1)
+  def on_date_prev_clicked(self):
+    self._viewmodel.shift_period(-1)
 
-  # def on_date_next_clicked(self):
-  #   self._viewmodel.shift_period(1)
+  def on_date_next_clicked(self):
+    self._viewmodel.shift_period(1)
 
-  # def show_calendar(self):
-  #   calendar_dialog = QDialog(self)
-  #   calendar_dialog.setWindowTitle("Select a Date")
+  def show_calendar(self):
+    calendar_dialog = QDialog(self)
+    calendar_dialog.setWindowTitle("Select a Date")
 
-  #   layout = QVBoxLayout()
-  #   calendar = QCalendarWidget()
-  #   layout.addWidget(calendar)
-  #   confirm_button = QPushButton("Confirm Date")
-  #   layout.addWidget(confirm_button)
+    layout = QVBoxLayout()
+    calendar = QCalendarWidget()
+    layout.addWidget(calendar)
+    confirm_button = QPushButton("Confirm Date")
+    layout.addWidget(confirm_button)
 
-  #   def get_selected_date():
-  #     selected_date = calendar.selectedDate().toPython()
-  #     self._viewmodel.update_period_from_selected_date(selected_date)
-  #     calendar_dialog.accept()
+    def get_selected_date():
+      selected_date = calendar.selectedDate().toPython()
+      self._viewmodel.update_period_from_selected_date(selected_date)
+      calendar_dialog.accept()
 
-  #   confirm_button.clicked.connect(get_selected_date)
-  #   calendar_dialog.setLayout(layout)
-  #   calendar_dialog.exec_()
+    confirm_button.clicked.connect(get_selected_date)
+    calendar_dialog.setLayout(layout)
+    calendar_dialog.exec_()
 
-  # def show_period_menu(self):
-  #   menu = QMenu(self)
-  #   actions = {}
-  #   for period in ["Day", "Week", "Month", "Year"]:
-  #     actions[period] = menu.addAction(period)
+  def show_period_menu(self):
+    menu = QMenu(self)
+    actions = {}
+    for period in ["Day", "Week", "Month", "Year"]:
+      actions[period] = menu.addAction(period)
 
-  #   action = menu.exec_(self.period_type_button.mapToGlobal(
-  #     self.period_type_button.rect().bottomLeft()))
+    action = menu.exec_(self.period_type_button.mapToGlobal(
+      self.period_type_button.rect().bottomLeft()))
 
-  #   if action:
-  #     self._viewmodel.set_period_type(action.text())
+    if action:
+      self._viewmodel.set_period_type(action.text())
 
   # def refresh_data(self):
   #   self.update_components()
@@ -277,13 +279,6 @@ class HomeView(QWidget):
   # def showEvent(self, event):
   #   super().showEvent(event)
   #   QTimer.singleShot(0, self.update_components)
-
-  # @Slot(str)
-  # def on_viewmodel_property_changed(self, property_name: str):
-  #   logger.debug(f"HomeView property changed: {property_name}")
-  #   if property_name in ['period_start', 'period_end', 'period_type']:
-  #     self.update_date_button_text()
-  #     QTimer.singleShot(0, self.update_components)
 
   # @Slot(str)
   # def update_timeline_period(self, property_name: str):
