@@ -105,7 +105,8 @@ class MainWindowView(QMainWindow):
     self.setCentralWidget(self.centralwidget)
     self.retranslateUi()
 
-    self.switch_page("home")
+    self.update_sidebar_buttons() # TODO Should I just setChecked the home button?
+
     QMetaObject.connectSlotsByName(self)
 
   def retranslateUi(self):
@@ -167,10 +168,11 @@ class MainWindowView(QMainWindow):
     """ Switch the page in the stacked widget. """
     self._viewmodel.current_page_index = self._viewmodel.page_index(name)
 
-    # Update button states
+  def update_sidebar_buttons(self,):
+    """ Update the sidebar buttons to reflect the current page. """
     buttons = self.sidebar.findChildren(QToolButton)
     for button in buttons:
-      if button.objectName().endswith(name):
+      if button.objectName().endswith(self._viewmodel.pages[self._viewmodel.current_page_index]):
         button.setChecked(True)
       else:
         button.setChecked(False)
@@ -178,3 +180,4 @@ class MainWindowView(QMainWindow):
   def on_property_changed(self, property_name):
     if property_name == '_current_page_index':
       self.stackedWidget.setCurrentIndex(self._viewmodel.current_page_index)
+      self.update_sidebar_buttons()
