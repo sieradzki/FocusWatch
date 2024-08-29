@@ -39,9 +39,15 @@ class MainWindowViewModel(BaseViewModel):
     # Initialize child viewmodels
     self._settings_viewmodel = SettingsViewModel()
     self._categorization_viewmodel = CategorizationViewModel(
-        activity_service, category_service, keyword_service, self._classifier_service)
+        self._activity_service,
+        self._category_service,
+        self._keyword_service,
+        self._classifier_service
+    )
     self._home_viewmodel = HomeViewModel(
-      activity_service, category_service)
+      self._activity_service,
+      self._category_service
+    )
 
     # Initialize properties
     self._pages = ["home", "categories", "settings"]

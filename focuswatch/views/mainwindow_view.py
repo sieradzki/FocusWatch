@@ -21,6 +21,7 @@ class MainWindowView(QMainWindow):
     super().__init__(parent)
     self._viewmodel = viewmodel
     self.setupUi()
+    self.retranslateUi()
     self.connect_signals()
 
   def setupUi(self):
@@ -92,7 +93,7 @@ class MainWindowView(QMainWindow):
     self.horizontalLayout.addWidget(self.stackedWidget)
 
     # Mock Pages for testing
-    self.page_home = self.create_mock_page("Home Page")
+    self.page_home = HomeView(self._viewmodel.home_viewmodel)
     self.page_categories = self.create_mock_page("Categories Page")
     self.page_settings = self.create_mock_page("Settings Page")
 
@@ -103,7 +104,6 @@ class MainWindowView(QMainWindow):
 
     # Set the central widget
     self.setCentralWidget(self.centralwidget)
-    self.retranslateUi()
 
     self.update_sidebar_buttons()  # TODO Should I just setChecked the home button?
 

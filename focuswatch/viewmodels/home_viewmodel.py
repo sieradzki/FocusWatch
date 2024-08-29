@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 from PySide6.QtCore import Property, Slot
 
 from focuswatch.viewmodels.base_viewmodel import BaseViewModel
+from focuswatch.viewmodels.components.timeline_viewmodel import TimelineViewModel
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
@@ -14,10 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 class HomeViewModel(BaseViewModel):
-  def __init__(self, activity_service: 'ActivityService', category_service: 'CategoryService'):
+  def __init__(self,
+               activity_service: 'ActivityService',
+               category_service: 'CategoryService'):
     super().__init__()
     self._activity_service = activity_service
     self._category_service = category_service
+    self._timeline_viewmodel = TimelineViewModel(
+        self._activity_service, self._category_service)
+
     self._period_start: datetime = datetime.now().date()
     self._period_end: Optional[datetime] = None
     self._period_type: str = "Day"
