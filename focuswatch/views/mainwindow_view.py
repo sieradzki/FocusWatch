@@ -1,13 +1,19 @@
-from PySide6.QtCore import QCoreApplication, QMetaObject, QRect, Qt, QSize
-from PySide6.QtWidgets import (QMainWindow, QMenuBar, QStatusBar, QTabWidget,
-                               QVBoxLayout, QWidget, QHBoxLayout, QFrame, QLabel, QToolButton, QSpacerItem, QSizePolicy, QStackedWidget)
-from PySide6.QtGui import QIcon, QFont
+import logging
 
+from PySide6.QtCore import QCoreApplication, QMetaObject, QRect, QSize, Qt
+from PySide6.QtGui import QFont, QIcon
+from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
+                               QMenuBar, QPushButton, QSizePolicy, QSpacerItem,
+                               QStackedWidget, QStatusBar, QTabWidget,
+                               QToolButton, QVBoxLayout, QWidget)
+
+from focuswatch.utils.resource_utils import apply_stylesheet, load_icon
 from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 from focuswatch.views.categorization_view import CategorizationView
 from focuswatch.views.dashboard_view import DashboardView
 from focuswatch.views.settings_view import SettingsView
-from focuswatch.utils.resource_utils import apply_stylesheet, load_icon
+
+logger = logging.getLogger(__name__)
 
 
 class MainWindowView(QMainWindow):
@@ -61,8 +67,8 @@ class MainWindowView(QMainWindow):
       "Home", "home.png")
     self.sidebar_button_categories = self.create_sidebar_button(
       "Categories", "categories.png")
-    self.sidebar_button_help = self.create_sidebar_button(
-      "Help", "help.png")
+    # self.sidebar_button_help = self.create_sidebar_button(
+    # "Help", "help.png")
     self.sidebar_button_settings = self.create_sidebar_button(
       "Settings", "settings.png")
 
@@ -73,8 +79,8 @@ class MainWindowView(QMainWindow):
       self.sidebar_button_categories, 0, Qt.AlignmentFlag.AlignHCenter)
     self.sidebarLayout.addSpacerItem(QSpacerItem(
       20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
-    self.sidebarLayout.addWidget(
-      self.sidebar_button_help, 0, Qt.AlignmentFlag.AlignHCenter)
+    # self.sidebarLayout.addWidget(
+    # self.sidebar_button_help, 0, Qt.AlignmentFlag.AlignHCenter)
     self.sidebarLayout.addWidget(
       self.sidebar_button_settings, 0, Qt.AlignmentFlag.AlignHCenter)
 
@@ -85,66 +91,34 @@ class MainWindowView(QMainWindow):
     self.stackedWidget = QStackedWidget(self.centralwidget)
     self.horizontalLayout.addWidget(self.stackedWidget)
 
-    """
-    # self.tabWidget = QTabWidget(self.centralwidget)
-    # self.tabWidget.setObjectName(u"tabWidget")
-    # self.tabWidget.setTabShape(QTabWidget.Rounded)
-    # self.tabWidget.setDocumentMode(False)
-    # self.tabWidget.setTabBarAutoHide(False)
+    # Mock Pages for testing
+    self.page_home = self.create_mock_page("Home Page")
+    self.page_categories = self.create_mock_page("Categories Page")
+    self.page_settings = self.create_mock_page("Settings Page")
 
-    # # Dashboard tab
-    # self._dashboard_view = DashboardView(
-    #     self._viewmodel.dashboard_viewmodel, self._viewmodel._activity_service, self._viewmodel._category_service)
-    # self.tabWidget.addTab(self._dashboard_view, "")
+    # Add pages to the stacked widget
+    self.stackedWidget.addWidget(self.page_home)
+    self.stackedWidget.addWidget(self.page_categories)
+    self.stackedWidget.addWidget(self.page_settings)
 
-    # # Categorization tab
-    # self._categorization_view = CategorizationView(
-    #     self._viewmodel.categorization_viewmodel)
-    # self.tabWidget.addTab(self._categorization_view, "")
-
-    # # Settings tab
-    # self._settings_view = SettingsView(
-    #     self._viewmodel.settings_viewmodel)
-    # self.settings_tab = self._settings_view.setupUi()
-    # self.tabWidget.addTab(self.settings_tab, "")
-
-    # self.verticalLayout.addWidget(self.tabWidget)
-    # self.verticalLayout_2.addLayout(self.verticalLayout)
-    # self.setCentralWidget(self.centralwidget)
-
-    # self.menubar = QMenuBar(self)
-    # self.menubar.setObjectName(u"menubar")
-    # self.menubar.setGeometry(QRect(0, 0, 1600, 22))
-    # self.setMenuBar(self.menubar)
-
-    # self.statusbar = QStatusBar(self)
-    # self.statusbar.setObjectName(u"statusbar")
-    # self.setStatusBar(self.statusbar)
-    """
-
+    # Set the central widget
     self.setCentralWidget(self.centralwidget)
     self.retranslateUi()
-    # self.tabWidget.setCurrentIndex(self._viewmodel.current_tab_index)
 
+    self.switch_page("home")
     QMetaObject.connectSlotsByName(self)
-
-    # Connect signals
-    # self.tabWidget.currentChanged.connect(self._viewmodel.switch_tab)
 
   def retranslateUi(self):
     self.logo_label.setText(QCoreApplication.translate(
-      "MainWindow", u"FocusWatch", None))
+      "MainWindow", u"focuswatch", None))
     self.sidebar_button_home.setText(
       QCoreApplication.translate("MainWindow", u"Home", None))
     self.sidebar_button_categories.setText(
       QCoreApplication.translate("MainWindow", u"Categories", None))
-    self.sidebar_button_help.setText(
-      QCoreApplication.translate("MainWindow", u"Help", None))
+    # self.sidebar_button_help.setText(
+    # QCoreApplication.translate("MainWindow", u"Help", None))
     self.sidebar_button_settings.setText(
       QCoreApplication.translate("MainWindow", u"Settings", None))
-    # for i, name in enumerate(self._viewmodel.tab_names):
-    # self.tabWidget.setTabText(
-    # i, QCoreApplication.translate("MainWindow", name, None))
 
   def create_sidebar_button(self, text: str, icon_path: str) -> QToolButton:
     """ Helper method to create sidebar buttons. """
@@ -163,7 +137,18 @@ class MainWindowView(QMainWindow):
     button.setIconSize(QSize(32, 32))
     button.setCheckable(True)
     button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+    apply_stylesheet(button, "sidebar_button.qss")
+
     return button
+
+  def create_mock_page(self, page_name: str) -> QWidget:
+    """ Helper method to create a mock page with a label for distinguishing pages. """
+    page = QWidget()
+    layout = QVBoxLayout(page)
+    label = QLabel(page_name)
+    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    layout.addWidget(label)
+    return page
 
   def closeEvent(self, event):
     self._viewmodel.exit_application()
@@ -171,6 +156,25 @@ class MainWindowView(QMainWindow):
 
   def connect_signals(self):
     self._viewmodel.property_changed.connect(self.on_property_changed)
+    """ Connect button signals to slots for page switching. """
+    self.sidebar_button_home.clicked.connect(lambda: self.switch_page("home"))
+    self.sidebar_button_categories.clicked.connect(
+      lambda: self.switch_page("categories"))
+    self.sidebar_button_settings.clicked.connect(
+      lambda: self.switch_page("settings"))
+
+  def switch_page(self, name: str):
+    """ Switch the page in the stacked widget. """
+    self._viewmodel.current_page_index = self._viewmodel.page_index(name)
+
+    # Update button states
+    buttons = self.sidebar.findChildren(QToolButton)
+    for button in buttons:
+      if button.objectName().endswith(name):
+        button.setChecked(True)
+      else:
+        button.setChecked(False)
 
   def on_property_changed(self, property_name):
-    print(f"Property changed: {property_name}")
+    if property_name == '_current_page_index':
+      self.stackedWidget.setCurrentIndex(self._viewmodel.current_page_index)

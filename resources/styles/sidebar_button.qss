@@ -1,0 +1,16 @@
+QToolButton {
+    background-color: transparent;
+    border: none;
+    font-size: 14px;
+    color: #F9F9F9;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+QToolButton:hover {
+    background-color: #27282C;
+}
+
+QToolButton:checked {
+    background-color: #27282C;
+}
