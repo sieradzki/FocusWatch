@@ -27,9 +27,14 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install pylint pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        sudo apt-get install -y xvfb
+
     - name: Lint with pylint
       run: |
         python -m pylint -e W0311 -e C0303 --jobs=0 --indent-string='  ' **/*.py
+
     - name: Test with pytest
       run: |
+        export DISPLAY=:99
+        Xvfb :99 -screen 0 1024x768x24 &
         pytest
