@@ -163,16 +163,16 @@ class CategorizationTab(QWidget):
     return self.categorization_tab
 
   def retranslateUi(self):
-    self.categorization_info_label.setText(QCoreApplication.translate("Dashboard", u"Rules for categorizing events. An event can only have one category. If several categories match, the deepest one will be chosen.\n"
+    self.categorization_info_label.setText(QCoreApplication.translate("Home", u"Rules for categorizing events. An event can only have one category. If several categories match, the deepest one will be chosen.\n"
                                                                       "To re-categorize previous entries after adding or updating category, click \"Retroactive categorization\" button", None))
     self.categorization_addCategory.setText(
-      QCoreApplication.translate("Dashboard", u"Add category", None))
+      QCoreApplication.translate("Home", u"Add category", None))
     self.retroactive_categorization_button.setText(QCoreApplication.translate(
-      "Dashboard", u"Retroactive categorization", None))
+      "Home", u"Retroactive categorization", None))
     self.categorization_restoreDefaults.setText(
-      QCoreApplication.translate("Dashboard", u"Restore defaults", None))
+      QCoreApplication.translate("Home", u"Restore defaults", None))
     self.categorization_helper_button.setText(
-      QCoreApplication.translate("Dashboard", u"Categorization helper", None))
+      QCoreApplication.translate("Home", u"Categorization helper", None))
 
   def onShow(self, event):
     self.clear_layout(self.categorization_content_horizontalLayout)

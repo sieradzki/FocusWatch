@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
 from focuswatch.utils.resource_utils import apply_stylesheet, load_icon
 from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 from focuswatch.views.categorization_view import CategorizationView
-from focuswatch.views.dashboard_view import DashboardView
+from focuswatch.views.home_view import HomeView
 from focuswatch.views.settings_view import SettingsView
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ class MainWindowView(QMainWindow):
     self.setCentralWidget(self.centralwidget)
     self.retranslateUi()
 
-    self.update_sidebar_buttons() # TODO Should I just setChecked the home button?
+    self.update_sidebar_buttons()  # TODO Should I just setChecked the home button?
 
     QMetaObject.connectSlotsByName(self)
 

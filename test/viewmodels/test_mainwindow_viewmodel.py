@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 from focuswatch.viewmodels.settings_viewmodel import SettingsViewModel
 from focuswatch.viewmodels.categorization_viewmodel import CategorizationViewModel
-from focuswatch.viewmodels.dashboard_viewmodel import DashboardViewModel
+from focuswatch.viewmodels.home_viewmodel import HomeViewModel
 from focuswatch.services.classifier_service import ClassifierService
 
 
@@ -37,7 +37,7 @@ class TestMainWindowViewModel(unittest.TestCase):
     self.assertIsInstance(
         self.viewmodel.categorization_viewmodel, CategorizationViewModel)
     self.assertIsInstance(
-        self.viewmodel.dashboard_viewmodel, DashboardViewModel)
+        self.viewmodel.home_viewmodel, HomeViewModel)
 
   def test_page_index(self) -> None:
     """ Test that the page index method returns the correct index. """

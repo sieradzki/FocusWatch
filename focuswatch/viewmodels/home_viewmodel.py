@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class DashboardViewModel(BaseViewModel):
+class HomeViewModel(BaseViewModel):
   def __init__(self, activity_service: 'ActivityService', category_service: 'CategoryService'):
     super().__init__()
     self._activity_service = activity_service

@@ -17,13 +17,13 @@ from focuswatch.views.components.timeline_view import TimelineView
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
   from focuswatch.services.category_service import CategoryService
-  from focuswatch.viewmodels.dashboard_viewmodel import DashboardViewModel
+  from focuswatch.viewmodels.home_viewmodel import HomeViewModel
 
 logger = logging.getLogger(__name__)
 
 
-class DashboardView(QWidget):
-  def __init__(self, viewmodel: 'DashboardViewModel', activity_service: 'ActivityService', category_service: 'CategoryService', parent=None):
+class HomeView(QWidget):
+  def __init__(self, viewmodel: 'HomeViewModel', activity_service: 'ActivityService', category_service: 'CategoryService', parent=None):
     super().__init__(parent)
     self._viewmodel = viewmodel
     self._activity_service = activity_service
@@ -37,7 +37,7 @@ class DashboardView(QWidget):
     self.connect_signals()
 
   def setupUi(self):
-    self.setObjectName("dashboard_view")
+    self.setObjectName("home_view")
     self.gridLayout = QGridLayout(self)
     self.gridLayout.setObjectName("gridLayout")
 
@@ -116,13 +116,13 @@ class DashboardView(QWidget):
 
   def retranslateUi(self):
     self.date_prev_button.setText(
-      QCoreApplication.translate("Dashboard", "<", None))
+      QCoreApplication.translate("Home", "<", None))
     self.date_next_button.setText(
-      QCoreApplication.translate("Dashboard", ">", None))
+      QCoreApplication.translate("Home", ">", None))
     self.period_type_button.setText(QCoreApplication.translate(
-      "Dashboard", self._viewmodel.period_type, None))
+      "Home", self._viewmodel.period_type, None))
     self.refreshButton.setText(
-      QCoreApplication.translate("Dashboard", "Refresh", None))
+      QCoreApplication.translate("Home", "Refresh", None))
     self.update_date_button_text()
 
   def update_date_button_text(self):
@@ -156,7 +156,7 @@ class DashboardView(QWidget):
 
   @Slot(str)
   def on_viewmodel_property_changed(self, property_name: str):
-    logger.debug(f"DashboardView property changed: {property_name}")
+    logger.debug(f"HomeView property changed: {property_name}")
     if property_name in ['period_start', 'period_end', 'period_type']:
       self.update_date_button_text()
       self.update_components()
@@ -245,7 +245,7 @@ class DashboardView(QWidget):
 
   @Slot(str)
   def on_viewmodel_property_changed(self, property_name: str):
-    logger.debug(f"DashboardView property changed: {property_name}")
+    logger.debug(f"HomeView property changed: {property_name}")
     if property_name in ['period_start', 'period_end', 'period_type']:
       self.update_date_button_text()
       QTimer.singleShot(0, self.update_components)

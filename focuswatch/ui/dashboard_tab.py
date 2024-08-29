@@ -1,4 +1,4 @@
-""" Dashboard tab for the FocusWatch Ui. """
+""" Home tab for the FocusWatch Ui. """
 from datetime import datetime, timedelta
 import logging
 from PySide6.QtCore import QCoreApplication, QMetaObject, QSize, Qt
@@ -13,7 +13,7 @@ from focuswatch.ui.top_categories import TopCategoriesComponent
 logger = logging.getLogger(__name__)
 
 
-class DashboardTab(QWidget):
+class HomeTab(QWidget):
   def __init__(self, activity_manager, category_manager, keyword_manager, parent=None):
     super().__init__(parent)
     self._activity_manager = activity_manager
@@ -27,9 +27,9 @@ class DashboardTab(QWidget):
     # self.setupUi()
 
   def setupUi(self):
-    self.dashboard_tab = QWidget()
-    self.dashboard_tab.setObjectName(u"dashboard_tab")
-    self.gridLayout = QGridLayout(self.dashboard_tab)
+    self.home_tab = QWidget()
+    self.home_tab.setObjectName(u"home_tab")
+    self.gridLayout = QGridLayout(self.home_tab)
     self.gridLayout.setObjectName(u"gridLayout")
 
     # Set up the components
@@ -41,7 +41,7 @@ class DashboardTab(QWidget):
 
     self.gridLayout.addItem(self.verticalSpacer, 1, 0, 1, 1)
 
-    self.date_nav_frame = QFrame(self.dashboard_tab)
+    self.date_nav_frame = QFrame(self.home_tab)
     self.date_nav_frame.setObjectName(u"date_nav_frame")
     sizePolicy1 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
     sizePolicy1.setHorizontalStretch(0)
@@ -107,7 +107,7 @@ class DashboardTab(QWidget):
 
     self.gridLayout.addItem(self.horizontalSpacer_2, 2, 1, 1, 1)
 
-    self.frame = QFrame(self.dashboard_tab)
+    self.frame = QFrame(self.home_tab)
     self.frame.setObjectName(u"frame")
     self.frame.setLayoutDirection(Qt.RightToLeft)
     self.frame.setStyleSheet(u"")
@@ -131,20 +131,20 @@ class DashboardTab(QWidget):
     self.showEvent = self.onShow
     self.refreshButton.clicked.connect(self.showEvent)
 
-    QMetaObject.connectSlotsByName(self.dashboard_tab)
+    QMetaObject.connectSlotsByName(self.home_tab)
 
     self.retranslateUi()
-    return self.dashboard_tab
+    return self.home_tab
 
   def retranslateUi(self):
     self.date_prev_button.setText(
-      QCoreApplication.translate("Dashboard", u"<", None))
+      QCoreApplication.translate("Home", u"<", None))
     self.date_next_button.setText(
-      QCoreApplication.translate("Dashboard", u">", None))
+      QCoreApplication.translate("Home", u">", None))
     self.time_period_button.setText(
-      QCoreApplication.translate("Dashboard", self.current_period, None))
+      QCoreApplication.translate("Home", self.current_period, None))
     self.refreshButton.setText(
-      QCoreApplication.translate("Dashboard", u"Refresh", None))
+      QCoreApplication.translate("Home", u"Refresh", None))
 
   def onShow(self):
     self.clearComponents()
@@ -177,21 +177,21 @@ class DashboardTab(QWidget):
     """ Setup the components """
     # Timeline setup
     self._timeline = TimelineComponent(
-        self.dashboard_tab, self._activity_manager, self._category_manager, self.period_start, self.period_end)
+        self.home_tab, self._activity_manager, self._category_manager, self.period_start, self.period_end)
     self._timeline_frame = self._timeline.setupUi()
 
     self.gridLayout.addWidget(self._timeline_frame, 2, 0, 1, 1)
 
     # Top categories setup
     self._top_categories = TopCategoriesComponent(
-        self.dashboard_tab, self._activity_manager, self._category_manager, self.period_start, self.period_end)
+        self.home_tab, self._activity_manager, self._category_manager, self.period_start, self.period_end)
     self._top_categories_frame = self._top_categories.setupUi()
 
     self.gridLayout.addWidget(self._top_categories_frame, 2, 2, 1, 1)
 
     # Top applications setup
     self._top_applications = TopApplicationsComponent(
-        self.dashboard_tab, self._activity_manager, self._category_manager, self.period_start, self.period_end)
+        self.home_tab, self._activity_manager, self._category_manager, self.period_start, self.period_end)
     self._top_applications_frame = self._top_applications.setupUi()
 
     self.gridLayout.addWidget(self._top_applications_frame, 2, 4, 1, 1)
@@ -212,7 +212,7 @@ class DashboardTab(QWidget):
       self.date_button.setText(self.period_start.strftime("%Y"))
 
   def select_date(self):
-    """ Select date for dashboard """
+    """ Select date for home """
     sender_name = self.sender().objectName()
 
     if sender_name == 'date_prev_button':
