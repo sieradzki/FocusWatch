@@ -1,8 +1,8 @@
 import logging
 from collections import defaultdict
-from typing import Dict, List
+from typing import TYPE_CHECKING, Dict, List
 
-from PySide6.QtCore import Property, Slot, Signal
+from PySide6.QtCore import Property, Signal, Slot
 
 from focuswatch.models.category import Category
 from focuswatch.models.keyword import Keyword
@@ -10,21 +10,30 @@ from focuswatch.services.activity_service import ActivityService
 from focuswatch.services.category_service import CategoryService
 from focuswatch.services.keyword_service import KeywordService
 from focuswatch.viewmodels.base_viewmodel import BaseViewModel
-from focuswatch.services.classifier_service import ClassifierService
-from focuswatch.viewmodels.dialogs.categorization_helper_dialog_viewmodel import CategorizationHelperViewModel
+from focuswatch.viewmodels.dialogs.categorization_helper_dialog_viewmodel import \
+    CategorizationHelperViewModel
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+  from focuswatch.services.activity_service import ActivityService
+  from focuswatch.services.category_service import CategoryService
+  from focuswatch.services.keyword_service import KeywordService
+  from focuswatch.services.classifier_service import ClassifierService
 
 
 class CategorizationViewModel(BaseViewModel):
   retroactive_categorization_progress = Signal(int, int)
 
-  def __init__(self, activity_service: ActivityService, category_service: CategoryService, keyword_service: KeywordService):
+  def __init__(self, activity_service: 'ActivityService', 
+               category_service: 'CategoryService', 
+               keyword_service: 'KeywordService',
+               classifier_service: 'ClassifierService'):
     super().__init__()
     self._activity_service = activity_service
     self._category_service = category_service
     self._keyword_service = keyword_service
-    self._classifier = ClassifierService(self._category_service)
+    self._classifier = classifier_service
 
     self._categories = []
     self._filter_text = ""

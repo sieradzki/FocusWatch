@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, List, Tuple
 
 from PySide6.QtCore import Property
@@ -11,8 +12,11 @@ from focuswatch.viewmodels.settings_viewmodel import SettingsViewModel
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
   from focuswatch.services.category_service import CategoryService
+  from focuswatch.services.classifier_service import ClassifierService
   from focuswatch.services.keyword_service import KeywordService
   from focuswatch.viewmodels.main_viewmodel import MainViewModel
+
+logger = logging.getLogger(__name__)
 
 
 class MainWindowViewModel(BaseViewModel):
@@ -21,7 +25,8 @@ class MainWindowViewModel(BaseViewModel):
   def __init__(self, main_viewmodel: 'MainViewModel',
                activity_service: 'ActivityService',
                category_service: 'CategoryService',
-               keyword_service: 'KeywordService'):
+               keyword_service: 'KeywordService',
+               classifier_service: 'ClassifierService'):
     super().__init__()
     self._main_viewmodel = main_viewmodel
 
@@ -29,11 +34,12 @@ class MainWindowViewModel(BaseViewModel):
     self._activity_service = activity_service
     self._category_service = category_service
     self._keyword_service = keyword_service
+    self._classifier_service = classifier_service
 
     # Initialize child viewmodels
     self._settings_viewmodel = SettingsViewModel()
     self._categorization_viewmodel = CategorizationViewModel(
-      activity_service, category_service, keyword_service)
+        activity_service, category_service, keyword_service, self._classifier_service)
     self._dashboard_viewmodel = DashboardViewModel(
       activity_service, category_service)
 
