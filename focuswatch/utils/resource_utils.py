@@ -1,7 +1,11 @@
+import logging
 import os
 import sys
+
 from PySide6.QtCore import QDir, QFile
 from PySide6.QtGui import QIcon
+
+logger = logging.getLogger(__name__)
 
 BASE_RESOURCES_DIR = "resources"
 BASE_STYLES_DIR = f"{BASE_RESOURCES_DIR}/styles"
@@ -25,6 +29,9 @@ def apply_stylesheet(target, style_path: str) -> None:
   if file.open(QFile.ReadOnly | QFile.Text):
     stylesheet = str(file.readAll(), 'utf-8')
     target.setStyleSheet(stylesheet)
+  else:
+    logger.error(f"Failed to open stylesheet file: {style_path}")
+
 
 def apply_styles(target, stylesheet_paths: list[str]) -> None:
   """
@@ -37,13 +44,14 @@ def apply_styles(target, stylesheet_paths: list[str]) -> None:
   stylesheets = load_stylesheets(stylesheet_paths)
   target.setStyleSheet(stylesheets)
 
+
 def load_stylesheets(stylesheet_paths: list[str]) -> str:
   """ 
   Loads and concatenates multiple stylesheets into a single string.
 
   Args:
     stylesheet_paths (list[str]): A list of relative paths from the base styles directory to the QSS stylesheet files.
-    
+
   Returns:
     str: The concatenated stylesheets.
   """

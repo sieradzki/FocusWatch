@@ -1,0 +1,30 @@
+#frame_container {
+  background-color: #27282C;
+  border-radius: 8px;
+  padding: 6px; /* Adjust padding if needed */
+}
+
+#label_title {
+  font-size: 16px;
+  font-weight: bold;
+  padding: 10px;
+}
+
+QFrame {
+  border: none;
+  margin: 0;
+}
+
+QScrollArea {
+  border: none;
+  background-color: #27282C;
+}
+
+QScrollBar:vertical {
+  border: none;
+  background: #27282C;
+}
+
+QScrollBar::handle:vertical {
+  background: #F9F9F9;
+}
