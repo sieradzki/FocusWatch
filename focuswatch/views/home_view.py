@@ -179,22 +179,20 @@ class HomeView(QWidget):
         self.date_button.setText("Today")
       else:
         self.date_button.setText(period_start.strftime("%d-%m-%Y"))
-        self.period_type_button.setText("Day")
     elif period_type == "Week":
       self.date_button.setText(f"{period_start.strftime(
         '%b %d')} - {period_end.strftime('%b %d, %Y')}")
-      self.period_type_button.setText("Week")
     elif period_type == "Month":
       self.date_button.setText(period_start.strftime("%B %Y"))
-      self.period_type_button.setText("Month")
     elif period_type == "Year":
       self.date_button.setText(period_start.strftime("%Y"))
-      self.period_type_button.setText("Year")
+
+    self.period_type_button.setText(period_type)
 
   @Slot(str)
   def on_viewmodel_property_changed(self, property_name: str):
     logger.info(f"Property changed: {property_name}")
-    if property_name in ['period_start', 'period_end', 'period_type']:
+    if property_name in ['period_updated']:
       self.update_date_button_text()
   #     self.update_components()
 

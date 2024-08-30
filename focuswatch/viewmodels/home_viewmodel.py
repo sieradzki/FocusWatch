@@ -40,54 +40,55 @@ class HomeViewModel(BaseViewModel):
   def period_type(self) -> str:
     return self._period_type
 
+  def _update_period(self, start: datetime, end: Optional[datetime], period_type: str) -> None:
+    """Update all period-related properties at once."""
+    self._period_start = start
+    self._period_end = end
+    self._period_type = period_type
+    self.property_changed.emit("period_updated")
+
   @Slot(int)
   def shift_period(self, direction: int) -> None:
     if self._period_type == "Day":
-      self._period_start += timedelta(days=direction)
-      self._period_end = None
+      new_start = self._period_start + timedelta(days=direction)
+      self._update_period(new_start, None, "Day")
     elif self._period_type == "Week":
-      self._period_start += timedelta(weeks=direction)
-      self._period_end = self._period_start + timedelta(days=6)
+      new_start = self._period_start + timedelta(weeks=direction)
+      new_end = new_start + timedelta(days=6)
+      self._update_period(new_start, new_end, "Week")
     elif self._period_type == "Month":
       new_month = self._period_start.month + direction
       new_year = self._period_start.year + (new_month - 1) // 12
       new_month = ((new_month - 1) % 12) + 1
-      self._period_start = self._period_start.replace(
+      new_start = self._period_start.replace(
         year=new_year, month=new_month, day=1)
-      self._period_end = (self._period_start + timedelta(days=32)
-                          ).replace(day=1) - timedelta(days=1)
+      new_end = (new_start + timedelta(days=32)
+                 ).replace(day=1) - timedelta(days=1)
+      self._update_period(new_start, new_end, "Month")
     elif self._period_type == "Year":
-      self._period_start = self._period_start.replace(
+      new_start = self._period_start.replace(
         year=self._period_start.year + direction, month=1, day=1)
-      self._period_end = self._period_start.replace(
-        year=self._period_start.year + 1) - timedelta(days=1)
-
-    self.property_changed.emit('period_start')
-    self.property_changed.emit('period_end')
+      new_end = new_start.replace(year=new_start.year + 1) - timedelta(days=1)
+      self._update_period(new_start, new_end, "Year")
 
   @Slot(str)
   def set_period_type(self, period_type: str) -> None:
-    self._period_type = period_type
-    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today = datetime.now().date()
 
     if period_type == "Day":
-      self._period_start = today
-      self._period_end = None
+      self._update_period(today, None, "Day")
     elif period_type == "Week":
-      self._period_start = today - timedelta(days=today.weekday())
-      self._period_end = self._period_start + timedelta(days=6)
+      start = today - timedelta(days=today.weekday())
+      end = start + timedelta(days=6)
+      self._update_period(start, end, "Week")
     elif period_type == "Month":
-      self._period_start = today.replace(day=1)
-      self._period_end = (self._period_start + timedelta(days=32)
-                          ).replace(day=1) - timedelta(days=1)
+      start = today.replace(day=1)
+      end = (start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+      self._update_period(start, end, "Month")
     elif period_type == "Year":
-      self._period_start = today.replace(month=1, day=1)
-      self._period_end = self._period_start.replace(
-        year=self._period_start.year + 1) - timedelta(days=1)
-
-    self.property_changed.emit('period_type')
-    self.property_changed.emit('period_start')
-    self.property_changed.emit('period_end')
+      start = today.replace(month=1, day=1)
+      end = start.replace(year=start.year + 1) - timedelta(days=1)
+      self._update_period(start, end, "Year")
 
   def get_timeline_data(self) -> List[Tuple[datetime, datetime, str, str, Optional[int]]]:
     return self._activity_service.get_period_entries(self._period_start, self._period_end)
@@ -100,20 +101,17 @@ class HomeViewModel(BaseViewModel):
 
   @Slot(datetime)
   def update_period_from_selected_date(self, date: datetime) -> None:
-    self._period_start = date
-    if self._period_type == "Week":
-      self._period_start -= timedelta(days=self._period_start.weekday())
-      self._period_end = self._period_start + timedelta(days=6)
+    if self._period_type == "Day":
+      self._update_period(date, None, "Day")
+    elif self._period_type == "Week":
+      start = date - timedelta(days=date.weekday())
+      end = start + timedelta(days=6)
+      self._update_period(start, end, "Week")
     elif self._period_type == "Month":
-      self._period_start = self._period_start.replace(day=1)
-      self._period_end = (self._period_start + timedelta(days=32)
-                          ).replace(day=1) - timedelta(days=1)
-    elif self._period_type == "Year":
-      self._period_start = self._period_start.replace(month=1, day=1)
-      self._period_end = self._period_start.replace(
-        year=self._period_start.year + 1) - timedelta(days=1)
-    else:  # Day
-      self._period_end = None
-
-    self.property_changed.emit('period_start')
-    self.property_changed.emit('period_end')
+      start = date.replace(day=1)
+      end = (start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+      self._update_period(start, end, "Month")
+    else:  # Year
+      start = date.replace(month=1, day=1)
+      end = start.replace(year=start.year + 1) - timedelta(days=1)
+      self._update_period(start, end, "Year")
