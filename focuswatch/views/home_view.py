@@ -13,7 +13,7 @@ from focuswatch.ui.top_categories import TopCategoriesComponent
 from focuswatch.viewmodels.components.timeline_viewmodel import \
     TimelineViewModel
 from focuswatch.views.components.timeline_view import TimelineView
-from focuswatch.utils.resource_utils import apply_stylesheet
+from focuswatch.utils.resource_utils import apply_stylesheet, apply_styles
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
@@ -32,6 +32,7 @@ class HomeView(QWidget):
     self.setupUi()
     self.retranslateUi()
     self.connect_signals()
+    apply_styles(self, ["nav_buttons.qss", "period_menu.qss"])
 
   def setupUi(self):
     self.setObjectName(u"page_home")
@@ -76,6 +77,8 @@ class HomeView(QWidget):
 
     self.date_button = QPushButton(self.home_nav_frame)
     self.date_button.setObjectName(u"date_button")
+    # set fixed width to prevent resizing
+    self.date_button.setMinimumSize(QSize(200, 0))
     self.horizontalLayout_5.addWidget(self.date_button)
 
     self.date_next_button = QPushButton(self.home_nav_frame)
@@ -191,7 +194,6 @@ class HomeView(QWidget):
 
   @Slot(str)
   def on_viewmodel_property_changed(self, property_name: str):
-    logger.info(f"Property changed: {property_name}")
     if property_name in ['period_updated']:
       self.update_date_button_text()
   #     self.update_components()
