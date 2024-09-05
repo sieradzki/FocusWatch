@@ -15,6 +15,9 @@ from focuswatch.viewmodels.components.timeline_viewmodel import \
 from focuswatch.views.components.timeline_view import TimelineView
 from focuswatch.utils.resource_utils import apply_stylesheet, apply_styles
 
+from focuswatch.views.components.card_widget import CardWidget
+from focuswatch.views.components.top_categories_card_view import TopCategoriesCardView
+
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
   from focuswatch.services.category_service import CategoryService
@@ -77,7 +80,6 @@ class HomeView(QWidget):
 
     self.date_button = QPushButton(self.home_nav_frame)
     self.date_button.setObjectName(u"date_button")
-    # set fixed width to prevent resizing
     self.date_button.setMinimumSize(QSize(200, 0))
     self.horizontalLayout_5.addWidget(self.date_button)
 
@@ -118,38 +120,63 @@ class HomeView(QWidget):
     self.main_layout = QHBoxLayout()
     self.home_verticalLayout.addLayout(self.main_layout)
 
-    # Placeholders just for the proper positioning
     # Timeline frame
     self.timeline_frame = QFrame(self)
     self.timeline_frame.setMinimumSize(QSize(300, 400))
     self.timeline_frame.setMaximumSize(QSize(300, 16777215))
     self.timeline_layout = QVBoxLayout(self.timeline_frame)
-
     self.timeline_frame.setStyleSheet(
       u"background-color: #161616; border: none;")
-
-    # Timeline buttons
-    # self.btn_timeline_activity = QPushButton("Activity")
-    # self.btn_timeline_projects = QPushButton("Projects")
-
-    # timeline_buttons_layout = QHBoxLayout()
-    # timeline_buttons_layout.addWidget(self.btn_timeline_activity)
-    # timeline_buttons_layout.addWidget(self.btn_timeline_projects)
-    # timeline_buttons_layout.addStretch()
-
-    # self.timeline_layout.addLayout(timeline_buttons_layout)
 
     # Scroll area for timeline
     self.scroll_timeline = QScrollArea(self.timeline_frame)
     self.scroll_timeline.setWidgetResizable(True)
     self.scroll_area_widget = QWidget()
     self.scroll_timeline.setWidget(self.scroll_area_widget)
-
     self.timeline_layout.addWidget(self.scroll_timeline)
+
     self.main_layout.addWidget(self.timeline_frame)
 
+    # Frame for main content
     self.content_frame = QFrame(self)
     self.content_layout = QVBoxLayout(self.content_frame)
+
+    # Grid layout to organize the cards in 3x3 structure
+    self.grid_layout = QGridLayout()
+    self.grid_layout.setSpacing(10)
+
+    # Ensuring each cell of the grid is of equal size
+    self.grid_layout.setColumnStretch(0, 1)
+    self.grid_layout.setColumnStretch(1, 1)
+    self.grid_layout.setColumnStretch(2, 1)
+    self.grid_layout.setRowStretch(0, 1)
+    self.grid_layout.setRowStretch(1, 1)
+    self.grid_layout.setRowStretch(2, 1)
+
+    # Top row: Top Categories, Top Applications, Top Names
+    self.top_categories_card = TopCategoriesCardView(
+      self._viewmodel.top_categories_card_viewmodel, self)
+    self.grid_layout.addWidget(self.top_categories_card, 0, 0)
+
+    # Placeholders for now
+    self.top_applications_card = CardWidget(
+      "Top Applications", self)
+    self.grid_layout.addWidget(self.top_applications_card, 0, 1)
+
+    self.top_names_card = CardWidget("Top Names", self)
+    self.grid_layout.addWidget(self.top_names_card, 0, 2)
+
+    self.focus_trend_card = CardWidget("Focus Trend", self)
+    self.grid_layout.addWidget(self.focus_trend_card, 1, 0, 1, 2)
+
+    self.daily_summary_card = CardWidget("Daily Summary", self)
+    self.grid_layout.addWidget(self.daily_summary_card, 1, 2, 2, 1)
+
+    self.daily_scores_card = CardWidget("Daily Scores", self)
+    self.grid_layout.addWidget(self.daily_scores_card, 2, 0, 1, 2)
+
+    # Add the grid layout to the content frame
+    self.content_layout.addLayout(self.grid_layout)
     self.main_layout.addWidget(self.content_frame)
 
   def retranslateUi(self):
@@ -166,6 +193,7 @@ class HomeView(QWidget):
   def connect_signals(self):
     self._viewmodel.property_changed.connect(
       self.on_viewmodel_property_changed)
+    self._viewmodel.period_changed.connect(self.update_date_button_text)
     self.date_prev_button.clicked.connect(self.on_date_prev_clicked)
     self.date_next_button.clicked.connect(self.on_date_next_clicked)
     self.date_button.clicked.connect(self.show_calendar)
@@ -194,15 +222,7 @@ class HomeView(QWidget):
 
   @Slot(str)
   def on_viewmodel_property_changed(self, property_name: str):
-    if property_name in ['period_updated']:
-      self.update_date_button_text()
-  #     self.update_components()
-
-  # @Slot(str)
-  # def update_timeline_period(self, property_name: str):
-  #   if property_name in ['period_start', 'period_end']:
-  #     self._timeline_viewmodel.period_start = self._viewmodel.period_start
-  #     self._timeline_viewmodel.period_end = self._viewmodel.period_end
+    pass
 
   def on_date_prev_clicked(self):
     self._viewmodel.shift_period(-1)
@@ -248,23 +268,6 @@ class HomeView(QWidget):
   #   self.clearComponents()
   #   QTimer.singleShot(0, self.component_setup)
 
-  # def component_setup(self):
-  #   """ Setup the components """
-  #   if self._timeline_view is None or not self._timeline_view.isVisible():
-  #     self._timeline_view = TimelineView(self._timeline_viewmodel)
-  #     self.gridLayout.addWidget(self._timeline_view, 2, 0, 1, 1)
-
-  #   self._timeline_viewmodel.period_start = self._viewmodel.period_start
-  #   self._timeline_viewmodel.period_end = self._viewmodel.period_end
-  #   self._timeline_viewmodel.update_timeline_data()
-
-  # def clearComponents(self):
-  #   """ Clear the components related to timeline, top categories, and top applications """
-  #   if self._timeline_view:
-  #     self._timeline_view.setParent(None)
-  #     self._timeline_view.deleteLater()
-  #     self._timeline_view = None
-
   # def clearLayout(self, layout):
   #   """ Clear the layout """
   #   if layout is not None:
@@ -279,10 +282,3 @@ class HomeView(QWidget):
   # def showEvent(self, event):
   #   super().showEvent(event)
   #   QTimer.singleShot(0, self.update_components)
-
-  # @Slot(str)
-  # def update_timeline_period(self, property_name: str):
-  #   if property_name in ['period_start', 'period_end']:
-  #     self._timeline_viewmodel.period_start = self._viewmodel.period_start
-  #     self._timeline_viewmodel.period_end = self._viewmodel.period_end
-  #     self._timeline_viewmodel.update_timeline_data()

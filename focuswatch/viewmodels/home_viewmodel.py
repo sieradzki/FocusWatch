@@ -2,10 +2,11 @@ import logging
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from PySide6.QtCore import Property, Slot
+from PySide6.QtCore import Property, Slot, Signal
 
 from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 from focuswatch.viewmodels.components.timeline_viewmodel import TimelineViewModel
+from focuswatch.viewmodels.components.top_categories_card_viewmodel import TopCategoriesCardViewModel
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
@@ -15,18 +16,32 @@ logger = logging.getLogger(__name__)
 
 
 class HomeViewModel(BaseViewModel):
+  period_changed = Signal(datetime, datetime, str)
+
   def __init__(self,
                activity_service: 'ActivityService',
                category_service: 'CategoryService'):
     super().__init__()
     self._activity_service = activity_service
     self._category_service = category_service
-    self._timeline_viewmodel = TimelineViewModel(
-        self._activity_service, self._category_service)
 
     self._period_start: datetime = datetime.now().date()
     self._period_end: Optional[datetime] = None
     self._period_type: str = "Day"
+
+    self._timeline_viewmodel = TimelineViewModel(
+      self._activity_service,
+      self._category_service
+    )
+    self._top_categories_card_viewmodel = TopCategoriesCardViewModel(
+      self._activity_service,
+      self._category_service,
+      self._period_start,
+      self._period_end
+    )
+
+    self.period_changed.connect(
+      self._top_categories_card_viewmodel.update_period)
 
   @Property(datetime, notify=BaseViewModel.property_changed)
   def period_start(self) -> datetime:
@@ -40,12 +55,17 @@ class HomeViewModel(BaseViewModel):
   def period_type(self) -> str:
     return self._period_type
 
+  @Property('QVariant', notify=BaseViewModel.property_changed)
+  def top_categories_card_viewmodel(self) -> TopCategoriesCardViewModel:
+    return self._top_categories_card_viewmodel
+
   def _update_period(self, start: datetime, end: Optional[datetime], period_type: str) -> None:
     """Update all period-related properties at once."""
     self._period_start = start
     self._period_end = end
     self._period_type = period_type
-    self.property_changed.emit("period_updated")
+    # self.property_changed.emit("period_updated")
+    self.period_changed.emit(start, end, period_type)
 
   @Slot(int)
   def shift_period(self, direction: int) -> None:
