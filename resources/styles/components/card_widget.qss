@@ -10,6 +10,10 @@
   padding: 10px;
 }
 
+QStackedWidget {
+  background-color: #27282C;
+}
+
 QFrame {
   border: none;
   margin: 0;
