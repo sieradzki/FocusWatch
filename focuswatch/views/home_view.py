@@ -198,7 +198,7 @@ class HomeView(QWidget):
     self.date_next_button.clicked.connect(self.on_date_next_clicked)
     self.date_button.clicked.connect(self.show_calendar)
     self.period_type_button.clicked.connect(self.show_period_menu)
-    # self.refreshButton.clicked.connect(self.refresh_data)
+    self.refreshButton.clicked.connect(self.on_refresh_clicked)
 
   def update_date_button_text(self):
     period_start = self._viewmodel.period_start
@@ -261,24 +261,5 @@ class HomeView(QWidget):
     if action:
       self._viewmodel.set_period_type(action.text())
 
-  # def refresh_data(self):
-  #   self.update_components()
-
-  # def update_components(self):
-  #   self.clearComponents()
-  #   QTimer.singleShot(0, self.component_setup)
-
-  # def clearLayout(self, layout):
-  #   """ Clear the layout """
-  #   if layout is not None:
-  #     while layout.count():
-  #       item = layout.takeAt(0)
-  #       widget = item.widget()
-  #       if widget is not None:
-  #         widget.deleteLater()
-  #       else:
-  #         self.clearLayout(item.layout())
-
-  # def showEvent(self, event):
-  #   super().showEvent(event)
-  #   QTimer.singleShot(0, self.update_components)
+  def on_refresh_clicked(self):
+    self._viewmodel.refresh_triggered.emit()

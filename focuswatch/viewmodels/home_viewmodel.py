@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class HomeViewModel(BaseViewModel):
   period_changed = Signal(datetime, datetime, str)
+  refresh_triggered = Signal()
 
   def __init__(self,
                activity_service: 'ActivityService',
@@ -40,8 +41,8 @@ class HomeViewModel(BaseViewModel):
       self._period_end
     )
 
-    self.period_changed.connect(
-      self._top_categories_card_viewmodel.update_period)
+    self.connect_period_changed()
+    self.connect_refresh_triggered()
 
   @Property(datetime, notify=BaseViewModel.property_changed)
   def period_start(self) -> datetime:
@@ -59,12 +60,21 @@ class HomeViewModel(BaseViewModel):
   def top_categories_card_viewmodel(self) -> TopCategoriesCardViewModel:
     return self._top_categories_card_viewmodel
 
+  def connect_period_changed(self):
+    self.period_changed.connect(
+      self._top_categories_card_viewmodel.update_period)
+    # add rest of the components later
+
+  def connect_refresh_triggered(self):
+    self.refresh_triggered.connect(
+      self._top_categories_card_viewmodel._update_top_categories)
+    # add rest of the components later
+
   def _update_period(self, start: datetime, end: Optional[datetime], period_type: str) -> None:
     """Update all period-related properties at once."""
     self._period_start = start
     self._period_end = end
     self._period_type = period_type
-    # self.property_changed.emit("period_updated")
     self.period_changed.emit(start, end, period_type)
 
   @Slot(int)
