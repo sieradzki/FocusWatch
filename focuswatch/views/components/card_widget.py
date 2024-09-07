@@ -11,7 +11,7 @@ class CardWidget(QWidget):
     super().__init__(parent)
     self.title = title
     self.current_index = 0
-    self.content_views = []  # To keep track of added views
+    self.content_views = []
     self.setupUi()
     apply_stylesheet(self, "components/card_widget.qss")
 
@@ -36,11 +36,13 @@ class CardWidget(QWidget):
     self.separator.setObjectName("separator")
     self.separator.setFrameShape(QFrame.Shape.HLine)
     self.separator.setFrameShadow(QFrame.Shadow.Sunken)
+    self.separator.setFixedHeight(2)
     verticalLayout.addWidget(self.separator)
 
     # Stacked widget to hold multiple content views
     self.stacked_widget = QStackedWidget(self.frame_container)
     self.stacked_widget.setObjectName("stacked_widget")
+    # self.stacked_widget.setMinimumSize(QSize(200, 200))
     verticalLayout.addWidget(self.stacked_widget)
 
     # Navigation buttons for switching content views
@@ -71,22 +73,22 @@ class CardWidget(QWidget):
     layout.addWidget(self.frame_container)
 
   def add_content_view(self, widget):
-    """Add a new content view to the card."""
+    """ Add a new content view to the card. """
     self.stacked_widget.addWidget(widget)
     self.content_views.append(widget)
     self.toggle_navigation_buttons(len(self.content_views) > 1)
 
   def toggle_navigation_buttons(self, show):
-    """Show or hide navigation buttons based on the number of content views."""
+    """ Show or hide navigation buttons based on the number of content views. """
     self.prev_button.setVisible(show)
     self.next_button.setVisible(show)
 
   def show_next_view(self):
-    """Show the next content view."""
+    """ Show the next content view. """
     self.current_index = (self.current_index + 1) % len(self.content_views)
     self.stacked_widget.setCurrentIndex(self.current_index)
 
   def show_previous_view(self):
-    """Show the previous content view."""
+    """ Show the previous content view. """
     self.current_index = (self.current_index - 1) % len(self.content_views)
     self.stacked_widget.setCurrentIndex(self.current_index)

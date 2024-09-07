@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Dict, List, Tuple
 
 from PySide6.QtCharts import QChart, QChartView, QPieSeries, QPieSlice, QLegend
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QSize
 from PySide6.QtGui import QColor, QPainter, QFont, QPen, QCursor, QBrush
 from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QLayout,
                                QProgressBar, QPushButton, QSizePolicy,
@@ -40,7 +40,6 @@ class TopCategoriesCardView(CardWidget):
     # Create the view for the chart
     self.chart_view = QChartView()
     self.chart_view.setRenderHint(QPainter.Antialiasing)
-    self.chart_view.setMinimumSize(300, 300)
 
     # Add both views to the CardWidget using add_content_view
     self.add_content_view(self.categories_container)
@@ -110,7 +109,7 @@ class TopCategoriesCardView(CardWidget):
     chart = QChart()
     chart.addSeries(series)
     chart.setAnimationOptions(QChart.SeriesAnimations)
-    # Speed up animation (default is 1000ms)
+    # Speed up animation
     chart.setAnimationDuration(500)
     chart.setBackgroundVisible(False)
     # Set chart background to transparent
@@ -137,9 +136,9 @@ class TopCategoriesCardView(CardWidget):
 
     # Ensure the chart view is updating properly
     self.chart_view.update()
-    self.chart_view.setRenderHint(QPainter.Antialiasing)
+    self.chart_view.setRenderHint(QPainter.Antialiasing, True)
 
-    self.chart_view.setAttribute(Qt.WA_TranslucentBackground)
+    # not sure why the .qss styling doesn't work
     self.chart_view.setStyleSheet("background: transparent;")
 
   def _on_slice_hover(self, state: bool):
@@ -156,6 +155,9 @@ class TopCategoriesCardView(CardWidget):
 
   def mouseMoveEvent(self, event):
     super().mouseMoveEvent(event)
+    # ensure we are on the chart view
+    if not self.stacked_widget.currentWidget() == self.chart_view:
+      return
     # Find the slice under the cursor
     pos = self.chart_view.mapFromParent(event.pos())
     try:
