@@ -1,12 +1,13 @@
 import logging
 from typing import TYPE_CHECKING, Dict, List, Tuple
 
-from PySide6.QtCharts import QChart, QChartView, QPieSeries, QPieSlice, QLegend
-from PySide6.QtCore import Qt, Signal, QSize
-from PySide6.QtGui import QColor, QPainter, QFont, QPen, QCursor, QBrush
+from PySide6.QtCharts import QChart, QChartView, QLegend, QPieSeries, QPieSlice
+from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QBrush, QColor, QCursor, QFont, QPainter, QPen
 from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QLayout,
-                               QProgressBar, QPushButton, QSizePolicy,
-                               QSpacerItem, QVBoxLayout, QWidget, QToolTip)
+                               QProgressBar, QPushButton, QScrollArea,
+                               QSizePolicy, QSpacerItem, QToolTip, QVBoxLayout,
+                               QWidget)
 
 from focuswatch.utils.resource_utils import (apply_combined_stylesheet,
                                              apply_stylesheet)
@@ -20,11 +21,46 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class TopCategoriesCardView(CardWidget):
-  """ View for the Top Categories Card component. """
+class ScrollableLegend(QScrollArea):
+  def __init__(self, parent=None):
+    super().__init__(parent)
+    self.setWidgetResizable(True)
+    self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+    self.setMaximumWidth(150)
+    self.setMinimumWidth(100)
+    self.setMaximumHeight(300)
 
+    self.content_widget = QWidget()
+    self.setWidget(self.content_widget)
+    self.layout = QVBoxLayout(self.content_widget)
+    self.layout.setContentsMargins(0, 10, 0, 0)
+
+    # Apply the new stylesheet
+    apply_stylesheet(self, "components/scrollable_legend.qss")
+
+  def add_item(self, color, label):
+    item_widget = QWidget()
+    item_layout = QHBoxLayout(item_widget)
+    item_layout.setContentsMargins(0, 0, 0, 0)
+
+    color_box = QLabel()
+    color_box.setFixedSize(QSize(10, 10))
+    color_box.setStyleSheet(
+      f"background-color: {color.name()}; border: none;")
+
+    label_widget = QLabel(label)
+    label_widget.setWordWrap(True)
+
+    item_layout.addWidget(color_box)
+    item_layout.addWidget(label_widget, 1)
+
+    self.layout.addWidget(item_widget)
+
+
+class TopCategoriesCardView(CardWidget):
   def __init__(self, viewmodel: 'TopCategoriesCardViewModel', parent=None):
-    super().__init__("Top Categories", parent)
+    super().__init__("Top Categories", parent=parent)
     self._viewmodel = viewmodel
     self._setup_ui()
     self._connect_signals()
@@ -33,17 +69,33 @@ class TopCategoriesCardView(CardWidget):
 
   def _setup_ui(self) -> None:
     """ Set up the UI components. """
+    self.stacked_widget.setMinimumSize(QSize(300, 300))
     # Create the view for progress bars
     self.categories_container = QWidget()
     self.categories_layout = QGridLayout(self.categories_container)
+    self.categories_container.setSizePolicy(
+        QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     # Create the view for the chart
+    self.chart_container = QWidget()
+    self.chart_layout = QHBoxLayout(self.chart_container)
+    self.chart_layout.setContentsMargins(0, 5, 0, 0)
+    self.chart_layout.setSpacing(0)
+
     self.chart_view = QChartView()
     self.chart_view.setRenderHint(QPainter.Antialiasing)
+    self.chart_view.setMinimumSize(200, 200)
+    self.chart_view.setSizePolicy(
+        QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+    self.scrollable_legend = ScrollableLegend()
+
+    self.chart_layout.addWidget(self.chart_view, 3)
+    self.chart_layout.addWidget(self.scrollable_legend, 1)
 
     # Add both views to the CardWidget using add_content_view
     self.add_content_view(self.categories_container)
-    self.add_content_view(self.chart_view)
+    self.add_content_view(self.chart_container)
 
   def _connect_signals(self) -> None:
     """ Connect signals from the ViewModel to the View. """
@@ -74,16 +126,20 @@ class TopCategoriesCardView(CardWidget):
     total_time = sum(time for _, time in self._viewmodel._top_categories)
     self.slice_tooltips.clear()
 
+    # Clear previous legend items
+    for i in reversed(range(self.scrollable_legend.layout.count())):
+      self.scrollable_legend.layout.itemAt(i).widget().setParent(None)
+
     for category_id, time in self._viewmodel._top_categories:
       category = self._viewmodel._category_service.get_category_by_id(
-          category_id)
+        category_id)
       if category:
         percentage = (time / total_time) * 100
         hours = time // 3600
         minutes = (time // 60) % 60
         seconds = time % 60
         time_str = f"{hours}h {minutes}m {
-            seconds}s" if hours else f"{minutes}m {seconds}s"
+          seconds}s" if hours else f"{minutes}m {seconds}s"
 
         slice = QPieSlice(category.name, time / 60)
         color = self._viewmodel.get_category_color(category_id)
@@ -91,7 +147,6 @@ class TopCategoriesCardView(CardWidget):
         slice.setLabelVisible(False)
         slice.setExploded(False)
         slice.setPen(QPen(Qt.NoPen))  # Remove border
-        # slice.setPen(QPen(QColor("#2a2a2a")))
         slice.setLabelColor(QColor("#F9F9F9"))
 
         # Store tooltip information
@@ -103,31 +158,24 @@ class TopCategoriesCardView(CardWidget):
 
         series.append(slice)
 
+        # Add item to scrollable legend
+        self.scrollable_legend.add_item(
+          QColor(color), f"{category.name} ({percentage:.1f}%)")
+
     series.setPieSize(0.80)  # Slightly smaller pie to create gaps
     series.setHoleSize(0.45)
 
     chart = QChart()
     chart.addSeries(series)
     chart.setAnimationOptions(QChart.SeriesAnimations)
-    # Speed up animation
-    chart.setAnimationDuration(500)
+    chart.setAnimationDuration(500)  # Speed up animation
     chart.setBackgroundVisible(False)
     # Set chart background to transparent
     chart.setBackgroundBrush(QBrush(Qt.transparent))
     chart.layout().setContentsMargins(0, 0, 0, 0)  # Remove chart margins
 
-    # Customize legend
-    legend = chart.legend()
-    legend.setVisible(True)
-    # Position legend to the right of the chart
-    legend.setAlignment(Qt.AlignRight)
-    legend.setFont(QFont("Helvetica", 10))
-    legend.setLabelColor(QColor("#F9F9F9"))
-    legend.setMarkerShape(QLegend.MarkerShapeRectangle)
-
-    # Adjust legend layout
-    legend.setMaximumWidth(self.chart_view.width() //
-                           3)  # Limit legend width
+    # Hide the default legend
+    chart.legend().hide()
 
     self.chart_view.setChart(chart)
     self.chart_view.setRenderHint(QPainter.Antialiasing)
@@ -138,7 +186,7 @@ class TopCategoriesCardView(CardWidget):
     self.chart_view.update()
     self.chart_view.setRenderHint(QPainter.Antialiasing, True)
 
-    # not sure why the .qss styling doesn't work
+    # Apply transparent background
     self.chart_view.setStyleSheet("background: transparent;")
 
   def _on_slice_hover(self, state: bool):
