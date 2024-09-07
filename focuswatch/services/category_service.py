@@ -197,7 +197,7 @@ class CategoryService:
       ("Email", "Comms", None), ("Media", None, "#ff0000"),
       ("Games", "Media", None), ("Video", "Media", None),
       ("Social media", "Media", None), ("Music", "Media", None),
-      ("Productivity", None, "#332032"), ("Uncategorized", None, "#8c8c8c"),
+      ("Productivity", None, "#5546B5"), ("Uncategorized", None, "#8c8c8c"),
       ("AFK", None, "#3d3d3d")
     ]
 
