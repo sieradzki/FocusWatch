@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QHBoxLayout, QLabel, QLayout, QProgressBar,
 
 from focuswatch.viewmodels.components.top_categories_card_viewmodel import TopCategoriesCardViewModel
 from focuswatch.views.components.card_widget import CardWidget
+from focuswatch.utils.resource_utils import apply_stylesheet, apply_combined_stylesheet
 
 logger = logging.getLogger(__name__)
 
@@ -123,19 +124,16 @@ class TopCategoriesCardView(CardWidget):
         f"stop: 0.7 {base_color.darker(80).name()},",
         f"stop: 1 {base_color.darker(70).name()}"
       ]
-      progress.setStyleSheet(f"""
-        QProgressBar {{
-            text-align: top;
-            border-radius: 3px;
-            background-color: #161616;
-        }}
+      chunk_style = f"""
         QProgressBar::chunk {{
             background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
                 {' '.join(stops)}
             );
-            border-radius: 3px;
         }}
-      """)
+      """
+
+      apply_combined_stylesheet(
+        progress, ['progress_bar.qss'], chunk_style)
 
       # Calculate and create the percentage label
       percentage = QLabel(f"{progress_value}%")

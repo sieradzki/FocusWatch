@@ -70,6 +70,26 @@ def load_stylesheets(stylesheet_paths: list[str]) -> str:
   return "\n".join(stylesheets)
 
 
+def apply_combined_stylesheet(target, style_paths: list[str], additional_styles: str = "") -> None:
+  """
+  Loads multiple QSS stylesheet files, combines them with additional styles,
+  and applies them to the specified target widget or QApplication instance.
+
+  Args:
+    target (QWidget or QApplication): The widget or application instance to apply the stylesheet to.
+    style_paths (list[str]): A list of relative paths from the base styles directory to the QSS stylesheet files.
+    additional_styles (str): Additional styles to combine with the loaded stylesheets.
+  """
+  # Load the stylesheets from file paths
+  loaded_styles = load_stylesheets(style_paths)
+
+  # Combine the loaded stylesheets with additional dynamic styles
+  combined_styles = f"{loaded_styles}\n{additional_styles}"
+
+  # Apply the combined stylesheet to the target
+  target.setStyleSheet(combined_styles)
+
+
 def load_icon(icon_name: str) -> QIcon:
   """
   Loads an icon from the resources/icons directory.
