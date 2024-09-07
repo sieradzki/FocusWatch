@@ -33,6 +33,7 @@ class CardWidget(QWidget):
     verticalLayout.addWidget(self.label_title)
 
     self.separator = QFrame(self.frame_container)
+    self.separator.setObjectName("separator")
     self.separator.setFrameShape(QFrame.Shape.HLine)
     self.separator.setFrameShadow(QFrame.Shadow.Sunken)
     verticalLayout.addWidget(self.separator)
