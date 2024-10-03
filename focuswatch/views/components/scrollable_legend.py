@@ -37,9 +37,9 @@ class ScrollableLegend(QScrollArea):
 
     if icon:  # possible feauture in top applications card
       icon_label = QLabel()
-      icon_label.setPixmap(icon.scaled(
-        16, 16, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-      item_layout.addWidget(icon_label)
+      # icon_label.setPixmap(icon.scaled(
+      # 16, 16, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+      # item_layout.addWidget(icon_label)
     else:
       color_box = QLabel()
       color_box.setFixedSize(QSize(10, 10))

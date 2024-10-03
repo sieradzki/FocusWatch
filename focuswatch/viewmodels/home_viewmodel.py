@@ -67,7 +67,7 @@ class HomeViewModel(BaseViewModel):
 
   def connect_refresh_triggered(self):
     self.refresh_triggered.connect(
-      self._top_categories_card_viewmodel._update_top_categories)
+      self._top_categories_card_viewmodel._update_top_items)
     # add rest of the components later
 
   def _update_period(self, start: datetime, end: Optional[datetime], period_type: str) -> None:

@@ -89,7 +89,7 @@ class TopItemsCardView(CardWidget):
     """ Update the pie chart with the given items. """
     series = QPieSeries()
     items = self._viewmodel.top_items
-    total_value = sum(value for _, value, _ in items)
+    total_value = sum(value for _, value, _, _ in items)
     self.slice_tooltips.clear()
 
     # CLear previous legend items
@@ -97,7 +97,7 @@ class TopItemsCardView(CardWidget):
       self.scrollable_legend.layout.itemAt(
         i).widget().deleteLater()  # TODO test this
 
-    for name, value, color in items:
+    for name, value, color, _ in items:
       slice = QPieSlice(name, value)
       if color:
         slice.setColor(color)
@@ -116,8 +116,8 @@ class TopItemsCardView(CardWidget):
 
       slice.hovered.connect(self._on_slice_hover)
 
-    # series.setPieSize(0.8)
-    # series.setHoleSize(0.45)
+    series.setPieSize(0.8)
+    series.setHoleSize(0.45)
 
     chart = QChart()
     chart.addSeries(series)
@@ -171,13 +171,11 @@ class TopItemsCardView(CardWidget):
 
     row = 0
     for item_data in items:
-      logger.info(f"[TOPITEMSCARDVIEW] Adding item to layout: {item_data}")
       row = self._add_item_to_layout(item_data, row, total_value)
 
     # Add a spacer to push the content to the top
     spacer = QSpacerItem(20, 40, QSizePolicy.Expanding, QSizePolicy.Expanding)
     self.list_layout.addItem(spacer, row, 0, 1, 4)
-
 
   def _add_item_to_layout(self) -> int:
     """ Add an item (with optional children) to the layout. """
