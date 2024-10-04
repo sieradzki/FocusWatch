@@ -57,44 +57,43 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
 
   def organize_categories(self) -> None:
     """ Organize top items (categories) hierarchically """
-    temp_cat_dict = defaultdict(
+    category_hierarchy = defaultdict(
       lambda: {'category': None, 'time': 0, 'children': [], 'visible': True}
     )
 
-    for category_id, time, color, _ in self._top_items:
-      category_id = int(category_id)  # uh?
+    # First pass: Populate category_hierarchy with categories and time information
+    for category_id, time_spent, color, _ in self._top_items:
+      category_id = int(category_id)
       category = self._category_service.get_category_by_id(category_id)
       if category:
-        # TODO does this search or create? or both i guss too
-        cat_dict = temp_cat_dict[category_id]
-        cat_dict['category'] = category
-        cat_dict['time'] = time
+        category_data = category_hierarchy[category_id]
+        category_data['category'] = category
+        category_data['time'] = time_spent
+
+        # Traverse up to the root parent and accumulate time
         parent_id = category.parent_category_id
-        while parent_id:  # find top parent
-          parent_dict = temp_cat_dict[parent_id]
-          # parent time should be sum of it's children (or not?) TODO test this
-          parent_dict['time'] += time
-          if parent_dict['category'] is None:
+        while parent_id:
+          parent_data = category_hierarchy[parent_id]
+          parent_data['time'] += time_spent
+          if parent_data['category'] is None:
             parent = self._category_service.get_category_by_id(
               parent_id)  # get parent if it has no tracked time itself
-            parent_dict['category'] = parent
-          parent_id = parent_dict['category'].parent_category_id if parent_dict['category'] else None
+            parent_data['category'] = parent
+          parent_id = parent_data['category'].parent_category_id if parent_data['category'] else None
 
-    # TODO optimization?
-    for category_id, cat_data in temp_cat_dict.items():  # add children to parents
-      category = cat_data['category']
-      parent_id = category.parent_category_id
+    # Second pass: Establish parent-child relationships and filter top-level categories
+    self._organized_categories = {}
+    for category_id, category_data in category_hierarchy.items():
+      category = category_data['category']
+      parent_id = category.parent_category_id if category else None
       if category and parent_id:
-        temp_cat_dict[parent_id]['children'].append({category_id: cat_data})
+        category_hierarchy[parent_id]['children'].append(category_data)
+      else:
+        self._organized_categories[category_id] = category_data
 
-    for cat_data in temp_cat_dict.values():  # sort children by time
-      cat_data['children'].sort(key=lambda x: list(
-        x.values())[0]['time'], reverse=True
-      )
-
-    self._organized_categories = {  # remove children from the root level
-      cat_id: cat_data for cat_id, cat_data in temp_cat_dict.items() if not cat_data['category'].parent_category_id
-    }
+    # Sort children by time in descending order
+    for category_data in category_hierarchy.values():
+      category_data['children'].sort(key=lambda x: x['time'], reverse=True)
 
     self.property_changed.emit("organized_categories")
 
