@@ -2,7 +2,7 @@
 
 
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 from PySide6.QtCore import Property, Slot
 from PySide6.QtGui import QColor
@@ -18,8 +18,8 @@ class TopItemsCardViewModel(BaseViewModel):
     self._period_start = period_start
     self._period_end = period_end
     # optional for additional context like icon path for applications but i'm not sure if's gonna be used to be honest
-    self._top_items: List[Tuple[str, float,
-                                Optional[QColor], Optional[str]]] = []
+    self._top_items: Dict[str, Tuple[float,
+                                     Optional[QColor], Optional[str]]] = {}
 
   @Slot(datetime, datetime)
   def update_period(self, start: datetime, end: Optional[datetime]) -> None:

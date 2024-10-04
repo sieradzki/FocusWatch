@@ -2,14 +2,14 @@
 
 
 import logging
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict
 
 from PySide6.QtCharts import QChart, QChartView, QPieSeries, QPieSlice
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QBrush, QColor, QCursor, QIcon, QPainter
 from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QProgressBar,
                                QPushButton, QSizePolicy, QSpacerItem, QToolTip,
-                               QWidget)
+                               QWidget, QLayout)
 
 from focuswatch.utils.resource_utils import (apply_combined_stylesheet,
                                              apply_stylesheet)
@@ -89,7 +89,7 @@ class TopItemsCardView(CardWidget):
     """ Update the pie chart with the given items. """
     series = QPieSeries()
     items = self._viewmodel.top_items
-    total_value = sum(value for _, value, _, _ in items)
+    total_time = sum(time for time, _, _, in items.values())
     self.slice_tooltips.clear()
 
     # CLear previous legend items
@@ -97,8 +97,8 @@ class TopItemsCardView(CardWidget):
       self.scrollable_legend.layout.itemAt(
         i).widget().deleteLater()  # TODO test this
 
-    for name, value, color, _ in items:
-      slice = QPieSlice(name, value)
+    for name, (time, color, _) in items.items():
+      slice = QPieSlice(name, time)
       if color:
         slice.setColor(color)
       slice.setLabelVisible(False)
@@ -107,8 +107,8 @@ class TopItemsCardView(CardWidget):
       slice.setLabelColor(QColor("#F9F9F9"))
       series.append(slice)
 
-      percentage = (value / total_value) * 100
-      tooltip = f"{name}\n{self._format_time(value)} ({percentage:.1f}%)"
+      percentage = (time / total_time) * 100
+      tooltip = f"{name}\n{self._format_time(time)} ({percentage:.1f}%)"
       self.slice_tooltips[slice] = tooltip
 
       self.scrollable_legend.add_item(
@@ -165,29 +165,77 @@ class TopItemsCardView(CardWidget):
 
   def _update_list(self) -> None:
     """ Update the list of items with progress bars and optional icons/toggles. """
-    self._clear_list_layout()
-    items = self._viewmodel.top_items
-    total_value = sum(value for _, value, _, _ in items)
-
-    row = 0
-    for item_data in items:
-      row = self._add_item_to_layout(item_data, row, total_value)
-
-    # Add a spacer to push the content to the top
-    spacer = QSpacerItem(20, 40, QSizePolicy.Expanding, QSizePolicy.Expanding)
-    self.list_layout.addItem(spacer, row, 0, 1, 4)
+    raise NotImplementedError(
+        "This method should be implemented in derived classes.")
 
   def _add_item_to_layout(self) -> int:
     """ Add an item (with optional children) to the layout. """
     raise NotImplementedError(
         "This method should be implemented in derived classes.")
 
+  def _create_category_label(self, name: str, time: int, color: str) -> QLabel:
+    """ Create a label for a category with the given name and time. """
+    label = QLabel(f"{name} - {self._format_time(time)}")
+    font = label.font()
+    label.setStyleSheet(f"color: {color};")
+    font.setBold(True)
+    label.setFont(font)
+    label.setWordWrap(True)
+    return label
+
+  def _create_progress_bar(self, time: int, total_time: int, color: str) -> QProgressBar:
+    """ Create a progress bar for the given time and total time. """
+    progress = QProgressBar()
+    progress.setFixedWidth(120)
+    progress.setFixedHeight(15)
+    progress.setTextVisible(False)
+    progress_value = int((time / total_time) * 100) if total_time > 0 else 0
+    progress.setValue(progress_value)
+
+    # Apply gradient styling
+    base_color = QColor(color)
+    stops = [
+      f"stop: 0 {base_color.name()},",
+      f"stop: 0.3 {base_color.darker(90).name()},",
+      f"stop: 0.7 {base_color.darker(80).name()},",
+      f"stop: 1 {base_color.darker(70).name()}"
+    ]
+    chunk_style = f"""
+      QProgressBar::chunk {{
+        background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
+          {' '.join(stops)}
+        );
+      }}
+    """
+    apply_combined_stylesheet(progress, ['progress_bar.qss'], chunk_style)
+    return progress
+
+  def _create_percentage_label(self, time: int, total_time: int) -> QLabel:
+    """ Create a label for the percentage of the given time compared to the total time. """
+    progress_value = int((time / total_time) * 100) if total_time > 0 else 0
+    percentage_label = QLabel(f"{progress_value}%")
+    percentage_label.setFixedWidth(30)
+    percentage_label.setStyleSheet("color: #626262;")
+    percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+    return percentage_label
+
   def _clear_list_layout(self) -> None:
-    """ Clear all items from the list layout. """
+    """ Clear all items from the list layout, including widgets and sub-layouts. """
     while self.list_layout.count():
       item = self.list_layout.takeAt(0)
       if item.widget():
         item.widget().deleteLater()
+      elif item.layout():
+        self._clear_layout(item.layout())
+
+  def _clear_layout(self, layout: QLayout) -> None:
+    """ Recursively clear a layout and delete all items. """
+    while layout.count():
+      item = layout.takeAt(0)
+      if item.widget():
+        item.widget().deleteLater()
+      elif item.layout():
+        self._clear_layout(item.layout())
 
   @staticmethod
   def _format_time(seconds: int) -> str:
