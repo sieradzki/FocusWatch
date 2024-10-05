@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (QHBoxLayout, QLabel, QScrollArea, QVBoxLayout,
                                QWidget, QSpacerItem, QSizePolicy)
 
 from focuswatch.utils.resource_utils import apply_stylesheet
+from focuswatch.views.components.elided_label import ElidedLabel
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class ScrollableLegend(QScrollArea):
         f"background-color: {color}; border: none;")
       item_layout.addWidget(color_box)
 
-    label_widget = QLabel(label)
+    label_widget = ElidedLabel(label)
     label_widget.setWordWrap(True)
     item_layout.addWidget(label_widget, 1)
 
