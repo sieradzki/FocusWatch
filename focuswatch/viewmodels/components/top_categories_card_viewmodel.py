@@ -59,6 +59,8 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
 
     # First pass: Populate category_hierarchy with categories and time information
     for category_id, (time_spent, color, _) in self._top_items.items():
+      if category_id == 'None':
+        continue
       category_id = int(category_id)
       category = self._category_service.get_category_by_id(category_id)
       if category:
