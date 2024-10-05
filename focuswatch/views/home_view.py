@@ -8,8 +8,6 @@ from PySide6.QtWidgets import (QCalendarWidget, QDialog, QFrame, QGridLayout,
                                QHBoxLayout, QMenu, QPushButton, QSizePolicy,
                                QSpacerItem, QVBoxLayout, QWidget, QScrollArea)
 
-from focuswatch.ui.top_applications import TopApplicationsComponent
-from focuswatch.ui.top_categories import TopCategoriesComponent
 from focuswatch.viewmodels.components.timeline_viewmodel import \
     TimelineViewModel
 from focuswatch.views.components.timeline_view import TimelineView
