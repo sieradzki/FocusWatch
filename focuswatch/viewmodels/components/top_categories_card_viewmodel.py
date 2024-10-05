@@ -3,10 +3,8 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
-from PySide6.QtCore import Property, Slot, Signal
-from focuswatch.models.category import Category
+from PySide6.QtCore import Property, Slot
 from focuswatch.utils.ui_utils import get_category_color_or_parent
-# Updated to inherit
 from focuswatch.viewmodels.components.top_items_card_viewmodel import TopItemsCardViewModel
 
 if TYPE_CHECKING:

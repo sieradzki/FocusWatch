@@ -1,23 +1,11 @@
 import logging
-from typing import TYPE_CHECKING, Dict, List, Tuple
 
-from PySide6.QtCharts import QChart, QChartView, QLegend, QPieSeries, QPieSlice
-from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QCursor, QFont, QPainter, QPen
-from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QLayout,
-                               QProgressBar, QPushButton, QScrollArea,
-                               QSizePolicy, QSpacerItem, QToolTip, QVBoxLayout,
-                               QWidget)
+from PySide6.QtCharts import QChart, QPieSeries
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QColor, QPainter, QPen
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QSpacerItem
 
-from focuswatch.utils.resource_utils import (apply_combined_stylesheet,
-                                             apply_stylesheet)
-from focuswatch.views.components.card_widget import CardWidget
-from focuswatch.views.components.scrollable_legend import ScrollableLegend
 from focuswatch.views.components.top_items_card_view import TopItemsCardView
-
-if TYPE_CHECKING:
-  from focuswatch.viewmodels.components.top_categories_card_viewmodel import \
-      TopCategoriesCardViewModel
 
 logger = logging.getLogger(__name__)
 

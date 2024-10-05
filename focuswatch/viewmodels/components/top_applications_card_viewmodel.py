@@ -1,15 +1,11 @@
 import logging
-from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
-from PySide6.QtCore import Property, Slot, Signal
-# Updated to inherit
 from focuswatch.viewmodels.components.top_items_card_viewmodel import TopItemsCardViewModel
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
-  from focuswatch.services.category_service import CategoryService
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +31,10 @@ class TopApplicationsCardViewModel(TopItemsCardViewModel):
     self._top_items.clear()
     for application, category, time in top_applications:
       self._top_items[application] = (
-        time, None, None)  # one color for applications
+        time, None, None)
 
     self.property_changed.emit('top_items')
 
   def get_application_icon(self, application: str) -> Optional[str]:
     """ Get the icon path for an application. """
-    return None
+    return None  # TODO
