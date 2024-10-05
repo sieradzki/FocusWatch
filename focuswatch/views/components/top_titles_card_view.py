@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 class TopNamesCardView(TopItemsCardView):
   def __init__(self, viewmodel, parent=None):
-    super().__init__("Top Names", viewmodel, parent)
+    super().__init__("Top Titles", viewmodel, parent)
 
   def _connect_signals(self):
     """ Connect signals from the ViewModel to the View. """

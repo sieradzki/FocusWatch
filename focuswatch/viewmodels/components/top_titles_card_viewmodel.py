@@ -25,10 +25,10 @@ class TopNamesCardViewModel(TopItemsCardViewModel):
   def _update_top_items(self) -> None:
     """ Update the list of top items."""
     self._top_items.clear()
-    top_names = self._activity_service.get_period_entries_name_time_total(
+    top_titles = self._activity_service.get_period_entries_name_time_total(
       self._period_start, self._period_end)[:self._top_items_limit]
 
-    for name, category, time in top_names:
+    for name, category, time in top_titles:
       self._top_items[name] = (
         time, None, None)
 

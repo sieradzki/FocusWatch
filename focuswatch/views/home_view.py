@@ -18,7 +18,7 @@ from focuswatch.utils.resource_utils import apply_stylesheet, apply_styles
 from focuswatch.views.components.card_widget import CardWidget
 from focuswatch.views.components.top_categories_card_view import TopCategoriesCardView
 from focuswatch.views.components.top_applications_card_view import TopApplicationsCardView
-from focuswatch.views.components.top_names_card_view import TopNamesCardView
+from focuswatch.views.components.top_titles_card_view import TopNamesCardView
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
@@ -155,7 +155,7 @@ class HomeView(QWidget):
     self.grid_layout.setRowStretch(1, 1)
     self.grid_layout.setRowStretch(2, 1)
 
-    # Top row: Top Categories, Top Applications, Top Names
+    # Top row: Top Categories, Top Applications, Top Titles
     self.top_categories_card = TopCategoriesCardView(
       self._viewmodel.top_categories_card_viewmodel, self)
     self.grid_layout.addWidget(self.top_categories_card, 0, 0)
@@ -164,9 +164,9 @@ class HomeView(QWidget):
       self._viewmodel.top_applications_card_viewmodel, self)
     self.grid_layout.addWidget(self.top_applications_card, 0, 1)
 
-    self.top_names_card = TopNamesCardView(
-      self._viewmodel.top_names_card_viewmodel, self)
-    self.grid_layout.addWidget(self.top_names_card, 0, 2)
+    self.top_titles_card = TopNamesCardView(
+      self._viewmodel.top_titles_card_viewmodel, self)
+    self.grid_layout.addWidget(self.top_titles_card, 0, 2)
 
     # Placeholders for now
     self.focus_trend_card = CardWidget("Focus Trend", self)
