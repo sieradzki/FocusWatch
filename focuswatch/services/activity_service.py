@@ -233,6 +233,44 @@ class ActivityService:
       logger.error(f"Failed to retrieve class time totals for period: {e}")
       return []
 
+  def get_period_entries_name_time_total(self, period_start: datetime, period_end: Optional[datetime] = None) -> List[Tuple[str, Optional[int], int]]:
+    """Return the total time spent on each window name for a given period.
+
+    Args:
+      period_start: The start date of the period.
+      period_end: The end date of the period. If None, only period_start is considered.
+
+    Returns:
+      List[Tuple[str, Optional[int], int]]: A list of tuples containing 
+      (window_name, category_id, total_time_seconds).
+    """
+    if period_end:
+      query = """
+        SELECT window_name, category_id,
+        SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
+        FROM activity_log
+        WHERE time_start BETWEEN ? AND ?
+        GROUP BY window_name
+        ORDER BY total_time_seconds DESC
+      """
+      params = (period_start.isoformat(), period_end.isoformat())
+    else:
+      query = """
+        SELECT window_name, category_id,
+        SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
+        FROM activity_log
+        WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
+        GROUP BY window_name
+        ORDER BY total_time_seconds DESC
+      """
+      params = (period_start.strftime("%Y-%m-%d"),)
+
+    try:
+      return self._db_conn.execute_query(query, params)
+    except Exception as e:
+      logger.error(f"Failed to retrieve name time totals for period: {e}")
+      return []
+
   def get_longest_duration_category_id_for_window_class_on_date(self, date: datetime, window_class: str) -> Optional[int]:
     """Return the category with the longest duration for a given window class on a given date.
 
