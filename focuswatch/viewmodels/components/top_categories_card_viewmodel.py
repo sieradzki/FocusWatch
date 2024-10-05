@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class TopCategoriesCardViewModel(TopItemsCardViewModel):
-  """ ViewModel for the Top Categories Card component, refactored to use TopItemsCardViewModel. """
+  """ ViewModel for the Top Categories Card component """
 
   def __init__(self,
                activity_service: 'ActivityService',

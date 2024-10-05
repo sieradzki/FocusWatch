@@ -90,7 +90,7 @@ class TopItemsCardView(CardWidget):
     raise NotImplementedError(
         "This method should be implemented in derived classes.")
 
-  def _on_slice_hover(self, state: bool, slice: QPieSlice, is_parent: bool) -> None:
+  def _on_slice_hover(self, state: bool, slice: QPieSlice, is_parent: bool = True) -> None:
     """ Handle hover events for pie slices. """
     if state:
       if is_parent:
