@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (QHBoxLayout, QLabel, QScrollArea, QVBoxLayout,
-                               QWidget)
+                               QWidget, QSpacerItem, QSizePolicy)
 
 from focuswatch.utils.resource_utils import apply_stylesheet
 
@@ -27,24 +27,28 @@ class ScrollableLegend(QScrollArea):
     self.layout = QVBoxLayout(self.content_widget)
     self.layout.setContentsMargins(0, 10, 0, 0)
 
-    # Apply the new stylesheet
     apply_stylesheet(self, "components/scrollable_legend.qss")
 
-  def add_item(self, icon: Optional[QPixmap] = None, label: str = ""):
+  # or icon path
+  def add_item(self, label: str, color: Optional[str] = None, icon: Optional[QPixmap] = None, depth: int = 0):
     item_widget = QWidget()
     item_layout = QHBoxLayout(item_widget)
     item_layout.setContentsMargins(0, 0, 0, 0)
 
-    if icon:  # possible feauture in top applications card
+    if depth > 0:
+      spacer = QSpacerItem(
+        10 * depth, 10, QSizePolicy.Fixed, QSizePolicy.Minimum)
+      item_layout.addSpacerItem(spacer)
+    if icon:  # possible feature in top applications card
       icon_label = QLabel()
-      # icon_label.setPixmap(icon.scaled(
-      # 16, 16, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-      # item_layout.addWidget(icon_label)
+      icon_label.setPixmap(icon.scaled(
+          16, 16, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+      item_layout.addWidget(icon_label)
     else:
       color_box = QLabel()
       color_box.setFixedSize(QSize(10, 10))
       color_box.setStyleSheet(
-        "background-color: grey; border: none;")
+        f"background-color: {color}; border: none;")
       item_layout.addWidget(color_box)
 
     label_widget = QLabel(label)
