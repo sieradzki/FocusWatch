@@ -135,16 +135,16 @@ class TopCategoriesCardView(TopItemsCardView):
     self.list_layout.addItem(spacer, row, 0, 1, 4)
 
   def _add_item_to_layout(self, item_data, row, total_value, depth=0) -> int:
-    """ Add category item (with toggle buttons) to the layout. """
     category = item_data['category']
-
     toggle_button = None
     if item_data['children']:
       toggle_button = self._create_toggle_button(item_data)
 
     label = self._create_category_label(
       category.name, item_data['time'], self._viewmodel.get_category_color(category.id))
-    percentage_label = self._create_percentage_label(
+    label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+
+    percentage_label = self._create_duration_label(
       item_data['time'], total_value)
     progress_bar = self._create_progress_bar(
       item_data['time'], total_value, self._viewmodel.get_category_color(category.id))

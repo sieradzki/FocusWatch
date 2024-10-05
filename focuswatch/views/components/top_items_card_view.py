@@ -6,7 +6,7 @@ from typing import Optional
 
 from PySide6.QtCharts import QChart, QChartView, QPieSeries, QPieSlice
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QBrush, QColor, QCursor, QPainter, QPen
+from PySide6.QtGui import QBrush, QColor, QCursor, QPainter, QPen, QFontMetrics
 from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QLayout,
                                QProgressBar, QSizePolicy, QSpacerItem,
                                QToolTip, QWidget)
@@ -16,6 +16,39 @@ from focuswatch.views.components.card_widget import CardWidget
 from focuswatch.views.components.scrollable_legend import ScrollableLegend
 
 logger = logging.getLogger(__name__)
+
+
+class ElidedLabel(QLabel):
+  """ Custom label that elides text and shows a tooltip when the text is elided. """
+
+  def __init__(self, full_text, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.full_text = full_text
+    self.is_elided = False
+    self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+    self.setMouseTracking(True)
+
+  def resizeEvent(self, event):
+    metrics = QFontMetrics(self.font())
+    elided_text = metrics.elidedText(
+      self.full_text, Qt.ElideRight, self.width())
+
+    # Check if the text is actually elided
+    self.is_elided = (elided_text != self.full_text)
+
+    self.setText(elided_text)
+    super().resizeEvent(event)
+
+  def enterEvent(self, event):
+    # Show tooltip only if the text is elided
+    if self.is_elided:
+      QToolTip.showText(self.mapToGlobal(
+        self.rect().bottomLeft()), self.full_text)
+    super().enterEvent(event)
+
+  def leaveEvent(self, event):
+    QToolTip.hideText()
+    super().leaveEvent(event)
 
 
 class TopItemsCardView(CardWidget):
@@ -31,7 +64,7 @@ class TopItemsCardView(CardWidget):
 
   def _setup_ui(self) -> None:
     """ Set up the UI components. """
-    self.stacked_widget.setMinimumSize(QSize(300, 300))
+    self.stacked_widget.setMinimumSize(QSize(350, 300))
 
     # Create the view for list items
     self.list_container = QWidget()
@@ -201,7 +234,7 @@ class TopItemsCardView(CardWidget):
       name, time, color if color else "#817DF3")
     progress_bar = self._create_progress_bar(
       time, total_time, color if color else "#817DF3")
-    percentage_label = self._create_percentage_label(time, total_time)
+    percentage_label = self._create_duration_label(time, total_time)
 
     # Create left layout with label and icon if available
     left_layout = QHBoxLayout()
@@ -228,19 +261,19 @@ class TopItemsCardView(CardWidget):
     return row + 1
 
   def _create_category_label(self, name: str, time: int, color: str) -> QLabel:
-    """ Create a label for a category with the given name and time. """
-    label = QLabel(f"{name} - {self._format_time(time)}")
+    full_text = f"{name}"
+    label = ElidedLabel(full_text)
     font = label.font()
-    label.setStyleSheet(f"color: {color};")
     font.setBold(True)
     label.setFont(font)
-    label.setWordWrap(True)
+    label.setStyleSheet(f"color: {color};")
     return label
 
   def _create_progress_bar(self, time: int, total_time: int, color: str) -> QProgressBar:
     """ Create a progress bar for the given time and total time. """
     progress = QProgressBar()
-    progress.setFixedWidth(120)
+    # progress.setFixedWidth(120)
+    progress.setMinimumWidth(120)
     progress.setFixedHeight(15)
     progress.setTextVisible(False)
     progress_value = int((time / total_time) * 100) if total_time > 0 else 0
@@ -261,16 +294,19 @@ class TopItemsCardView(CardWidget):
         );
       }}
     """
+
+    progress.setToolTip(
+      f"{int((time / total_time) * 100) if total_time > 0 else 0}%")
     apply_combined_stylesheet(progress, ['progress_bar.qss'], chunk_style)
     return progress
 
-  def _create_percentage_label(self, time: int, total_time: int) -> QLabel:
+  def _create_duration_label(self, time: int, total_time: int) -> QLabel:
     """ Create a label for the percentage of the given time compared to the total time. """
-    progress_value = int((time / total_time) * 100) if total_time > 0 else 0
-    percentage_label = QLabel(f"{progress_value}%")
-    percentage_label.setFixedWidth(30)
+    progress_value = self._format_time(time)
+    percentage_label = QLabel(f"{progress_value}")
+    percentage_label.setFixedWidth(50)
     percentage_label.setStyleSheet("color: #626262;")
-    percentage_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+    percentage_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
     return percentage_label
 
   def _clear_list_layout(self) -> None:
