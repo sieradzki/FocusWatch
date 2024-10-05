@@ -3,10 +3,8 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 
-from PySide6.QtCore import Property, Slot, Signal
-from focuswatch.models.category import Category
+from PySide6.QtCore import Property, Slot
 from focuswatch.utils.ui_utils import get_category_color_or_parent
-# Updated to inherit
 from focuswatch.viewmodels.components.top_items_card_viewmodel import TopItemsCardViewModel
 
 if TYPE_CHECKING:
@@ -17,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class TopCategoriesCardViewModel(TopItemsCardViewModel):
-  """ ViewModel for the Top Categories Card component, refactored to use TopItemsCardViewModel. """
+  """ ViewModel for the Top Categories Card component """
 
   def __init__(self,
                activity_service: 'ActivityService',
@@ -38,7 +36,7 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
   def _update_top_items(self) -> None:
     """ Update the list of top items."""
     top_categories = self._category_service.get_period_category_time_totals(
-      self._period_start, self._period_end)
+      self._period_start, self._period_end)[:self._top_items_limit]
 
     # clear top items
     self._top_items.clear()

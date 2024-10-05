@@ -7,6 +7,7 @@ from PySide6.QtCore import Property, Slot, Signal
 from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 from focuswatch.viewmodels.components.timeline_viewmodel import TimelineViewModel
 from focuswatch.viewmodels.components.top_categories_card_viewmodel import TopCategoriesCardViewModel
+from focuswatch.viewmodels.components.top_applications_card_viewmodel import TopApplicationsCardViewModel
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
@@ -40,6 +41,11 @@ class HomeViewModel(BaseViewModel):
       self._period_start,
       self._period_end
     )
+    self._top_applications_card_viewmodel = TopApplicationsCardViewModel(
+      self._activity_service,
+      self._period_start,
+      self._period_end
+    )
 
     self.connect_period_changed()
     self.connect_refresh_triggered()
@@ -60,14 +66,22 @@ class HomeViewModel(BaseViewModel):
   def top_categories_card_viewmodel(self) -> TopCategoriesCardViewModel:
     return self._top_categories_card_viewmodel
 
+  @Property('QVariant', notify=BaseViewModel.property_changed)
+  def top_applications_card_viewmodel(self) -> TopApplicationsCardViewModel:
+    return self._top_applications_card_viewmodel
+
   def connect_period_changed(self):
     self.period_changed.connect(
       self._top_categories_card_viewmodel.update_period)
+    self.period_changed.connect(
+      self._top_applications_card_viewmodel.update_period)
     # add rest of the components later
 
   def connect_refresh_triggered(self):
     self.refresh_triggered.connect(
       self._top_categories_card_viewmodel._update_top_items)
+    self.refresh_triggered.connect(
+      self._top_applications_card_viewmodel._update_top_items)
     # add rest of the components later
 
   def _update_period(self, start: datetime, end: Optional[datetime], period_type: str) -> None:
@@ -119,15 +133,6 @@ class HomeViewModel(BaseViewModel):
       start = today.replace(month=1, day=1)
       end = start.replace(year=start.year + 1) - timedelta(days=1)
       self._update_period(start, end, "Year")
-
-  def get_timeline_data(self) -> List[Tuple[datetime, datetime, str, str, Optional[int]]]:
-    return self._activity_service.get_period_entries(self._period_start, self._period_end)
-
-  def get_top_categories_data(self) -> List[Tuple[str, int]]:
-    return self._activity_service.get_period_entries_class_time_total(self._period_start, self._period_end)
-
-  def get_top_applications_data(self) -> List[Tuple[str, Optional[int], int]]:
-    return self._activity_service.get_period_entries_class_time_total(self._period_start, self._period_end)
 
   @Slot(datetime)
   def update_period_from_selected_date(self, date: datetime) -> None:

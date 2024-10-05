@@ -13,10 +13,15 @@ from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 class TopItemsCardViewModel(BaseViewModel):
   """ Base ViewModel for Top Items cards. """
 
-  def __init__(self, period_start: datetime, period_end: Optional[datetime] = None):
+  def __init__(self,
+               period_start: datetime,
+               period_end: Optional[datetime] = None,
+               item_limit: int = 10):
     super().__init__()
     self._period_start = period_start
     self._period_end = period_end
+    self._top_items_limit = item_limit
+
     # optional for additional context like icon path for applications but i'm not sure if's gonna be used to be honest
     self._top_items: Dict[str, Tuple[float,
                                      Optional[QColor], Optional[str]]] = {}

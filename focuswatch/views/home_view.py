@@ -17,6 +17,7 @@ from focuswatch.utils.resource_utils import apply_stylesheet, apply_styles
 
 from focuswatch.views.components.card_widget import CardWidget
 from focuswatch.views.components.top_categories_card_view import TopCategoriesCardView
+from focuswatch.views.components.top_applications_card_view import TopApplicationsCardView
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
@@ -158,11 +159,11 @@ class HomeView(QWidget):
       self._viewmodel.top_categories_card_viewmodel, self)
     self.grid_layout.addWidget(self.top_categories_card, 0, 0)
 
-    # Placeholders for now
-    self.top_applications_card = CardWidget(
-      "Top Applications", self)
+    self.top_applications_card = TopApplicationsCardView(
+      self._viewmodel.top_applications_card_viewmodel, self)
     self.grid_layout.addWidget(self.top_applications_card, 0, 1)
 
+    # Placeholders for now
     self.top_names_card = CardWidget("Top Names", self)
     self.grid_layout.addWidget(self.top_names_card, 0, 2)
 

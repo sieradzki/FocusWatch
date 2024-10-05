@@ -2,17 +2,15 @@
 
 
 import logging
-from typing import List, Optional, Tuple, Dict
+from typing import Optional
 
-from PySide6.QtCharts import QChart, QChartView, QPieSeries, QPieSlice
+from PySide6.QtCharts import QChartView, QPieSlice
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QBrush, QColor, QCursor, QIcon, QPainter
-from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QProgressBar,
-                               QPushButton, QSizePolicy, QSpacerItem, QToolTip,
-                               QWidget, QLayout)
+from PySide6.QtGui import QColor, QCursor, QPainter
+from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QLayout,
+                               QProgressBar, QSizePolicy, QToolTip, QWidget)
 
-from focuswatch.utils.resource_utils import (apply_combined_stylesheet,
-                                             apply_stylesheet)
+from focuswatch.utils.resource_utils import apply_combined_stylesheet
 from focuswatch.views.components.card_widget import CardWidget
 from focuswatch.views.components.scrollable_legend import ScrollableLegend
 
@@ -90,7 +88,7 @@ class TopItemsCardView(CardWidget):
     raise NotImplementedError(
         "This method should be implemented in derived classes.")
 
-  def _on_slice_hover(self, state: bool, slice: QPieSlice, is_parent: bool) -> None:
+  def _on_slice_hover(self, state: bool, slice: QPieSlice, is_parent: bool = True) -> None:
     """ Handle hover events for pie slices. """
     if state:
       if is_parent:
