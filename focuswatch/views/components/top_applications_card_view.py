@@ -1,10 +1,5 @@
 import logging
 
-from PySide6.QtCharts import QChart, QPieSeries
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QBrush, QColor, QPainter, QPen
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QSpacerItem
-
 from focuswatch.views.components.top_items_card_view import TopItemsCardView
 
 logger = logging.getLogger(__name__)

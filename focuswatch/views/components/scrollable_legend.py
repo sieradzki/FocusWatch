@@ -49,7 +49,7 @@ class ScrollableLegend(QScrollArea):
       color_box = QLabel()
       color_box.setFixedSize(QSize(10, 10))
       color_box.setStyleSheet(
-        f"background-color: {color}; border: none;")
+        f"background-color: {color}; border: none; border-radius: 1px;")
       item_layout.addWidget(color_box)
 
     label_widget = ElidedLabel(label)

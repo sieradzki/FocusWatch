@@ -118,7 +118,7 @@ class TopItemsCardView(CardWidget):
         color = slice.brush().color().name()
 
       percentage = time / total_time * 100
-      tooltip = f"{application}: {percentage:.1f}%"
+      tooltip = f"{application}\n{self._format_time(time)} ({percentage:.1f}%)"
       self.slice_tooltips[slice] = tooltip
 
       slice.hovered.connect(
