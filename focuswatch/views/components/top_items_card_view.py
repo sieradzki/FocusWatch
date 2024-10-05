@@ -87,59 +87,18 @@ class TopItemsCardView(CardWidget):
 
   def _update_chart(self) -> None:
     """ Update the pie chart with the given items. """
-    series = QPieSeries()
-    items = self._viewmodel.top_items
-    total_time = sum(time for time, _, _, in items.values())
-    self.slice_tooltips.clear()
+    raise NotImplementedError(
+        "This method should be implemented in derived classes.")
 
-    # CLear previous legend items
-    for i in reversed(range(self.scrollable_legend.layout.count())):
-      self.scrollable_legend.layout.itemAt(
-        i).widget().deleteLater()  # TODO test this
-
-    for name, (time, color, _) in items.items():
-      slice = QPieSlice(name, time)
-      if color:
-        slice.setColor(color)
-      slice.setLabelVisible(False)
-      slice.setExploded(False)
-      slice.setPen(Qt.NoPen)  # Remove border
-      slice.setLabelColor(QColor("#F9F9F9"))
-      series.append(slice)
-
-      percentage = (time / total_time) * 100
-      tooltip = f"{name}\n{self._format_time(time)} ({percentage:.1f}%)"
-      self.slice_tooltips[slice] = tooltip
-
-      self.scrollable_legend.add_item(
-          color, f"{name} ({percentage:.1f}%)")
-
-      slice.hovered.connect(self._on_slice_hover)
-
-    series.setPieSize(0.8)
-    series.setHoleSize(0.45)
-
-    chart = QChart()
-    chart.addSeries(series)
-    chart.setAnimationOptions(QChart.SeriesAnimations)
-    chart.setAnimationDuration(500)
-    chart.setBackgroundVisible(False)
-    # Set chart background to transparent
-    chart.setBackgroundBrush(QBrush(Qt.transparent))
-    chart.layout().setContentsMargins(0, 0, 0, 0)  # Remove margins
-    # Hide default chart legend
-    chart.legend().hide()
-
-    self.chart_view.setChart(chart)
-    self.chart_view.setRenderHint(QPainter.Antialiasing)
-
-    self.chart_view.setStyleSheet("background: transparent;")
-
-  def _on_slice_hover(self, state: bool) -> None:
+  def _on_slice_hover(self, state: bool, slice: QPieSlice, is_parent: bool) -> None:
     """ Handle hover events for pie slices. """
-    slice = self.sender()
     if state:
-      slice.setExploded(True)
+      if is_parent:
+        slice.setExploded(True)
+        slice.setExplodeDistanceFactor(0.1)
+      else:
+        slice.setExploded(True)
+        slice.setExplodeDistanceFactor(0.02)
       tooltip_text = self.slice_tooltips.get(slice, "")
       QToolTip.showText(QCursor.pos(), tooltip_text)
     else:
@@ -159,7 +118,8 @@ class TopItemsCardView(CardWidget):
       logger.error("No slices found in the chart. Ignoring hover event.")
       return
     if slice:
-      self._on_slice_hover(True)
+      self._on_slice_hover(True, slice, slice.series() ==
+                           self.chart_view.chart().series()[1])
     else:
       QToolTip.hideText()
 

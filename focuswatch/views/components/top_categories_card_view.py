@@ -35,6 +35,99 @@ class TopCategoriesCardView(TopItemsCardView):
     if property_name in ["top_items", "visible_categories"]:
       self._update_view()
 
+  def _update_chart(self) -> None:
+    """ Update the pie chart with the organized categories in a multi-level fashion. """
+    chart = QChart()
+    self.slice_tooltips.clear()
+    organized_categories = self._viewmodel.organized_categories
+    total_time = sum(data['time'] for data in organized_categories.values())
+
+    # Clear the legend before adding new items
+    while self.scrollable_legend.layout.count() > 0:
+      item = self.scrollable_legend.layout.takeAt(0)
+      if item.widget():
+        item.widget().deleteLater()
+
+    # Create the main series (first level for children)
+    child_series = QPieSeries()
+    # Make the hole smaller so children are more visible
+    child_series.setHoleSize(0.5)
+    child_series.setPieSize(0.6)
+
+    parent_series = QPieSeries()
+    parent_series.setHoleSize(0.6)  # Parents start where children end
+    parent_series.setPieSize(0.85)
+
+    for category_id, category_data in organized_categories.items():
+      category = category_data['category']
+      if category and not category.parent_category_id:
+        # Create parent legend item
+        self.scrollable_legend.add_item(
+          f"{category.name}", self._viewmodel.get_category_color(category.id), depth=0)
+
+        # Create child slices if this parent has children
+        if category_data['children']:
+          for child_data in category_data['children']:
+            child_category = child_data['category']
+            if child_category:
+              child_slice = QPieSlice(
+                child_category.name, child_data['time'])
+              child_color = self._viewmodel.get_category_color(
+                child_category.id)
+              if child_color:
+                child_slice.setColor(child_color)
+              child_slice.setLabelVisible(False)
+              child_slice.setPen(QPen(QColor("#363739"), 2))
+              child_series.append(child_slice)
+
+              child_percentage = (
+                child_data['time'] / total_time) * 100
+              child_tooltip = f"{child_category.name}\n{
+                self._format_time(child_data['time'])} ({child_percentage:.1f}%)"
+              self.slice_tooltips[child_slice] = child_tooltip
+
+              # Update scrollable legend with nesting for child categories
+              self.scrollable_legend.add_item(
+                f"{child_category.name}", child_color, depth=1)
+              child_slice.hovered.connect(
+                lambda state, s=child_slice: self._on_slice_hover(state, s, False))
+
+        # Add parent slice
+        parent_slice = QPieSlice(category.name, category_data['time'])
+        color = self._viewmodel.get_category_color(category.id)
+        if color:
+          parent_slice.setColor(color)
+        parent_slice.setLabelVisible(False)
+        parent_slice.setPen(QPen(QColor("#363739"), 2))
+        parent_series.append(parent_slice)
+
+        percentage = (category_data['time'] / total_time) * 100
+        tooltip = f"{category.name}\n{self._format_time(
+          category_data['time'])} ({percentage:.1f}%)"
+        self.slice_tooltips[parent_slice] = tooltip
+
+        parent_slice.hovered.connect(
+          lambda state, s=parent_slice: self._on_slice_hover(state, s, True))
+
+    # Add both series to the chart
+    chart.addSeries(child_series)
+    chart.addSeries(parent_series)
+
+    chart.setAnimationOptions(QChart.SeriesAnimations)
+    chart.setAnimationDuration(500)
+    chart.setBackgroundVisible(False)
+    chart.setBackgroundBrush(QBrush(Qt.transparent))
+    chart.layout().setContentsMargins(0, 0, 0, 0)
+    chart.legend().hide()
+
+    self.chart_view.setChart(chart)
+    self.chart_view.setRenderHint(QPainter.Antialiasing)
+    self.chart_view.setStyleSheet("background: transparent;")
+
+    # Push items to the top
+    spacer = QSpacerItem(20, 40, QSizePolicy.Expanding, QSizePolicy.Expanding)
+    self.scrollable_legend.layout.addItem(spacer)
+
   def _update_list(self) -> None:
     """ Update the list of items with progress bars and optional toggles. """
     self._clear_list_layout()
