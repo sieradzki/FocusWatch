@@ -38,7 +38,7 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
   def _update_top_items(self) -> None:
     """ Update the list of top items."""
     top_categories = self._category_service.get_period_category_time_totals(
-      self._period_start, self._period_end)
+      self._period_start, self._period_end)[:self._top_items_limit]
 
     # clear top items
     self._top_items.clear()

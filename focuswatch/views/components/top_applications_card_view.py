@@ -53,7 +53,7 @@ class TopApplicationsCardView(TopItemsCardView):
     series.setPieSize(0.85)
 
     base_color = QColor("#817DF3")
-    variation_step = 90
+    variation_step = 100
 
     for index, (application, (time, color, icon)) in enumerate(items.items()):
       slice = series.append(application, time)
@@ -105,11 +105,6 @@ class TopApplicationsCardView(TopItemsCardView):
 
     for item_key, item_data in items.items():
       row = self._add_item_to_layout((item_key, item_data), row, total_time)
-
-    # Add a few dummies for testing
-    # for i in range(15):
-    #   dummy_data = (f"dummy_{i}", (0, None, None))
-    #   row = self._add_item_to_layout(dummy_data, row, total_time)
 
     # Add a spacer to push the content to the top
     spacer = QSpacerItem(20, 40, QSizePolicy.Expanding, QSizePolicy.Expanding)

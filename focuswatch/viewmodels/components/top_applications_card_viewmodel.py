@@ -29,7 +29,7 @@ class TopApplicationsCardViewModel(TopItemsCardViewModel):
   def _update_top_items(self) -> None:
     """ Update the list of top items."""
     top_applications = self._activity_service.get_period_entries_class_time_total(
-      self._period_start, self._period_end)
+      self._period_start, self._period_end)[:self._top_items_limit]
 
     # clear top items
     self._top_items.clear()
