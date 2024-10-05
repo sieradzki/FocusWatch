@@ -5,9 +5,9 @@ from focuswatch.views.components.top_items_card_view import TopItemsCardView
 logger = logging.getLogger(__name__)
 
 
-class TopApplicationsCardView(TopItemsCardView):
+class TopNamesCardView(TopItemsCardView):
   def __init__(self, viewmodel, parent=None):
-    super().__init__("Top Applications", viewmodel, parent)
+    super().__init__("Top Titles", viewmodel, parent)
 
   def _connect_signals(self):
     """ Connect signals from the ViewModel to the View. """

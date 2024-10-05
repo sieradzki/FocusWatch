@@ -42,8 +42,8 @@ class CardWidget(QWidget):
     # Stacked widget to hold multiple content views
     self.stacked_widget = QStackedWidget(self.frame_container)
     self.stacked_widget.setObjectName("stacked_widget")
-    # self.stacked_widget.setMinimumSize(QSize(200, 200))
-    self.stacked_widget.setMaximumHeight(300)
+    # self.stacked_widget.setMinimumSize(QSize(300, 200))
+    # self.stacked_widget.setMaximumHeight(300)
     verticalLayout.addWidget(self.stacked_widget)
 
     # Navigation buttons for switching content views

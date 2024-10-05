@@ -8,6 +8,7 @@ from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 from focuswatch.viewmodels.components.timeline_viewmodel import TimelineViewModel
 from focuswatch.viewmodels.components.top_categories_card_viewmodel import TopCategoriesCardViewModel
 from focuswatch.viewmodels.components.top_applications_card_viewmodel import TopApplicationsCardViewModel
+from focuswatch.viewmodels.components.top_titles_card_viewmodel import TopNamesCardViewModel
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
@@ -47,6 +48,12 @@ class HomeViewModel(BaseViewModel):
       self._period_end
     )
 
+    self._top_titles_card_viewmodel = TopNamesCardViewModel(
+      self._activity_service,
+      self._period_start,
+      self._period_end
+    )
+
     self.connect_period_changed()
     self.connect_refresh_triggered()
 
@@ -70,19 +77,25 @@ class HomeViewModel(BaseViewModel):
   def top_applications_card_viewmodel(self) -> TopApplicationsCardViewModel:
     return self._top_applications_card_viewmodel
 
+  @Property('QVariant', notify=BaseViewModel.property_changed)
+  def top_titles_card_viewmodel(self) -> TopNamesCardViewModel:
+    return self._top_titles_card_viewmodel
+
   def connect_period_changed(self):
     self.period_changed.connect(
       self._top_categories_card_viewmodel.update_period)
     self.period_changed.connect(
       self._top_applications_card_viewmodel.update_period)
-    # add rest of the components later
+    self.period_changed.connect(
+      self._top_titles_card_viewmodel.update_period)
 
   def connect_refresh_triggered(self):
     self.refresh_triggered.connect(
       self._top_categories_card_viewmodel._update_top_items)
     self.refresh_triggered.connect(
       self._top_applications_card_viewmodel._update_top_items)
-    # add rest of the components later
+    self.refresh_triggered.connect(
+      self._top_titles_card_viewmodel._update_top_items)
 
   def _update_period(self, start: datetime, end: Optional[datetime], period_type: str) -> None:
     """Update all period-related properties at once."""
