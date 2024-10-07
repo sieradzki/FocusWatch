@@ -5,17 +5,18 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import QCoreApplication, QSize, Qt, QTimer, Slot
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QCalendarWidget, QDialog, QFrame, QGridLayout,
-                               QHBoxLayout, QMenu, QPushButton, QSizePolicy,
-                               QSpacerItem, QVBoxLayout, QWidget, QScrollArea)
+                               QHBoxLayout, QMenu, QPushButton, QScrollArea,
+                               QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
+from focuswatch.utils.resource_utils import apply_styles, apply_stylesheet
 from focuswatch.viewmodels.components.timeline_viewmodel import \
     TimelineViewModel
-from focuswatch.views.components.timeline_view import TimelineView
-from focuswatch.utils.resource_utils import apply_stylesheet, apply_styles
-
 from focuswatch.views.components.card_widget import CardWidget
-from focuswatch.views.components.top_categories_card_view import TopCategoriesCardView
-from focuswatch.views.components.top_applications_card_view import TopApplicationsCardView
+from focuswatch.views.components.timeline_view import TimelineView
+from focuswatch.views.components.top_applications_card_view import \
+    TopApplicationsCardView
+from focuswatch.views.components.top_categories_card_view import \
+    TopCategoriesCardView
 from focuswatch.views.components.top_titles_card_view import TopNamesCardView
 
 if TYPE_CHECKING:
@@ -121,19 +122,22 @@ class HomeView(QWidget):
     self.home_verticalLayout.addLayout(self.main_layout)
 
     # Timeline frame
-    self.timeline_frame = QFrame(self)
-    self.timeline_frame.setMinimumSize(QSize(300, 400))
-    self.timeline_frame.setMaximumSize(QSize(300, 16777215))
-    self.timeline_layout = QVBoxLayout(self.timeline_frame)
-    self.timeline_frame.setStyleSheet(
-      u"background-color: #161616; border: none;")
+    self._timeline_view = TimelineView(
+      self._viewmodel.timeline_viewmodel, self)
+    self.timeline_frame = self._timeline_view
+    # self.timeline_frame = QFrame(self)
+    # self.timeline_frame.setMinimumSize(QSize(300, 400))
+    # self.timeline_frame.setMaximumSize(QSize(300, 16777215))
+    # self.timeline_layout = QVBoxLayout(self.timeline_frame)
+    # self.timeline_frame.setStyleSheet(
+    #   u"background-color: #161616; border: none;")
 
     # Scroll area for timeline
-    self.scroll_timeline = QScrollArea(self.timeline_frame)
-    self.scroll_timeline.setWidgetResizable(True)
-    self.scroll_area_widget = QWidget()
-    self.scroll_timeline.setWidget(self.scroll_area_widget)
-    self.timeline_layout.addWidget(self.scroll_timeline)
+    # self.scroll_timeline = QScrollArea(self.timeline_frame)
+    # self.scroll_timeline.setWidgetResizable(True)
+    # self.scroll_area_widget = QWidget()
+    # self.scroll_timeline.setWidget(self.scroll_area_widget)
+    # self.timeline_layout.addWidget(self.scroll_timeline)
 
     self.main_layout.addWidget(self.timeline_frame)
 

@@ -1,22 +1,25 @@
 import logging
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional
 from collections import defaultdict
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Dict, List, Optional
 
-from PySide6.QtCore import QObject, Signal, Property, Slot
+from PySide6.QtCore import Property, QObject, Signal, Slot
 
-from focuswatch.services.activity_service import ActivityService
-from focuswatch.services.category_service import CategoryService
 from focuswatch.models.activity import Activity
 from focuswatch.ui.utils import get_category_color_or_parent
+from focuswatch.viewmodels.base_viewmodel import BaseViewModel
+
+if TYPE_CHECKING:
+  from focuswatch.services.activity_service import ActivityService
+  from focuswatch.services.category_service import CategoryService
 
 logger = logging.getLogger(__name__)
 
 
-class TimelineViewModel(QObject):
+class TimelineViewModel(BaseViewModel):
   data_changed = Signal()
 
-  def __init__(self, activity_service: ActivityService, category_service: CategoryService):
+  def __init__(self, activity_service: 'ActivityService', category_service: 'CategoryService'):
     super().__init__()
     self._activity_service = activity_service
     self._category_service = category_service
@@ -24,6 +27,12 @@ class TimelineViewModel(QObject):
       hour=0, minute=0, second=0, microsecond=0)
     self._period_end: Optional[datetime] = None
     self._timeline_data: Dict[int, List[int]] = {}
+
+  @Slot(datetime, datetime)
+  def update_period(self, start: datetime, end: Optional[datetime]) -> None:
+    """ Update the time period. """
+    self.period_start = start
+    self.period_end = end
 
   @Property(datetime, notify=data_changed)
   def period_start(self) -> datetime:
@@ -88,11 +97,7 @@ class TimelineViewModel(QObject):
       hour_entries[int(hour)][int(index)] = max_category
 
     self._timeline_data = dict(hour_entries)
-    logger.info(f"Timeline data updated")
-    self.data_changed.emit()
-
-  def update_timeline_data(self):
-    self._update_timeline_data()  # This is the existing private method
+    # logger.info(f"Timeline data updated")
     self.data_changed.emit()
 
   @Slot(int, result=str)

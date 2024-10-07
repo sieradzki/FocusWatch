@@ -70,6 +70,10 @@ class HomeViewModel(BaseViewModel):
     return self._period_type
 
   @Property('QVariant', notify=BaseViewModel.property_changed)
+  def timeline_viewmodel(self) -> TimelineViewModel:
+    return self._timeline_viewmodel
+
+  @Property('QVariant', notify=BaseViewModel.property_changed)
   def top_categories_card_viewmodel(self) -> TopCategoriesCardViewModel:
     return self._top_categories_card_viewmodel
 
@@ -82,20 +86,23 @@ class HomeViewModel(BaseViewModel):
     return self._top_titles_card_viewmodel
 
   def connect_period_changed(self):
-    self.period_changed.connect(
-      self._top_categories_card_viewmodel.update_period)
-    self.period_changed.connect(
-      self._top_applications_card_viewmodel.update_period)
-    self.period_changed.connect(
-      self._top_titles_card_viewmodel.update_period)
+    for viewmodel in [
+        self._timeline_viewmodel,
+        self._top_categories_card_viewmodel,
+        self._top_applications_card_viewmodel,
+        self._top_titles_card_viewmodel
+    ]:
+        self.period_changed.connect(viewmodel.update_period)
+
 
   def connect_refresh_triggered(self):
-    self.refresh_triggered.connect(
-      self._top_categories_card_viewmodel._update_top_items)
-    self.refresh_triggered.connect(
-      self._top_applications_card_viewmodel._update_top_items)
-    self.refresh_triggered.connect(
-      self._top_titles_card_viewmodel._update_top_items)
+    self.refresh_triggered.connect(self._timeline_viewmodel._update_timeline_data)
+    for viewmodel in [
+        self._top_categories_card_viewmodel,
+        self._top_applications_card_viewmodel,
+        self._top_titles_card_viewmodel
+    ]:
+        self.refresh_triggered.connect(viewmodel._update_top_items)
 
   def _update_period(self, start: datetime, end: Optional[datetime], period_type: str) -> None:
     """Update all period-related properties at once."""

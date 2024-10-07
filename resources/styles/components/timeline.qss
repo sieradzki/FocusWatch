@@ -1,0 +1,53 @@
+QScrollArea#timeline_view {
+    border: none;
+    background-color: transparent; /
+}
+
+QWidget#timeline_widget {
+    background-color: #1e1e1e;
+}
+
+QWidget#hour_widget {
+    border-bottom: 1px solid #2d2d2d;
+}
+
+QLabel#hour_label {
+    color: #F9F9F9;
+    font-size: 12px;
+    padding-left: 5px;
+}
+
+QWidget#activity_card {
+    background-color: #27282C;
+    color: #F9F9F9;
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+QWidget#activity_card_color {
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+QScrollBar:vertical {
+    background: #1b1c1e;
+    width: 12px;
+    margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: #363739;
+    min-height: 20px;
+    border-radius: 6px;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    background: none;
+    height: 0px;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: none;
+}
