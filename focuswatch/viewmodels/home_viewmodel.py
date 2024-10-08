@@ -28,7 +28,8 @@ class HomeViewModel(BaseViewModel):
     self._activity_service = activity_service
     self._category_service = category_service
 
-    self._period_start: datetime = datetime.now().date()
+    self._period_start: datetime = datetime.now().replace(
+      hour=0, minute=0, second=0, microsecond=0)
     self._period_end: Optional[datetime] = None
     self._period_type: str = "Day"
 
@@ -92,20 +93,19 @@ class HomeViewModel(BaseViewModel):
         self._top_applications_card_viewmodel,
         self._top_titles_card_viewmodel
     ]:
-        self.period_changed.connect(viewmodel.update_period)
-
+      self.period_changed.connect(viewmodel.update_period)
 
   def connect_refresh_triggered(self):
-    self.refresh_triggered.connect(self._timeline_viewmodel._update_timeline_data)
+    self.refresh_triggered.connect(
+      self._timeline_viewmodel._update_timeline_data)
     for viewmodel in [
         self._top_categories_card_viewmodel,
         self._top_applications_card_viewmodel,
         self._top_titles_card_viewmodel
     ]:
-        self.refresh_triggered.connect(viewmodel._update_top_items)
+      self.refresh_triggered.connect(viewmodel._update_top_items)
 
   def _update_period(self, start: datetime, end: Optional[datetime], period_type: str) -> None:
-    """Update all period-related properties at once."""
     self._period_start = start
     self._period_end = end
     self._period_type = period_type
@@ -137,8 +137,7 @@ class HomeViewModel(BaseViewModel):
 
   @Slot(str)
   def set_period_type(self, period_type: str) -> None:
-    today = datetime.now().date()
-
+    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     if period_type == "Day":
       self._update_period(today, None, "Day")
     elif period_type == "Week":
@@ -156,8 +155,9 @@ class HomeViewModel(BaseViewModel):
 
   @Slot(datetime)
   def update_period_from_selected_date(self, date: datetime) -> None:
+    date = date.replace(hour=0, minute=0, second=0, microsecond=0)
     if self._period_type == "Day":
-      self._update_period(date, None, "Day")
+        self._update_period(date, None, "Day")
     elif self._period_type == "Week":
       start = date - timedelta(days=date.weekday())
       end = start + timedelta(days=6)

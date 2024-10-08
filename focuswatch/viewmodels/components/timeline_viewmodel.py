@@ -28,6 +28,8 @@ class TimelineViewModel(BaseViewModel):
     self._period_end: Optional[datetime] = None
     self._timeline_data: Dict[int, List[int]] = {}
 
+    self.property_changed.connect(self._update_timeline_data)
+
     self._update_timeline_data()
 
   @Slot(datetime, datetime)
@@ -35,6 +37,8 @@ class TimelineViewModel(BaseViewModel):
     """ Update the time period. """
     self.period_start = start
     self.period_end = end
+    self.property_changed.emit("period_start")
+    self.property_changed.emit("period_end")
 
   @Property(datetime, notify=data_changed)
   def period_start(self) -> datetime:
@@ -44,7 +48,7 @@ class TimelineViewModel(BaseViewModel):
   def period_start(self, value: datetime) -> None:
     if self._period_start != value:
       self._period_start = value
-      self._update_timeline_data()
+      self.property_changed.emit("period_start")
 
   @Property(datetime, notify=data_changed)
   def period_end(self) -> Optional[datetime]:
@@ -54,7 +58,7 @@ class TimelineViewModel(BaseViewModel):
   def period_end(self, value: Optional[datetime]) -> None:
     if self._period_end != value:
       self._period_end = value
-      self._update_timeline_data()
+      self.property_changed.emit("period_end")
 
   @Property(dict, notify=data_changed)
   def timeline_data(self) -> Dict[int, List[int]]:
