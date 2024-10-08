@@ -56,6 +56,8 @@ class TimelineView(QWidget):
     self._scroll_area.setMinimumWidth(300)
     self._scroll_area.setWidgetResizable(True)
     self._scroll_area.setObjectName("timeline_view")
+    self._scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    self._scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
     self._timeline_widget = QWidget()
     self._timeline_widget.setObjectName("timeline_widget")
@@ -70,6 +72,23 @@ class TimelineView(QWidget):
     self._timeline_layout.setContentsMargins(0, 0, 0, 0)
     self._timeline_layout.setSpacing(0)
 
+    # Create the current time indicator line
+    self._current_time_line = QFrame(self._timeline_widget)
+    self._current_time_line.setObjectName("current_time_line")
+    self._current_time_line.setFrameShape(QFrame.HLine)
+    self._current_time_line.setFrameShadow(QFrame.Plain)
+    self._current_time_line.setLineWidth(2)
+    # self._current_time_line.raise_()  # Bring to front
+
+    # Update the position of the line
+    self._update_current_time_line()
+
+    # Start a timer to update the line every minute
+    self._current_time_timer = QTimer(self)
+    self._current_time_timer.timeout.connect(
+        self._update_current_time_line)
+    self._current_time_timer.start(60000)  # minute
+
     self._create_time_grid()
 
   def _connect_signals(self) -> None:
@@ -82,6 +101,7 @@ class TimelineView(QWidget):
     """ Handle property changes in the ViewModel. """
     if property_name in ["period_start", "period_end"]:
       self.update_timeline()
+      self._update_current_time_line()
 
   def _create_time_grid(self) -> None:
     """ Create the time grid representing 24 hours. """
@@ -168,6 +188,7 @@ class TimelineView(QWidget):
       )
 
       activity_card.show()
+    self._current_time_line.raise_()
 
   def scroll_to_current_hour(self) -> None:
     """ Scroll to the current hour in the timeline. """
@@ -181,7 +202,25 @@ class TimelineView(QWidget):
 
     QTimer.singleShot(0, set_scroll_position)
 
+  def _update_current_time_line(self):
+    """Update the position of the current time indicator line."""
+    if self._viewmodel.period_start.date() == datetime.now().date():
+      now = datetime.now()
+      total_minutes = now.hour * 60 + now.minute
+      y_position = total_minutes * self._minute_height
+
+      self._current_time_line.setGeometry(
+          50,  # Starting after the hour labels
+          int(y_position),
+          self._timeline_widget.width() - 50,  # Width spans the rest of the timeline
+          2  # Line thickness
+      )
+      self._current_time_line.show()
+    else:
+      self._current_time_line.hide()
+
   def resizeEvent(self, event) -> None:
     """Handle widget resizing to adjust activity cards."""
     super().resizeEvent(event)
     self.update_timeline()
+    self._update_current_time_line()
