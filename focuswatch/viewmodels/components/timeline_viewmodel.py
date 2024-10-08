@@ -28,6 +28,8 @@ class TimelineViewModel(BaseViewModel):
     self._period_end: Optional[datetime] = None
     self._timeline_data: Dict[int, List[int]] = {}
 
+    self._update_timeline_data()
+
   @Slot(datetime, datetime)
   def update_period(self, start: datetime, end: Optional[datetime]) -> None:
     """ Update the time period. """

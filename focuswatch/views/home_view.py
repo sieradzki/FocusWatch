@@ -123,7 +123,7 @@ class HomeView(QWidget):
 
     # Timeline frame
     self._timeline_view = TimelineView(
-      self._viewmodel.timeline_viewmodel, self)
+      self._viewmodel.timeline_viewmodel, parent=self)
     self.timeline_frame = self._timeline_view
     # self.timeline_frame = QFrame(self)
     # self.timeline_frame.setMinimumSize(QSize(300, 400))
