@@ -6,7 +6,7 @@ from PySide6.QtCore import Property
 from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 from focuswatch.viewmodels.categorization_viewmodel import \
     CategorizationViewModel
-from focuswatch.viewmodels.dashboard_viewmodel import DashboardViewModel
+from focuswatch.viewmodels.home_viewmodel import HomeViewModel
 from focuswatch.viewmodels.settings_viewmodel import SettingsViewModel
 
 if TYPE_CHECKING:
@@ -39,9 +39,15 @@ class MainWindowViewModel(BaseViewModel):
     # Initialize child viewmodels
     self._settings_viewmodel = SettingsViewModel()
     self._categorization_viewmodel = CategorizationViewModel(
-        activity_service, category_service, keyword_service, self._classifier_service)
-    self._dashboard_viewmodel = DashboardViewModel(
-      activity_service, category_service)
+        self._activity_service,
+        self._category_service,
+        self._keyword_service,
+        self._classifier_service
+    )
+    self._home_viewmodel = HomeViewModel(
+      self._activity_service,
+      self._category_service
+    )
 
     # Initialize properties
     self._pages = ["home", "categories", "settings"]
@@ -86,8 +92,8 @@ class MainWindowViewModel(BaseViewModel):
     return self._categorization_viewmodel
 
   @Property('QVariant', notify=BaseViewModel.property_changed)
-  def dashboard_viewmodel(self) -> DashboardViewModel:
-    return self._dashboard_viewmodel
+  def home_viewmodel(self) -> HomeViewModel:
+    return self._home_viewmodel
 
   def exit_application(self) -> None:
     """Exit the application."""

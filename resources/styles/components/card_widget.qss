@@ -1,0 +1,41 @@
+#frame_container {
+  background-color: #27282C;
+  border-radius: 8px;
+  padding: 6px; /* Adjust padding if needed */
+}
+
+#label_title {
+  font-size: 16px;
+  font-weight: bold;
+  padding: 10px;
+}
+
+QStackedWidget {
+  background-color: #27282C;
+}
+
+QFrame {
+  border: none;
+  margin: 0;
+}
+
+#separator {
+  border: none;
+  margin: 0;
+  min-height: 1px;
+  background-color: rgba(54, 55, 57, 0.5);
+}
+
+QScrollArea {
+  border: none;
+  background-color: #27282C;
+}
+
+QScrollBar:vertical {
+  border: none;
+  background: #27282C;
+}
+
+QScrollBar::handle:vertical {
+  background: #F9F9F9;
+}

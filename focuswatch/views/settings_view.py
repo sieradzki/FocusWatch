@@ -31,7 +31,7 @@ class SettingsView(QWidget):
     self.autostart_groupbox = QGroupBox(self.general_tab)
     self.autostart_groupbox.setObjectName(u"autostart_groupbox")
     self.autostart_groupbox.setTitle(
-        QCoreApplication.translate("Dashboard", u"Autostart", None))
+        QCoreApplication.translate("Home", u"Autostart", None))
     self.verticalLayout_autostart = QVBoxLayout(self.autostart_groupbox)
     self.verticalLayout_autostart.setObjectName(
         u"verticalLayout_autostart")
@@ -39,7 +39,7 @@ class SettingsView(QWidget):
     self.autostart_checkbox = QCheckBox(self.autostart_groupbox)
     self.autostart_checkbox.setObjectName(u"autostart_checkbox")
     self.autostart_checkbox.setText(QCoreApplication.translate(
-        "Dashboard", u"Start FocusWatch on system startup", None))
+        "Home", u"Start FocusWatch on system startup", None))
     self.autostart_checkbox.setChecked(self.viewmodel.autostart_enabled)
     self.autostart_checkbox.setEnabled(
         self.viewmodel.is_autostart_available())
@@ -53,7 +53,7 @@ class SettingsView(QWidget):
         20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
     self.tab_settings_watcher.addTab(
-        self.general_tab, QCoreApplication.translate("Dashboard", u"General", None))
+        self.general_tab, QCoreApplication.translate("Home", u"General", None))
 
     # Watcher tab
     self.watcher_tab = QWidget()
@@ -67,7 +67,7 @@ class SettingsView(QWidget):
     font2.setBold(False)
     self.watch_label.setFont(font2)
     self.watch_label.setText(QCoreApplication.translate(
-        "Dashboard", u"Watch interval", None))
+        "Home", u"Watch interval", None))
     self.verticalLayout_watcher.addWidget(self.watch_label)
 
     self.watch_interval = QDoubleSpinBox(self.watcher_tab)
@@ -78,7 +78,7 @@ class SettingsView(QWidget):
     self.watch_interval.setMaximum(60.0)
     self.watch_interval.setSingleStep(0.5)
     self.watch_interval.setSuffix(
-        QCoreApplication.translate("Dashboard", u" s", None))
+        QCoreApplication.translate("Home", u" s", None))
     self.watch_interval.valueChanged.connect(
         self.on_watch_interval_changed)
     self.verticalLayout_watcher.addWidget(self.watch_interval)
@@ -87,7 +87,7 @@ class SettingsView(QWidget):
     self.watch_afk.setChecked(self.viewmodel.watch_afk)
     self.watch_afk.setObjectName(u"watch_afk")
     self.watch_afk.setText(QCoreApplication.translate(
-        "Dashboard", u"Watch AFK", None))
+        "Home", u"Watch AFK", None))
     self.watch_afk.stateChanged.connect(self.on_watch_afk_changed)
     self.verticalLayout_watcher.addWidget(self.watch_afk)
 
@@ -95,7 +95,7 @@ class SettingsView(QWidget):
     self.afk_label.setObjectName(u"afk_label")
     self.afk_label.setEnabled(self.viewmodel.watch_afk)
     self.afk_label.setText(QCoreApplication.translate(
-        "Dashboard", u"AFK timeout", None))
+        "Home", u"AFK timeout", None))
     self.verticalLayout_watcher.addWidget(self.afk_label)
 
     self.afk_timeout = QSpinBox(self.watcher_tab)
@@ -105,21 +105,21 @@ class SettingsView(QWidget):
     self.afk_timeout.setMaximum(60)
     self.afk_timeout.setValue(self.viewmodel.afk_timeout)
     self.afk_timeout.setSuffix(
-        QCoreApplication.translate("Dashboard", u" m", None))
+        QCoreApplication.translate("Home", u" m", None))
     self.afk_timeout.valueChanged.connect(self.on_afk_timeout_changed)
     self.verticalLayout_watcher.addWidget(self.afk_timeout)
 
     self.label_note = QLabel(self.watcher_tab)
     self.label_note.setObjectName(u"label_note")
     self.label_note.setText(QCoreApplication.translate(
-        "Dashboard", u"Note: Changes will apply on next restart", None))
+        "Home", u"Note: Changes will apply on next restart", None))
     self.verticalLayout_watcher.addWidget(self.label_note)
 
     self.verticalLayout_watcher.addItem(QSpacerItem(
         20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
     self.tab_settings_watcher.addTab(
-        self.watcher_tab, QCoreApplication.translate("Dashboard", u"Watcher", None))
+        self.watcher_tab, QCoreApplication.translate("Home", u"Watcher", None))
 
     self.verticalLayout_9.addWidget(self.tab_settings_watcher)
 

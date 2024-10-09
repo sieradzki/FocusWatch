@@ -143,11 +143,11 @@ def main():
   main_window = MainWindowView(mainwindow_viewmodel)
 
   # Add actions to the menu
-  open_dashboard = QAction("Open")
-  open_dashboard.triggered.connect(main_window.show)
-  menu.addAction(open_dashboard)
+  open_mainwindow = QAction("Open")
+  open_mainwindow .triggered.connect(main_window.show)
+  menu.addAction(open_mainwindow)
 
-  # Open or hide dashboard on double-click
+  # Open or hide home on double-click
   tray.activated.connect(
       lambda reason: main_window.hide() if reason == QSystemTrayIcon.Trigger and main_window.isVisible()
       else main_window.show() if reason == QSystemTrayIcon.Trigger else None
