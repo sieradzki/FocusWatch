@@ -1,0 +1,49 @@
+QScrollArea#timeline_view {
+    background-color: #1e1e1e;
+    border: 2px solid #363739;
+    border-radius: 4px;
+    /* background-color: transparent; */
+}
+
+QWidget#timeline_widget {
+    background-color: #1e1e1e;
+}
+
+QWidget[cssClass="hour_widget"] {
+    background-color: #161616;
+    border-bottom: 1px solid #2d2d2d;
+}
+
+QLabel[cssClass="hour_label"] {
+    color: #626262;
+    font-size: 10px;
+    padding-left: 5px;
+}
+
+QScrollBar:vertical {
+    background: #1b1c1e;
+    width: 12px;
+    margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:vertical {
+    background: #363739;
+    min-height: 20px;
+    border-radius: 6px;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    background: none;
+    height: 0px;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+QFrame#current_time_line {
+    background-color: #FF0000;  /* Red color */
+    border: none;
+}

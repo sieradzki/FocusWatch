@@ -1,0 +1,40 @@
+QWidget#activity_card {
+    background-color: #27282C;
+    border-radius: 4px;
+    border-bottom: 1px solid #2d2d2d;
+}
+
+QWidget#activity_card_color {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+
+QWidget#activity_card_text_container {
+    background-color: #27282C;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+QLabel#activity_card_label_category[durationType="short"] {
+    color: #F9F9F9;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+QLabel#activity_card_label_category[durationType="long"] {
+    color: #F9F9F9;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+QLabel#activity_card_label_parent {
+    color: #F9F9F9;
+    font-size: 12px;
+    font-weight: normal;
+}
+
+QLabel#activity_card_label_time {
+    color: #626262;
+    font-size: 10px;
+    padding-right: 3px;
+}
