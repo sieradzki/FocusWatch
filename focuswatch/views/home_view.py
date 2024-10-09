@@ -125,19 +125,6 @@ class HomeView(QWidget):
     self._timeline_view = TimelineView(
       self._viewmodel.timeline_viewmodel, parent=self)
     self.timeline_frame = self._timeline_view
-    # self.timeline_frame = QFrame(self)
-    # self.timeline_frame.setMinimumSize(QSize(300, 400))
-    # self.timeline_frame.setMaximumSize(QSize(300, 16777215))
-    # self.timeline_layout = QVBoxLayout(self.timeline_frame)
-    # self.timeline_frame.setStyleSheet(
-    #   u"background-color: #161616; border: none;")
-
-    # Scroll area for timeline
-    # self.scroll_timeline = QScrollArea(self.timeline_frame)
-    # self.scroll_timeline.setWidgetResizable(True)
-    # self.scroll_area_widget = QWidget()
-    # self.scroll_timeline.setWidget(self.scroll_area_widget)
-    # self.timeline_layout.addWidget(self.scroll_timeline)
 
     self.main_layout.addWidget(self.timeline_frame)
 
@@ -211,7 +198,7 @@ class HomeView(QWidget):
     period_type = self._viewmodel.period_type
 
     if period_type == "Day":
-      if period_start == datetime.today().date():
+      if period_start.date() == datetime.today().date():
         self.date_button.setText("Today")
       else:
         self.date_button.setText(period_start.strftime("%d-%m-%Y"))

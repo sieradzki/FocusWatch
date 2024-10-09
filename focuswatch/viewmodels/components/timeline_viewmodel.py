@@ -60,6 +60,8 @@ class TimelineViewModel(BaseViewModel):
       self._period_end = value
       self.property_changed.emit("period_end")
 
+  
+
   @Property(dict, notify=data_changed)
   def timeline_data(self) -> Dict[int, List[int]]:
     return self._timeline_data
