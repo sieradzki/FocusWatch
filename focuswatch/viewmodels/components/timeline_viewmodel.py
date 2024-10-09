@@ -111,6 +111,10 @@ class TimelineViewModel(BaseViewModel):
     category = self._category_service.get_category_by_id(category_id)
     return category.name if category else ""
 
+  def get_parent_category(self, category_id: int) -> Optional[str]:
+    category = self._category_service.get_category_by_id(category_id)
+    return category.parent_category_id if category else None
+
   @Slot(int, result=str)
   def get_category_color(self, category_id: int) -> str:
     return get_category_color_or_parent(category_id)  # TODO

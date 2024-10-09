@@ -172,11 +172,34 @@ class TimelineView(QWidget):
       y_position = start_minutes * self._minute_height
       height = int(duration * self._minute_height)
 
+      parent_id = self._viewmodel.get_parent_category(category_id)
+      parent_name = self._viewmodel.get_category_name(parent_id)
+
+      # Calculate actual time range
+      start_hour = start_minutes // 60
+      start_minutes %= 60
+
+      duration_hours = duration // 60
+      duration_minutes = duration % 60
+
+      end_hour = start_hour + duration_hours
+      end_minutes = start_minutes + duration_minutes
+
+      if end_minutes >= 60:
+        end_minutes -= 60
+        end_hour += 1
+
+      time_range = f"{start_hour:02d}:{
+          start_minutes:02d} - {end_hour:02d}:{end_minutes:02d}"
+
       # Create the activity card
       activity_card = ActivityCard(
         category_id=category_id,
         category_name=self._viewmodel.get_category_name(category_id),
         color=self._viewmodel.get_category_color(category_id),
+        parent_category=parent_name,
+        time_range=time_range,
+        duration=duration,
         parent=self._timeline_widget,
       )
 
@@ -212,8 +235,8 @@ class TimelineView(QWidget):
       self._current_time_line.setGeometry(
           50,  # Starting after the hour labels
           int(y_position),
-          self._timeline_widget.width() - 50,  # Width spans the rest of the timeline
-          2  # Line thickness
+          self._timeline_widget.width() - 50,
+          1  # Line thickness
       )
       self._current_time_line.show()
     else:
