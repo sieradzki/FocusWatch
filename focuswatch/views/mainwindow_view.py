@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
 
 from focuswatch.utils.resource_utils import apply_stylesheet, load_icon
 from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
-from focuswatch.views.categorization_view import CategorizationView
+from focuswatch.views.categories_view import CategoriesView
 from focuswatch.views.home_view import HomeView
 from focuswatch.views.settings_view import SettingsView
 
@@ -92,9 +92,12 @@ class MainWindowView(QMainWindow):
     self.stackedWidget = QStackedWidget(self.centralwidget)
     self.horizontalLayout.addWidget(self.stackedWidget)
 
-    # Mock Pages for testing
+    # Pages
     self.page_home = HomeView(self._viewmodel.home_viewmodel)
-    self.page_categories = self.create_mock_page("Categories Page")
+    self.page_categories = CategoriesView(
+      self._viewmodel.categories_viewmodel)
+
+    # Mock Pages for testing
     self.page_settings = self.create_mock_page("Settings Page")
 
     # Add pages to the stacked widget

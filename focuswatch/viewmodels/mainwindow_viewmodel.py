@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, List, Tuple
 from PySide6.QtCore import Property
 
 from focuswatch.viewmodels.base_viewmodel import BaseViewModel
-from focuswatch.viewmodels.categorization_viewmodel import \
-    CategorizationViewModel
+from focuswatch.viewmodels.categories_viewmodel import \
+    CategoriesViewModel
 from focuswatch.viewmodels.home_viewmodel import HomeViewModel
 from focuswatch.viewmodels.settings_viewmodel import SettingsViewModel
 
@@ -38,7 +38,7 @@ class MainWindowViewModel(BaseViewModel):
 
     # Initialize child viewmodels
     self._settings_viewmodel = SettingsViewModel()
-    self._categorization_viewmodel = CategorizationViewModel(
+    self._categories_viewmodel = CategoriesViewModel(
         self._activity_service,
         self._category_service,
         self._keyword_service,
@@ -88,8 +88,8 @@ class MainWindowViewModel(BaseViewModel):
     return self._settings_viewmodel
 
   @Property('QVariant', notify=BaseViewModel.property_changed)
-  def categorization_viewmodel(self) -> CategorizationViewModel:
-    return self._categorization_viewmodel
+  def categories_viewmodel(self) -> CategoriesViewModel:
+    return self._categories_viewmodel
 
   @Property('QVariant', notify=BaseViewModel.property_changed)
   def home_viewmodel(self) -> HomeViewModel:

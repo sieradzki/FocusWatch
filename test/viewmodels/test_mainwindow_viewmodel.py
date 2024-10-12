@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 from focuswatch.viewmodels.settings_viewmodel import SettingsViewModel
-from focuswatch.viewmodels.categorization_viewmodel import CategorizationViewModel
+from focuswatch.viewmodels.categories_viewmodel import CategorizationViewModel
 from focuswatch.viewmodels.home_viewmodel import HomeViewModel
 from focuswatch.services.classifier_service import ClassifierService
 

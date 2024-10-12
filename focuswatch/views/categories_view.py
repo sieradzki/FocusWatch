@@ -12,7 +12,7 @@ from focuswatch.ui.categorization_helper_dialog import \
 from focuswatch.ui.utils import (get_category_color_or_parent,
                                  get_contrasting_text_color)
 from focuswatch.viewmodels.categories_viewmodel import \
-    CategorizationViewModel
+    CategoriesViewModel
 from focuswatch.views.dialogs.categorization_helper_dialog_view import \
     CategorizationHelperView
 from focuswatch.views.dialogs.category_dialog_view import CategoryDialogView
@@ -20,8 +20,8 @@ from focuswatch.views.dialogs.category_dialog_view import CategoryDialogView
 logger = logging.getLogger(__name__)
 
 
-class CategorizationView(QWidget):
-  def __init__(self, viewmodel: CategorizationViewModel, parent=None):
+class CategoriesView(QWidget):
+  def __init__(self, viewmodel: CategoriesViewModel, parent=None):
     super().__init__(parent)
     self._viewmodel = viewmodel
     self.setupUi()

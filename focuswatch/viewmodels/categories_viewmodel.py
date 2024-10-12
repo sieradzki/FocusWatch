@@ -22,11 +22,11 @@ if TYPE_CHECKING:
   from focuswatch.services.classifier_service import ClassifierService
 
 
-class CategorizationViewModel(BaseViewModel):
+class CategoriesViewModel(BaseViewModel):
   retroactive_categorization_progress = Signal(int, int)
 
-  def __init__(self, activity_service: 'ActivityService', 
-               category_service: 'CategoryService', 
+  def __init__(self, activity_service: 'ActivityService',
+               category_service: 'CategoryService',
                keyword_service: 'KeywordService',
                classifier_service: 'ClassifierService'):
     super().__init__()
