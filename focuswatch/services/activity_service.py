@@ -68,6 +68,32 @@ class ActivityService:
       logger.error(f"Failed to update category for activity: {e}")
       return False
 
+  def bulk_update_category(self, activity_ids: List[int], category_id: int) -> bool:
+    """Bulk update the category_id for multiple activities.
+
+    Args:
+      activity_ids: List of activity IDs to update.
+      category_id: The new category ID.
+
+    Returns:
+      bool: True if the categories were updated successfully, False otherwise.
+    """
+    if not activity_ids:
+        return True
+
+    # Construct placeholders for parameterized query
+    placeholders = ','.join(['?'] * len(activity_ids))
+    query = f'UPDATE activity_log SET category_id = ? WHERE id IN ({
+        placeholders})'
+    params = [category_id] + activity_ids
+
+    try:
+        self._db_conn.execute_update(query, params)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to bulk update categories for activities: {e}")
+        return False
+
   def get_all_activities(self) -> List[Activity]:
     """Return all activity entries in the database.
 
