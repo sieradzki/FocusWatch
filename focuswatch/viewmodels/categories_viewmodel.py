@@ -76,7 +76,8 @@ class CategoriesViewModel(BaseViewModel):
       category_dict = {
           'category': category,
           'keywords': cat_key[category.id],
-          'children': []
+          'children': [],
+          'expanded': True,
       }
       if category.parent_category_id is None:
         temp_cat_dict[category.id] = category_dict
@@ -85,6 +86,7 @@ class CategoriesViewModel(BaseViewModel):
             'category': None,
             'keywords': [],
             'children': [category.id],
+            'expanded': True,
         }
         temp_cat_dict[category.id] = category_dict
       else:
@@ -106,10 +108,6 @@ class CategoriesViewModel(BaseViewModel):
       organize_categories_recursive(root_cat_id)
 
     self._organized_categories = cat_dict
-
-    for category_id, category_data in self.organized_categories.items():  # add 'expanded' for toggling
-      if 'expanded' not in category_data:
-        category_data['expanded'] = True
 
     self.property_changed.emit('organized_categories')
 

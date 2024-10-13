@@ -1,0 +1,126 @@
+QLabel {
+    color: #F9F9F9;
+}
+
+QToolTip {
+    background-color: #1b1c1e;
+    color: #F9F9F9;
+    border: 1px solid #363739;
+    padding: 5px;
+    border-radius: 4px;
+    font-family: Arial;
+    font-size: 12px;
+}
+
+QScrollArea#scroll_area {
+    background-color: #1e1e1e;
+    border: none;
+}
+
+QWidget#scroll_area_widget {
+    background-color: #1e1e1e;
+}
+
+QFrame#top_bar,
+QFrame#bottom_bar {
+    background-color: #1e1e1e;
+    border: none;
+}
+
+QFrame#line_divider {
+    background-color: #363739;
+    height: 1px;
+}
+
+QLineEdit#filter_input {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    font-size: 14px;
+    color: #F9F9F9;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+QPushButton {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    border-radius: 4px;
+    color: #F9F9F9;
+    font-family: Arial;
+    font-size: 14px;
+    padding: 5px 10px;
+    text-decoration: none;
+}
+
+QPushButton:hover {
+    background-color: #252628;
+}
+
+QPushButton:active {
+    position: relative;
+    top: 1px;
+}
+
+QPushButton#button_restore_defaults {
+    background-color: #D9534F;
+    color: #FFFFFF;
+    border: none;
+}
+
+QPushButton#button_restore_defaults:hover {
+    background-color: #C9302C;
+}
+
+QPushButton#button_add_category,
+QPushButton#button_helper,
+QPushButton#button_retroactive {
+    /* Inherits general button styles */
+}
+
+QPushButton#button_add_category:hover,
+QPushButton#button_helper:hover,
+QPushButton#button_retroactive:hover {
+    background-color: #252628;
+}
+
+QPushButton#toggle_button {
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+QPushButton[objectName^="category_button_"] {
+    background-color: transparent;
+    border: none;
+    color: #F9F9F9;
+    font-size: 14px;
+    text-align: left;
+    padding: 5px 0;
+}
+
+QPushButton[objectName^="category_button_"]:hover {
+    color: #FFFFFF;
+}
+
+QWidget#category_row_widget {
+    border-radius: 4px;
+}
+
+QWidget#category_row_widget:hover {
+    background-color: #252628;
+    border-radius: 4px;
+}
+
+QLabel[objectName^="keywords_label_"] {
+    color: #A0A0A0;
+    font-size: 12px;
+}
+
+QLabel#keyword_chip {
+    background-color: #2A2A2A;
+    color: #F9F9F9;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 12px;
+}

@@ -1,6 +1,6 @@
 import logging
 
-from PySide6.QtCore import QCoreApplication, QRect, QSize, Qt
+from PySide6.QtCore import QCoreApplication, QRect, QSize, Qt, Slot
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout, QLineEdit,
                                QMessageBox, QProgressDialog, QPushButton,
@@ -11,8 +11,8 @@ from focuswatch.ui.categorization_helper_dialog import \
     CategorizationHelperDialog
 from focuswatch.ui.utils import (get_category_color_or_parent,
                                  get_contrasting_text_color)
-from focuswatch.viewmodels.categories_viewmodel import \
-    CategoriesViewModel
+from focuswatch.utils.resource_utils import apply_styles, apply_stylesheet
+from focuswatch.viewmodels.categories_viewmodel import CategoriesViewModel
 from focuswatch.views.dialogs.categorization_helper_dialog_view import \
     CategorizationHelperView
 from focuswatch.views.dialogs.category_dialog_view import CategoryDialogView
@@ -24,312 +24,376 @@ class CategoriesView(QWidget):
   def __init__(self, viewmodel: CategoriesViewModel, parent=None):
     super().__init__(parent)
     self._viewmodel = viewmodel
-    self.setupUi()
-    self.connect_signals()
+    self._max_keywords_display = 10
+    self._setup_ui()
+    self._connect_signals()
 
-  def setupUi(self):
-    self.setObjectName(u"categorization_view")
+    apply_styles(self, ["categories_view.qss"])
 
-    # Main layout for the CategorizationView
-    self.verticalLayout_5 = QVBoxLayout(self)
-    self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+  def _setup_ui(self):
+    """ Set up the UI components. """
+    self.setObjectName("categories_view")
 
-    # Categorization main frame
-    self.categorization_main_frame = QFrame(self)
-    self.categorization_main_frame.setObjectName(u"categorization_main_frame")
-    self.categorization_main_frame.setFrameShape(QFrame.StyledPanel)
-    self.categorization_main_frame.setFrameShadow(QFrame.Raised)
+    # Main vertical layout
+    self.main_layout = QVBoxLayout(self)
+    self.main_layout.setObjectName("main_layout")
 
-    # Categorization main frame layout
-    self.verticalLayout_12 = QVBoxLayout(self.categorization_main_frame)
-    self.verticalLayout_12.setObjectName(u"verticalLayout_12")
+    # Top bar with filter and buttons
+    self._create_top_bar()
 
-    # Categorization info label
-    self.categorization_info_label = QLabel(self.categorization_main_frame)
-    self.categorization_info_label.setObjectName(u"categorization_info_label")
-    font1 = QFont()
-    font1.setPointSize(12)
-    self.categorization_info_label.setFont(font1)
-    self.categorization_info_label.setScaledContents(False)
-    self.categorization_info_label.setWordWrap(True)
+    # Divider line TODO is it worth to create a asepate class for this?
+    self.line_divider = QFrame(self)
+    self.line_divider.setObjectName("line_divider")
+    self.line_divider.setFrameShape(QFrame.Shape.HLine)
+    self.line_divider.setFrameShadow(QFrame.Shadow.Sunken)
+    self.main_layout.addWidget(self.line_divider)
 
-    self.verticalLayout_12.addWidget(self.categorization_info_label)
+    # Main content area
+    self._create_main_content_area()
 
-    # Categorization scroll area
-    self.categorization_scrollArea = QScrollArea(
-      self.categorization_main_frame)
-    self.categorization_scrollArea.setObjectName(u"categorization_scrollArea")
-    sizePolicy3 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-    sizePolicy3.setHorizontalStretch(0)
-    sizePolicy3.setVerticalStretch(0)
-    sizePolicy3.setHeightForWidth(
-      self.categorization_scrollArea.sizePolicy().hasHeightForWidth())
-    self.categorization_scrollArea.setSizePolicy(sizePolicy3)
-    self.categorization_scrollArea.setWidgetResizable(True)
-    self.categorization_scrollAreaWidgetContents = QWidget()
-    self.categorization_scrollAreaWidgetContents.setObjectName(
-      u"categorization_scrollAreaWidgetContents")
-    self.categorization_scrollAreaWidgetContents.setGeometry(
-      QRect(0, 0, 1536, 737))
-    self.verticalLayout_13 = QVBoxLayout(
-      self.categorization_scrollAreaWidgetContents)
-    self.verticalLayout_13.setObjectName(u"verticalLayout_13")
-    self.categorization_verticalLayout = QVBoxLayout()
-    self.categorization_verticalLayout.setObjectName(
-      u"categorization_verticalLayout")
-    self.categorization_content_horizontalLayout = QHBoxLayout()
-    self.categorization_content_horizontalLayout.setObjectName(
-      u"categorization_content_horizontalLayout")
+    # Bottom bar with buttons
+    self._create_bottom_bar()
 
-    self.categorization_verticalLayout.addLayout(
-      self.categorization_content_horizontalLayout)
+  def _create_top_bar(self):
+    """ Create the top bar with filter, import, export, and restore defaults buttons. """
+    self.top_bar = QFrame(self)
+    self.top_bar.setObjectName("top_bar")
+    self.top_bar_layout = QHBoxLayout(self.top_bar)
+    self.top_bar_layout.setContentsMargins(0, 0, 0, 0)
+    self.top_bar_layout.setSpacing(10)
 
-    self.verticalSpacer_2 = QSpacerItem(
-      20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+    # Filter input
+    self.filter_input = QLineEdit(self.top_bar)
+    self.filter_input.setObjectName("filter_input")
+    self.filter_input.setPlaceholderText(
+        "Filter categories and keywords...")
+    self.filter_input.setClearButtonEnabled(True)
+    self.top_bar_layout.addWidget(self.filter_input)
 
-    self.categorization_verticalLayout.addItem(self.verticalSpacer_2)
+    # Spacer
+    self.top_bar_spacer = QSpacerItem(
+        40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+    self.top_bar_layout.addItem(self.top_bar_spacer)
 
-    self.categorization_button_horizontalLayout = QHBoxLayout()
-    self.categorization_button_horizontalLayout.setObjectName(
-      u"categorization_button_horizontalLayout")
-    self.categorization_addCategory = QPushButton(
-      self.categorization_scrollAreaWidgetContents)
-    self.categorization_addCategory.setObjectName(
-      u"categorization_addCategory")
+    # Import button
+    self.button_import = QPushButton("Import", self.top_bar)
+    self.button_import.setObjectName("button_import")
+    self.button_import.setEnabled(False)
+    self.top_bar_layout.addWidget(self.button_import)
 
-    self.categorization_button_horizontalLayout.addWidget(
-      self.categorization_addCategory)
-
-    self.horizontalSpacer_4 = QSpacerItem(
-      40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-
-    self.categorization_button_horizontalLayout.addItem(
-      self.horizontalSpacer_4)
-
-    # Categorization helper button
-    self.categorization_helper_button = QPushButton(
-      self.categorization_scrollAreaWidgetContents)
-    self.categorization_helper_button.setObjectName(
-      u"categorization_helper_button")
-    self.categorization_button_horizontalLayout.addWidget(
-      self.categorization_helper_button)
-
-    # Retroactive categorization button
-    self.retroactive_categorization_button = QPushButton(
-      self.categorization_scrollAreaWidgetContents)
-    self.retroactive_categorization_button.setObjectName(
-      u"retroactive_categorization_button")
-
-    self.categorization_button_horizontalLayout.addWidget(
-      self.retroactive_categorization_button)
+    # Export button
+    self.button_export = QPushButton("Export", self.top_bar)
+    self.button_export.setObjectName("button_export")
+    self.button_export.setEnabled(False)
+    self.top_bar_layout.addWidget(self.button_export)
 
     # Restore defaults button
-    self.categorization_restoreDefaults = QPushButton(
-      self.categorization_scrollAreaWidgetContents)
-    self.categorization_restoreDefaults.setObjectName(
-      u"categorization_restoreDefaults")
-    self.categorization_button_horizontalLayout.addWidget(
-      self.categorization_restoreDefaults)
+    self.button_restore_defaults = QPushButton(
+        "Restore Defaults", self.top_bar)
+    self.button_restore_defaults.setObjectName("button_restore_defaults")
+    self.top_bar_layout.addWidget(self.button_restore_defaults)
 
-    self.categorization_verticalLayout.addLayout(
-      self.categorization_button_horizontalLayout)
+    self.main_layout.addWidget(self.top_bar)
 
-    self.verticalLayout_13.addLayout(self.categorization_verticalLayout)
+  def _create_main_content_area(self):
+    """ Create the main content area similar to the original implementation. """
+    # Scroll area
+    self.scroll_area = QScrollArea(self)
+    self.scroll_area.setObjectName("scroll_area")
+    self.scroll_area.setWidgetResizable(True)
+    self.scroll_area_widget = QWidget()
+    self.scroll_area_widget.setObjectName("scroll_area_widget")
+    self.scroll_area_layout = QVBoxLayout(self.scroll_area_widget)
+    self.scroll_area_layout.setObjectName("scroll_area_layout")
 
-    self.categorization_scrollArea.setWidget(
-      self.categorization_scrollAreaWidgetContents)
+    # Categories layout
+    self.categories_layout = QVBoxLayout()
+    self.categories_layout.setObjectName("categories_layout")
+    self.scroll_area_layout.addLayout(self.categories_layout)
 
-    self.verticalLayout_12.addWidget(self.categorization_scrollArea)
+    self.scroll_area.setWidget(self.scroll_area_widget)
+    self.main_layout.addWidget(self.scroll_area)
 
-    self.verticalLayout_5.addWidget(self.categorization_main_frame)
+    # Populate categories
+    self._populate_categories()
 
-    # Add filter layout
-    self.filter_layout = QHBoxLayout()
-    self.filter_input = QLineEdit(self.categorization_main_frame)
-    self.filter_input.setPlaceholderText(
-      "Filter categories and keywords...")
+  def _create_bottom_bar(self):
+    """ Create the bottom bar with add category, helper, and retroactive categorization buttons. """
+    self.bottom_bar = QFrame(self)
+    self.bottom_bar.setObjectName("bottom_bar")
+    self.bottom_bar_layout = QHBoxLayout(self.bottom_bar)
+    self.bottom_bar_layout.setContentsMargins(0, 0, 0, 0)
+    self.bottom_bar_layout.setSpacing(10)
 
-    self.filter_layout.addWidget(self.filter_input)
+    # Add category button
+    self.button_add_category = QPushButton("Add Category", self.bottom_bar)
+    self.button_add_category.setObjectName("button_add_category")
+    self.bottom_bar_layout.addWidget(self.button_add_category)
 
-    # Insert filter layout at the top of the main layout
-    self.verticalLayout_12.insertLayout(0, self.filter_layout)
+    # Spacer
+    self.bottom_bar_spacer = QSpacerItem(
+        40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+    self.bottom_bar_layout.addItem(self.bottom_bar_spacer)
 
-    self.categories_setup()
-    self.retranslateUi()
+    # Categorization helper button
+    self.button_helper = QPushButton(
+        "Categorization Helper", self.bottom_bar)
+    self.button_helper.setObjectName("button_helper")
+    self.bottom_bar_layout.addWidget(self.button_helper)
 
-  def retranslateUi(self):
-    self.categorization_info_label.setText(QCoreApplication.translate("Home", u"Rules for categorizing events. An event can only have one category. If several categories match, the deepest one will be chosen.\n"
-                                                                      "To re-categorize previous entries after adding or updating category, click \"Retroactive categorization\" button", None))
-    self.categorization_addCategory.setText(
-      QCoreApplication.translate("Home", u"Add category", None))
-    self.retroactive_categorization_button.setText(QCoreApplication.translate(
-      "Home", u"Retroactive categorization", None))
-    self.categorization_restoreDefaults.setText(
-      QCoreApplication.translate("Home", u"Restore defaults", None))
-    self.categorization_helper_button.setText(
-      QCoreApplication.translate("Home", u"Categorization helper", None))
+    # Retroactive categorization button
+    self.button_retroactive = QPushButton(
+        "Retroactive Categorization", self.bottom_bar)
+    self.button_retroactive.setObjectName("button_retroactive")
+    self.bottom_bar_layout.addWidget(self.button_retroactive)
 
-  def connect_signals(self):
-    self._viewmodel.property_changed.connect(
-      self.on_property_changed)
+    self.main_layout.addWidget(self.bottom_bar)
+
+  def _connect_signals(self):
+    """ Connect signals and slots. """
+    self._viewmodel.property_changed.connect(self.on_property_changed)
 
     self.filter_input.textChanged.connect(self.on_filter_changed)
-    self.categorization_addCategory.clicked.connect(self.show_category_dialog)
+    self.button_add_category.clicked.connect(self.show_category_dialog)
+    self.button_helper.clicked.connect(self.show_categorization_helper)
+    self.button_retroactive.clicked.connect(
+        self.retroactive_categorization)
+    self.button_restore_defaults.clicked.connect(self.restore_defaults)
 
-    self.categorization_helper_button.clicked.connect(
-      self.show_categorization_helper)
-    self.retroactive_categorization_button.clicked.connect(
-      self.retroactive_categorization)
-    self.categorization_restoreDefaults.clicked.connect(self.restore_defaults)
-
+  @Slot(str)
   def on_filter_changed(self, text):
+    """ Handle filter text changes. """
     self._viewmodel.filter_text = text
+    self._populate_categories()
 
+  @Slot(str)
   def on_property_changed(self, property_name):
+    """ Handle property changes from the ViewModel. """
     if property_name in ['filter_text', 'organized_categories']:
-      self.update_categories_display()
+      self._populate_categories()
 
-  def update_categories_display(self):
-    self.clear_layout(self.categorization_content_horizontalLayout)
-    self.categories_setup()
+  def _populate_categories(self):
+    """ Populate the categories in the main content area. """
+    # Clear existing content
+    self._clear_layout(self.categories_layout)
 
-  def categories_setup(self):
-    category_layout = QVBoxLayout()
-    category_layout.setObjectName(u"category_layout")
-    category_layout.setSizeConstraint(QLayout.SetDefaultConstraint)
-    category_layout.setContentsMargins(-1, 0, 0, -1)
+    def add_categories(categories, depth=0):
+      for category_id, category_data in categories.items():
+        category = category_data['category']
+        keywords = category_data['keywords']
+        children_ids = category_data.get('children', [])
 
-    cat_label_sizePolicy = QSizePolicy(
-        QSizePolicy.Maximum, QSizePolicy.Fixed)
-    cat_label_sizePolicy.setHorizontalStretch(0)
-    cat_label_sizePolicy.setVerticalStretch(0)
+        # Check if category or its descendants match the filter
+        matches_filter = self._category_matches_filter(category_data)
 
-    for category_id, category_data in self._viewmodel.organized_categories.items():
-      category = category_data['category']
-      keywords = category_data['keywords']
+        if not matches_filter:
+          continue  # Skip this category and its children
 
-      # Skip Uncategorized
-      if category.name in ['Uncategorized']:
-        continue
-
-      # Apply filter
-      if self._viewmodel.filter_text:
-        if self._viewmodel.filter_text not in category.name.lower() and not any(self._viewmodel.filter_text in keyword.lower() for keyword in keywords):
+        # Skip Uncategorized
+        if category.name == 'Uncategorized':
           continue
 
-      category_row_layout = QHBoxLayout()
-      category_row_layout.setObjectName(
-        f"category_row_layout_{category_id}")
-      category_row_layout.setSizeConstraint(QLayout.SetMinimumSize)
-      category_row_layout.setContentsMargins(-1, 0, 0, -1)
-      category_row_layout.setAlignment(Qt.AlignLeft)
+        # Create category row widget
+        category_row_widget = QWidget()
+        category_row_widget.setObjectName("category_row_widget")
+        category_row_widget.setAutoFillBackground(True)
+        category_row_layout = QHBoxLayout(category_row_widget)
+        category_row_layout.setContentsMargins(0, 0, 0, 0)
+        category_row_layout.setSpacing(10)
 
-      category_button = QPushButton(
-        self.categorization_scrollAreaWidgetContents)
-      category_button.setObjectName(f"category_button_{category_id}")
-      category_button.clicked.connect(
-        lambda checked, c_id=category_id: self.show_category_dialog(c_id))
-      cat_label_sizePolicy.setHeightForWidth(
-        category_button.sizePolicy().hasHeightForWidth())
-      category_button.setSizePolicy(cat_label_sizePolicy)
+        # Indentation based on depth
+        indent = 20 * depth
+        category_row_layout.addSpacing(indent)
 
-      color = get_category_color_or_parent(category_id)
-      font_color = get_contrasting_text_color(color)
+        # Toggle Button for Categories with Children
+        if children_ids:
+          toggle_button = QPushButton()
+          toggle_button.setCheckable(True)
+          toggle_button.setChecked(category_data.get('expanded', True))
+          toggle_button.setFixedSize(16, 16)
+          toggle_button.setObjectName('toggle_button')
+          # Set icon based on expanded state
+          self._update_toggle_button_icon(
+            toggle_button, category_data['expanded'])
+          toggle_button.clicked.connect(
+              lambda checked, cid=category_id: self._toggle_category(cid)
+          )
+          category_row_layout.addWidget(toggle_button)
+        else:
+          # Align with toggle button space
+          category_row_layout.addSpacing(16)
 
-      if color:
+        # Color Indicator
+        color_indicator = QLabel()
+        color_indicator.setFixedSize(16, 16)
+        category_color = get_category_color_or_parent(category_id)
+        if category_color:
+          color_indicator.setStyleSheet(
+            f"background-color: {category_color}; border-radius: 8px;")
+        else:
+          color_indicator.setStyleSheet(
+            "background-color: #A0A0A0; border-radius: 8px;")
+        category_row_layout.addWidget(color_indicator)
+
+        # Category Button
+        category_button = QPushButton(category.name)
+        category_button.setObjectName(f"category_button_{category_id}")
+        category_button.clicked.connect(
+            lambda checked, c_id=category_id: self.show_category_dialog(
+              c_id)
+        )
+        category_button.setFont(QFont('Arial', 12))
         category_button.setStyleSheet(
-          f"background-color: {color}; color: {font_color};")
+            "background-color: transparent; color: #F9F9F9; border: none; padding: 5px 0; text-align: left;"
+        )
+        category_row_layout.addWidget(category_button)
 
-      depth = self._viewmodel.get_category_depth(category_id)
-      indent = 40 * depth
+        # Keywords as Chips
+        keywords_layout = QHBoxLayout()
+        keywords_layout.setSpacing(5)
+        displayed_keywords = keywords[:self._max_keywords_display]
+        if len(keywords) > self._max_keywords_display:
+          displayed_keywords.append('...')
+        for keyword in displayed_keywords:
+          keyword_label = QLabel(keyword)
+          keyword_label.setObjectName("keyword_chip")
+          keywords_layout.addWidget(keyword_label)
+        category_row_layout.addLayout(keywords_layout)
 
-      horizontalSpacer = QSpacerItem(
-        indent, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
-      category_row_layout.addItem(horizontalSpacer)
+        # Add the category row to the main layout
+        self.categories_layout.addWidget(category_row_widget)
 
-      category_button.setText(category.name)
-      font = QFont()
-      font.setPointSize(12)
-      category_button.setFont(font)
+        # If the category is expanded, add its children
+        if category_data.get('expanded', True) and children_ids:
+          child_categories = {
+              child_id: self._viewmodel.organized_categories[child_id]
+              for child_id in children_ids
+          }
+          add_categories(child_categories, depth + 1)
 
-      category_row_layout.addWidget(category_button)
+    # Start with root categories
+    root_categories = {
+        cid: cdata
+        for cid, cdata in self._viewmodel.organized_categories.items()
+        if cdata['category'].parent_category_id is None
+    }
+    add_categories(root_categories)
 
-      keywords_label = QLabel(
-        self.categorization_scrollAreaWidgetContents)
-      keywords_label.setText(' | '.join(keywords))
-      keywords_label.setSizePolicy(
-        QSizePolicy.Expanding, QSizePolicy.Expanding)
-      keywords_label.setWordWrap(True)
-      keywords_label.setFont(font)
+    # Add stretch to push content to the top
+    self.categories_layout.addStretch()
 
-      category_row_layout.addWidget(keywords_label)
+  def _category_matches_filter(self, category_data):
+    """ Check if a category or any of its descendants match the filter. """
+    category = category_data['category']
+    keywords = category_data['keywords']
+    children_ids = category_data.get('children', [])
+    filter_text = self._viewmodel.filter_text.lower()
 
-      category_layout.addLayout(category_row_layout)
+    # Check if the category itself matches the filter
+    if filter_text in category.name.lower() or any(filter_text in kw.lower() for kw in keywords):
+      return True
 
-    self.categorization_content_horizontalLayout.addLayout(category_layout)
+    # Recursively check if any child categories match the filter
+    for child_id in children_ids:
+      child_data = self._viewmodel.organized_categories[child_id]
+      if self._category_matches_filter(child_data):
+        return True
 
-  def show_category_dialog(self, category_id):
-    dialog = CategoryDialogView(self, self._viewmodel._category_service,
-                                self._viewmodel._keyword_service, category_id)
+    # No match found
+    return False
+
+  def _toggle_category(self, category_id):
+    # Toggle the expanded state
+    category_data = self._viewmodel.organized_categories[category_id]
+    category_data['expanded'] = not category_data.get('expanded', True)
+    # Refresh the category display
+    self._populate_categories()
+
+  def _update_toggle_button_icon(self, button, expanded):
+    if expanded:
+      # button.setIcon(QIcon(':/icons/arrow_down.png'))
+      button.setText('▼')
+    else:
+      # button.setIcon(QIcon(':/icons/arrow_right.png'))
+      button.setText('►')
+    button.setStyleSheet("background-color: transparent; border: none;")
+
+  def _clear_layout(self, layout):
+    """ Clear all widgets from a layout. """
+    while layout.count():
+      item = layout.takeAt(0)
+      widget = item.widget()
+      if widget is not None:
+        widget.deleteLater()
+      elif item.layout():
+        self._clear_layout(item.layout())
+
+  def show_category_dialog(self, category_id=None):
+    """ Show the category dialog to add or edit a category. """
+    dialog = CategoryDialogView(
+        self, self._viewmodel._category_service, self._viewmodel._keyword_service, category_id)
     if dialog.exec_():
       self._viewmodel.load_categories()
 
-  def restore_defaults(self):
+  def show_categorization_helper(self):
+    """ Show the categorization helper dialog. """
+    dialog = CategorizationHelperView(self, self._viewmodel._activity_service,
+                                      self._viewmodel._category_service, self._viewmodel._keyword_service)
+    dialog.exec_()
+    self._viewmodel.load_categories()
+
+  def retroactive_categorization(self):
+    """ Perform retroactive categorization with confirmation and progress dialog. """
     dialog = QMessageBox()
-    dialog.setWindowTitle("Restore defaults")
+    dialog.setWindowTitle("Retroactive Categorization")
     dialog.setText(
-        "Are you sure you want to restore default categories?\nThis action cannot be undone and might take a while.")
+        "Are you sure you want to retroactively categorize all entries based on the current ruleset?\n"
+        "This action cannot be undone and might take a while."
+    )
     dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
     dialog.setDefaultButton(QMessageBox.No)
     result = dialog.exec_()
 
-    if result == QMessageBox.Yes:
-      self._viewmodel.restore_defaults()
+    if result == QMessageBox.No:
+      return
 
-  def retroactive_categorization(self, skip_confirmation: bool = False):
-    if not skip_confirmation:
-      dialog = QMessageBox()
-      dialog.setWindowTitle("Retroactive Categorization")
-      dialog.setText(
-        "Are you sure you want to retroactively categorize all entries based on current ruleset?\n"
-        "This action cannot be undone and might take a while.")
-      dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-      dialog.setDefaultButton(QMessageBox.No)
-      result = dialog.exec_()
-
-      if result == QMessageBox.No:
-        return
-
-    self.progress_dialog = self.show_progress_dialog(
-      "Progress", "Categorizing entries...")
+    self.progress_dialog = self._show_progress_dialog(
+        "Progress", "Categorizing entries..."
+    )
 
     # Connect the progress signal before starting the categorization
     self._viewmodel.retroactive_categorization_progress.connect(
-      self.update_progress_dialog)
+        self._update_progress_dialog
+    )
 
     # Start the categorization process
     success = self._viewmodel.retroactive_categorization()
 
     # Disconnect the signal after the process is complete
     self._viewmodel.retroactive_categorization_progress.disconnect(
-      self.update_progress_dialog)
+        self._update_progress_dialog
+    )
 
     self.progress_dialog.close()
 
     if success:
       QMessageBox.information(
-        self, "Retroactive Categorization", "Categorization completed successfully.")
+          self, "Retroactive Categorization", "Categorization completed successfully."
+      )
     else:
       QMessageBox.critical(
-        self, "Retroactive Categorization", "An error occurred during categorization.")
+          self, "Retroactive Categorization", "An error occurred during categorization."
+      )
 
-  def update_progress_dialog(self, current: int, total: int):
+  def _update_progress_dialog(self, current: int, total: int):
+    """ Update the progress dialog during retroactive categorization. """
     if hasattr(self, 'progress_dialog'):
       progress = int((current / total) * 100)
       self.progress_dialog.setValue(progress)
       QCoreApplication.processEvents()
 
-  def show_progress_dialog(self, title, message):
+  def _show_progress_dialog(self, title: str, message: str) -> QProgressDialog:
+    """ Show a progress dialog. """
     progress_dialog = QProgressDialog(message, None, 0, 100, self)
     progress_dialog.setWindowTitle(title)
     progress_dialog.setWindowModality(Qt.WindowModal)
@@ -340,28 +404,42 @@ class CategoriesView(QWidget):
     QCoreApplication.processEvents()
     return progress_dialog
 
-  def show_categorization_helper(self):
-    dialog = CategorizationHelperView(self, self._viewmodel._activity_service,
-                                      self._viewmodel._category_service, self._viewmodel._keyword_service)
-    dialog.exec_()
-    self._viewmodel.load_categories()
+  def restore_defaults(self):
+    """ Restore default categories with confirmation. """
+    dialog = QMessageBox(self)
+    dialog.setWindowTitle("Restore Defaults")
+    dialog.setText(
+      "Are you sure you want to restore default categories?\n"
+      "This action cannot be undone and might take a while."
+    )
+    dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+    dialog.setDefaultButton(QMessageBox.No)
+    result = dialog.exec_()
 
-  def clear_layout(self, layout):
-    while layout.count():
-      item = layout.takeAt(0)
-      widget = item.widget()
-      if widget is not None:
-        widget.deleteLater()
-      else:
-        if isinstance(item, QSpacerItem):
-          continue
-        self.clear_layout(item.layout())
+    if result == QMessageBox.Yes:
+      self.progress_dialog = self._show_progress_dialog(
+        "Progress", "Restoring defaults and categorizing entries..."
+      )
 
-  def update_ui(self):
-    self.clear_layout(self.categorization_content_horizontalLayout)
-    self.categories_setup()
+      # Connect the progress signal
+      self._viewmodel.retroactive_categorization_progress.connect(
+        self._update_progress_dialog
+      )
+
+      # Perform restore defaults and retroactive categorization
+      self._viewmodel.restore_defaults()
+
+      # Disconnect the signal
+      self._viewmodel.retroactive_categorization_progress.disconnect(
+        self._update_progress_dialog
+      )
+
+      self.progress_dialog.close()
+      QMessageBox.information(
+        self, "Restore Defaults", "Default categories restored successfully."
+      )
 
   def closeEvent(self, event):
-    self._viewmodel.property_changed.disconnect(
-      self.on_viewmodel_property_changed)
+    """ Handle the close event. """
+    self._viewmodel.property_changed.disconnect(self.on_property_changed)
     super().closeEvent(event)
