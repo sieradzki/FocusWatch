@@ -63,8 +63,6 @@ class ActivityService:
 
     try:
       self._db_conn.execute_update(query, params)
-      logger.info(f"Updated category for activity {
-                  activity_id} to {category_id}")
       return True
     except Exception as e:
       logger.error(f"Failed to update category for activity: {e}")
