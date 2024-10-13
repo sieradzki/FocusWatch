@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 from focuswatch.viewmodels.settings_viewmodel import SettingsViewModel
-from focuswatch.viewmodels.categorization_viewmodel import CategorizationViewModel
+from focuswatch.viewmodels.categories_viewmodel import CategoriesViewModel
 from focuswatch.viewmodels.home_viewmodel import HomeViewModel
 from focuswatch.services.classifier_service import ClassifierService
 
@@ -35,7 +35,7 @@ class TestMainWindowViewModel(unittest.TestCase):
     self.assertIsInstance(
         self.viewmodel.settings_viewmodel, SettingsViewModel)
     self.assertIsInstance(
-        self.viewmodel.categorization_viewmodel, CategorizationViewModel)
+        self.viewmodel.categories_viewmodel, CategoriesViewModel)
     self.assertIsInstance(
         self.viewmodel.home_viewmodel, HomeViewModel)
 

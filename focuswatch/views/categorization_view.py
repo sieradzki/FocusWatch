@@ -11,7 +11,7 @@ from focuswatch.ui.categorization_helper_dialog import \
     CategorizationHelperDialog
 from focuswatch.ui.utils import (get_category_color_or_parent,
                                  get_contrasting_text_color)
-from focuswatch.viewmodels.categorization_viewmodel import \
+from focuswatch.viewmodels.categories_viewmodel import \
     CategorizationViewModel
 from focuswatch.views.dialogs.categorization_helper_dialog_view import \
     CategorizationHelperView
@@ -171,7 +171,7 @@ class CategorizationView(QWidget):
 
   def connect_signals(self):
     self._viewmodel.property_changed.connect(
-      self.on_viewmodel_property_changed)
+      self.on_property_changed)
 
     self.filter_input.textChanged.connect(self.on_filter_changed)
     self.categorization_addCategory.clicked.connect(self.show_category_dialog)
@@ -185,7 +185,7 @@ class CategorizationView(QWidget):
   def on_filter_changed(self, text):
     self._viewmodel.filter_text = text
 
-  def on_viewmodel_property_changed(self, property_name):
+  def on_property_changed(self, property_name):
     if property_name in ['filter_text', 'organized_categories']:
       self.update_categories_display()
 
