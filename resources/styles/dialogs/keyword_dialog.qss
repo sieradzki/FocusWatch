@@ -1,0 +1,85 @@
+QDialog {
+    background-color: #1e1e1e;
+}
+
+QLabel {
+    color: #F9F9F9;
+}
+
+QLineEdit {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    font-size: 14px;
+    color: #F9F9F9;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+QCheckBox {
+    color: #F9F9F9;
+    font-size: 14px;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
+QCheckBox::indicator:unchecked {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    border-radius: 2px;
+}
+
+QCheckBox::indicator:unchecked:hover {
+    border: 1px solid #4A4A4A;
+}
+
+QCheckBox::indicator:checked {
+    background-color: #007ACC;
+    border: 1px solid #007ACC;
+    border-radius: 2px;
+}
+
+QCheckBox::indicator:checked:hover {
+    border: 1px solid #1E90FF;
+}
+
+QCheckBox::indicator:disabled {
+    background-color: #2A2A2A;
+    border: 1px solid #4A4A4A;
+}
+
+QPushButton {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    border-radius: 4px;
+    color: #F9F9F9;
+    font-family: Arial;
+    font-size: 14px;
+    padding: 5px 10px;
+    text-decoration: none;
+}
+
+QPushButton:hover {
+    background-color: #252628;
+}
+
+QPushButton#deleteButton {
+    background-color: #D9534F;
+    color: #FFFFFF;
+    border: none;
+}
+
+QPushButton#deleteButton:hover {
+    background-color: #C9302C;
+}
+
+QDialogButtonBox {
+    button-layout: 0;
+}
+
+QLabel#titleLabel {
+    font-size: 18pt;
+    font-weight: bold;
+}
