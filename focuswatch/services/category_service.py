@@ -47,15 +47,18 @@ class CategoryService:
 
     insert_query = 'INSERT INTO categories (name, parent_category, color) VALUES (?, ?, ?)'
     insert_params = (
-      category.name, category.parent_category_id, category.color)
+        category.name, category.parent_category_id, category.color)
 
     try:
-      self._db_conn.execute_update(insert_query, insert_params)
-      logger.info(f"Created new category: {category.name}")
-      return True
+      cursor = self._db_conn.execute_update(
+        insert_query, insert_params, return_cursor=True)
+      new_category_id = cursor.lastrowid
+      logger.info(f"Created new category: {
+                  category.name} with ID {new_category_id}")
+      return new_category_id
     except Exception as e:
       logger.error(f"Failed to create category: {e}")
-      return False
+      return None
 
   def get_category_by_id(self, category_id: int) -> Optional[Category]:
     """Retrieve a category by its ID.
@@ -137,7 +140,7 @@ class CategoryService:
       return False
 
   def delete_category(self, category_id: int) -> bool:
-    """Delete a category from the database.
+    """ Delete a category from the database.
 
     Args:
       category_id: The ID of the category to delete.
@@ -145,12 +148,17 @@ class CategoryService:
     Returns:
       bool: True if the deletion was successful, False otherwise.
     """
-    query = "DELETE FROM categories WHERE id = ?"
-    params = (category_id,)
-
     try:
-      self._db_conn.execute_update(query, params)
+      # Delete the category
+      category_delete_query = "DELETE FROM categories WHERE id = ?"
+      self._db_conn.execute_update(category_delete_query, (category_id,))
       logger.info(f"Deleted category with ID: {category_id}")
+
+      # Delete keywords associated with the category
+      keyword_delete_query = "DELETE FROM keywords WHERE category_id = ?"
+      self._db_conn.execute_update(keyword_delete_query, (category_id,))
+      logger.info(f"Deleted keywords for category ID: {category_id}")
+
       return True
     except Exception as e:
       logger.error(f"Failed to delete category: {e}")

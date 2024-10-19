@@ -1,221 +1,145 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-                               QComboBox, QPushButton, QGridLayout, QDialogButtonBox,
-                               QColorDialog, QMessageBox, QFrame, QSizePolicy, QSpacerItem, QMenu)
-from PySide6.QtGui import QColor, QFont
-from PySide6.QtCore import Qt, QSize, QCoreApplication
-from focuswatch.viewmodels.dialogs.category_dialog_viewmodel import CategoryDialogViewModel
-from focuswatch.views.dialogs.keyword_dialog_view import KeywordDialogView
-from focuswatch.ui.utils import get_category_color
 import logging
+from functools import partial
+from typing import TYPE_CHECKING, Optional
+
+from PySide6.QtCore import Qt, Slot
+from PySide6.QtGui import QAction, QColor
+from PySide6.QtWidgets import (QColorDialog, QComboBox, QDialog,
+                               QDialogButtonBox, QFormLayout, QFrame,
+                               QGridLayout, QHBoxLayout, QLabel, QLineEdit,
+                               QMenu, QMessageBox, QPushButton, QScrollArea,
+                               QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
+
+from focuswatch.utils.resource_utils import apply_stylesheet
+from focuswatch.viewmodels.dialogs.category_dialog_viewmodel import \
+    CategoryDialogViewModel
+from focuswatch.views.dialogs.keyword_dialog_view import KeywordDialogView
+
+if TYPE_CHECKING:
+  from focuswatch.services.category_service import CategoryService
+  from focuswatch.services.keyword_service import KeywordService
 
 logger = logging.getLogger(__name__)
 
 
 class CategoryDialogView(QDialog):
-  def __init__(self, parent, category_service, keyword_service, category_id=None):
+  def __init__(self,
+               parent: QWidget,
+               category_service: 'CategoryService',
+               keyword_service: 'KeywordService',
+               category_id: Optional[int] = None):
     super().__init__(parent)
     self._viewmodel = CategoryDialogViewModel(
-      category_service, keyword_service, category_id)
-    self.setupUi()
-    self.connectSignals()
+        category_service, keyword_service, category_id)
+    self._setup_ui()
+    self._connect_signals()
 
-  def setupUi(self):
-    if not self.objectName():
-      self.setObjectName(u"Dialog")
-    self.resize(464, 422)
+    apply_stylesheet(self, "dialogs/category_dialog.qss")
+
+  def _setup_ui(self):
+    self.setWindowTitle(
+      "Edit Category" if self._viewmodel._category.id else "Add Category")
+    self.setMinimumSize(500, 500)
 
     # Main layout
-    self.verticalLayout = QVBoxLayout(self)
-    self.verticalLayout.setObjectName(u"verticalLayout")
+    mainLayout = QVBoxLayout(self)
+    mainLayout.setSpacing(10)
+    mainLayout.setContentsMargins(20, 20, 20, 20)
 
-    # Dialog title
-    self.label = QLabel(self)
-    self.label.setObjectName(u"label")
-    font = QFont()
-    font.setPointSize(16)
-    self.label.setFont(font)
+    # Title label
+    self.titleLabel = QLabel(self)
+    self.titleLabel.setObjectName("titleLabel")
+    self.titleLabel.setText(
+      "Edit Category" if self._viewmodel._category.id else "Add Category")
+    mainLayout.addWidget(self.titleLabel)
 
-    self.verticalLayout.addWidget(self.label)
+    # Form layout for inputs
+    formLayout = QFormLayout()
+    formLayout.setLabelAlignment(Qt.AlignRight)
+    formLayout.setSpacing(10)
 
-    # Frame
-    self.frame = QFrame(self)
-    self.frame.setObjectName(u"frame")
-    self.frame.setFrameShape(QFrame.StyledPanel)
-    self.frame.setFrameShadow(QFrame.Raised)
-    self.verticalLayout_2 = QVBoxLayout(self.frame)
-    self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-
-    self.horizontalLayout_2 = QHBoxLayout()
-    self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-
-    # Name label
-    self.nameLabel = QLabel(self.frame)
-    self.nameLabel.setObjectName(u"nameLabel")
-    sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Preferred)
-    sizePolicy.setHorizontalStretch(0)
-    sizePolicy.setVerticalStretch(0)
-    sizePolicy.setHeightForWidth(
-      self.nameLabel.sizePolicy().hasHeightForWidth())
-    self.nameLabel.setSizePolicy(sizePolicy)
-    self.nameLabel.setMinimumSize(QSize(40, 0))
-
-    self.horizontalLayout_2.addWidget(self.nameLabel)
-
-    # Name line edit
-    self.name_lineEdit = QLineEdit(self.frame)
-    self.name_lineEdit.setObjectName(u"name_lineEdit")
-    sizePolicy1 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
-    sizePolicy1.setHorizontalStretch(0)
-    sizePolicy1.setVerticalStretch(0)
-    sizePolicy1.setHeightForWidth(
-      self.name_lineEdit.sizePolicy().hasHeightForWidth())
-    self.name_lineEdit.setSizePolicy(sizePolicy1)
-    self.name_lineEdit.setMaximumSize(QSize(16777215, 30))
-    self.name_lineEdit.setText(self._viewmodel.name)
-
-    self.horizontalLayout_2.addWidget(self.name_lineEdit)
-
-    # Spacer
-    self.horizontalSpacer_2 = QSpacerItem(
-      40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-    self.horizontalLayout_2.addItem(self.horizontalSpacer_2)
-
-    self.verticalLayout_2.addLayout(self.horizontalLayout_2)
-
-    # Parent Category label
-    self.horizontalLayout_4 = QHBoxLayout()
-    self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-    self.parentLabel = QLabel(self.frame)
-    self.parentLabel.setObjectName(u"parentLabel")
-    self.parentLabel.setText("Parent category:")
-    self.horizontalLayout_4.addWidget(self.parentLabel)
+    # Name input
+    self.nameLineEdit = QLineEdit(self)
+    self.nameLineEdit.setObjectName("nameLineEdit")
+    self.nameLineEdit.setText(self._viewmodel.name)
+    formLayout.addRow("Name:", self.nameLineEdit)
 
     # Parent Category combo box
-    self.parent_comboBox = QComboBox(self.frame)
-    self.parent_comboBox.setObjectName(u"parent_comboBox")
+    self.parentComboBox = QComboBox(self)
+    self.parentComboBox.setObjectName("parentComboBox")
     self.populate_parent_combo()
-    self.parent_comboBox.currentIndexChanged.connect(self.on_parent_changed)
-    self.horizontalLayout_4.addWidget(self.parent_comboBox)
+    formLayout.addRow("Parent Category:", self.parentComboBox)
 
-    self.horizontalSpacer_3 = QSpacerItem(
-      40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-
-    self.horizontalLayout_4.addItem(self.horizontalSpacer_3)
-    self.verticalLayout_2.addLayout(self.horizontalLayout_4)
-
-    # Color
-    self.horizontalLayout = QHBoxLayout()
-    self.horizontalLayout.setObjectName(u"horizontalLayout")
-    self.colorLabel = QLabel(self.frame)
-    self.colorLabel.setObjectName(u"colorLabel")
-    self.horizontalLayout.addWidget(self.colorLabel)
-
-    self.selectColor_pushButton = QPushButton(self.frame)
-    self.selectColor_pushButton.setObjectName(u"selectColor_pushButton")
-    self.selectColor_pushButton.setMinimumSize(QSize(40, 20))
-    self.selectColor_pushButton.setMaximumSize(QSize(40, 20))
+    # Color selection
+    colorLayout = QHBoxLayout()
+    self.selectColorButton = QPushButton(self)
+    self.selectColorButton.setObjectName("selectColorButton")
+    self.selectColorButton.setFixedSize(40, 20)
     self.update_color_button()
-    self.horizontalLayout.addWidget(self.selectColor_pushButton)
+    colorLayout.addWidget(self.selectColorButton)
+    colorLayout.addStretch()
+    formLayout.addRow("Color:", colorLayout)
 
-    self.horizontalSpacer = QSpacerItem(
-      40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+    mainLayout.addLayout(formLayout)
 
-    self.horizontalLayout.addItem(self.horizontalSpacer)
-    self.verticalLayout_2.addLayout(self.horizontalLayout)
+    # Keywords Section
+    keywordsLabel = QLabel("Keywords:", self)
+    keywordsLabel.setObjectName("keywordsLabel")
+    mainLayout.addWidget(keywordsLabel)
 
-    # Keywords
-    self.frame_2 = QFrame(self.frame)
-    self.frame_2.setObjectName(u"frame_2")
-    self.frame_2.setFrameShape(QFrame.StyledPanel)
-    self.frame_2.setFrameShadow(QFrame.Raised)
-    self.verticalLayout_3 = QVBoxLayout(self.frame_2)
-    self.verticalLayout_3.setSpacing(1)
-    self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-    self.verticalLayout_3.setContentsMargins(1, 1, 1, 1)
-    self.horizontalLayout_5 = QHBoxLayout()
-    self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
-    self.keywordsLabel = QLabel(self.frame_2)
-    self.keywordsLabel.setObjectName(u"keywordsLabel")
+    # Keywords Frame
+    keywordsFrame = QFrame(self)
+    keywordsFrame.setObjectName("keywordFrame")
+    keywordsFrameLayout = QVBoxLayout(keywordsFrame)
+    keywordsFrameLayout.setContentsMargins(5, 5, 5, 5)
 
-    self.horizontalLayout_5.addWidget(self.keywordsLabel)
+    # Scroll area for keywords
+    scrollArea = QScrollArea(self)
+    scrollArea.setWidgetResizable(True)
+    scrollArea.setFixedHeight(150)
 
-    self.keywords_gridLayout = QGridLayout()
-    self.keywords_gridLayout.setObjectName(u"keywords_gridLayout")
-
+    scrollContent = QWidget()
+    scrollContent.setObjectName("scrollContent")
+    self.keywordsGridLayout = QGridLayout(scrollContent)
+    self.keywordsGridLayout.setSpacing(5)
     self.setup_keyword_grid()
 
-    self.horizontalLayout_5.addLayout(self.keywords_gridLayout)
+    scrollArea.setWidget(scrollContent)
+    keywordsFrameLayout.addWidget(scrollArea)
 
-    self.horizontalSpacer_5 = QSpacerItem(
-      40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+    mainLayout.addWidget(keywordsFrame)
 
-    self.horizontalLayout_5.addItem(self.horizontalSpacer_5)
+    # Note label
+    noteLabel = QLabel(
+      "Note: Click on a keyword to edit, right-click to remove.", self)
+    noteLabel.setObjectName("noteLabel")
+    mainLayout.addWidget(noteLabel)
 
-    self.verticalLayout_3.addLayout(self.horizontalLayout_5)
+    # Spacer
+    mainLayout.addStretch()
 
-    self.verticalSpacer_2 = QSpacerItem(
-      20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-
-    self.verticalLayout_3.addItem(self.verticalSpacer_2)
-
-    # note
-    self.noteLabel = QLabel(self.frame_2)
-    self.noteLabel.setObjectName(u"noteLabel")
-
-    self.verticalLayout_3.addWidget(self.noteLabel)
-
-    self.verticalLayout_2.addWidget(self.frame_2)
-
-    self.verticalSpacer = QSpacerItem(
-      20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-
-    self.verticalLayout_2.addItem(self.verticalSpacer)
-
-    # Buttons
-    self.buttonBox = QDialogButtonBox(self)
-    self.buttonBox.setObjectName("buttonBox")
-    self.buttonBox.setOrientation(Qt.Horizontal)
-    self.buttonBox.setStandardButtons(
-      QDialogButtonBox.Cancel | QDialogButtonBox.Save)
-
+    # Delete button (if applicable)
     if self._viewmodel.can_delete_category():
-      self.deleteButton = QPushButton(self.frame)
+      self.deleteButton = QPushButton("Delete Category", self)
       self.deleteButton.setObjectName("deleteButton")
-      self.deleteButton.setText("Delete category")
-      self.deleteButton.setStyleSheet("background-color: red")
-      self.verticalLayout_2.addWidget(self.deleteButton)
+      mainLayout.addWidget(self.deleteButton)
 
-    self.verticalLayout.addWidget(self.frame)
-    self.verticalLayout.addWidget(self.buttonBox)
+    # Dialog buttons
+    self.buttonBox = QDialogButtonBox(
+      QDialogButtonBox.Save | QDialogButtonBox.Cancel, self)
+    mainLayout.addWidget(self.buttonBox)
 
-    self.retranslateUi()
+    # Set main layout
+    self.setLayout(mainLayout)
 
-  def retranslateUi(self):
-    self.setWindowTitle(QCoreApplication.translate(
-      "Dialog", "Edit Category" if self._viewmodel._category else "Add Category", None))
-    self.label.setText(QCoreApplication.translate(
-      "Dialog", u"Edit Category" if self._viewmodel._category else u"Add a category", None))
-    self.nameLabel.setText(QCoreApplication.translate("Dialog", u"Name", None))
-    self.parentLabel.setText(QCoreApplication.translate(
-      "Dialog", u"Parent category", None))
-
-    self.colorLabel.setText(
-      QCoreApplication.translate("Dialog", u"Color", None))
-    self.selectColor_pushButton.setText("")
-    self.keywordsLabel.setText(
-      QCoreApplication.translate("Dialog", u"Keywords", None))
-    self.noteLabel.setText(QCoreApplication.translate(
-      "Dialog", u"Note: Click on keyword to edit, right-click on keyword to remove it", None))
-
-  def connectSignals(self):
-    # Connect ViewModel properties to UI elements
+  def _connect_signals(self):
+    # Connect ViewModel property changes to UI updates
     self._viewmodel.property_changed.connect(self.on_property_changed)
 
-    # Connect UI elements to ViewModel
-    self.name_lineEdit.textChanged.connect(self.on_name_changed)
-    self.parent_comboBox.currentIndexChanged.connect(
-        self.on_parent_changed)
-    self.selectColor_pushButton.clicked.connect(self.show_color_dialog)
+    # Connect UI elements to ViewModel properties and methods
+    self.nameLineEdit.textChanged.connect(self.on_name_changed)
+    self.parentComboBox.currentIndexChanged.connect(self.on_parent_changed)
+    self.selectColorButton.clicked.connect(self.show_color_dialog)
 
     self.buttonBox.accepted.connect(self.accept)
     self.buttonBox.rejected.connect(self.reject)
@@ -223,9 +147,10 @@ class CategoryDialogView(QDialog):
     if hasattr(self, 'deleteButton'):
       self.deleteButton.clicked.connect(self.delete_category)
 
+  @Slot(str)
   def on_property_changed(self, property_name):
     if property_name == 'name':
-      self.name_lineEdit.setText(self._viewmodel.name)
+      self.nameLineEdit.setText(self._viewmodel.name)
     elif property_name == 'parent_category_id':
       self.populate_parent_combo()
     elif property_name == 'color':
@@ -233,100 +158,115 @@ class CategoryDialogView(QDialog):
     elif property_name == 'keywords':
       self.setup_keyword_grid()
 
+  @Slot(str)
   def on_name_changed(self, text):
     self._viewmodel.name = text
 
+  @Slot(int)
   def on_parent_changed(self, index):
-    self._viewmodel.parent_category_id = self.parent_comboBox.itemData(index)
+    self._viewmodel.parent_category_id = self.parentComboBox.itemData(index)
 
   def populate_parent_combo(self):
-    self.parent_comboBox.clear()
-    self.parent_comboBox.addItem("None", None)
+    self.parentComboBox.blockSignals(True)
+    self.parentComboBox.clear()
+    self.parentComboBox.addItem("None", None)
 
     for category in self._viewmodel.get_all_categories():
-      if (not self._viewmodel._category or category.id != self._viewmodel._category.id) and category.name != "Uncategorized":
-        self.parent_comboBox.addItem(category.name, category.id)
+      if category.id != self._viewmodel._category.id and category.name != "Uncategorized":
+        self.parentComboBox.addItem(category.name, category.id)
 
-    if self._viewmodel.parent_category_id:
-      index = self.parent_comboBox.findData(self._viewmodel.parent_category_id)
+    current_id = self._viewmodel.parent_category_id
+    if current_id:
+      index = self.parentComboBox.findData(current_id)
       if index >= 0:
-        self.parent_comboBox.setCurrentIndex(index)
+        self.parentComboBox.setCurrentIndex(index)
+    else:
+      self.parentComboBox.setCurrentIndex(0)
+    self.parentComboBox.blockSignals(False)
 
   def update_color_button(self):
     color = QColor(
       self._viewmodel.color) if self._viewmodel.color else QColor(Qt.white)
-    self.selectColor_pushButton.setStyleSheet(
-      f"background-color: {color.name()};")
+    self.selectColorButton.setStyleSheet(f"background-color: {color.name()};")
 
   def setup_keyword_grid(self):
     # Clear existing buttons
-    for i in reversed(range(self.keywords_gridLayout.count())):
-      widget = self.keywords_gridLayout.itemAt(i).widget()
-      if widget:
-        widget.setParent(None)
+    while self.keywordsGridLayout.count():
+      item = self.keywordsGridLayout.takeAt(0)
+      widget = item.widget()
+      if widget is not None:
+        widget.deleteLater()
+      else:
+        del item
 
-    row, col = 0, 0
-    for keyword in self._viewmodel.keywords:
-      keywordButton = QPushButton(keyword.name)
-      keywordButton.setObjectName(
-        f"keywordButton_{keyword.id or keyword.name}")
-      # Edit on left-click
-      keywordButton.clicked.connect(
-        lambda checked, k=keyword: self.edit_keyword(k))
-      self.keywords_gridLayout.addWidget(keywordButton, row, col)
-      # Delete on right-click # TODO temporarily disabled
-      # keywordButton.mouseReleaseEvent = lambda event: self.keyword_mouse_release_event(
-      # event, keywordButton)
+    self.keywordsGridLayout.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+
+    max_columns = 4
+    for i in range(max_columns):
+      self.keywordsGridLayout.setColumnStretch(i, 1)
+
+    row = 0
+    col = 0
+    for index, keyword in enumerate(self._viewmodel.keywords):
+      keywordButton = QPushButton(keyword.name, self)
+      keywordButton.setObjectName(f"keywordButton_{index}")
+      keywordButton.setProperty("class", "keywordButton")
+      keywordButton.setCursor(Qt.PointingHandCursor)
+
+      keywordButton.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+      keywordButton.setFixedHeight(30)
+
+      keywordButton.clicked.connect(partial(self.edit_keyword, index))
+      keywordButton.setContextMenuPolicy(Qt.CustomContextMenu)
+      keywordButton.customContextMenuRequested.connect(
+          partial(self.show_keyword_context_menu, index, keywordButton))
+      self.keywordsGridLayout.addWidget(keywordButton, row, col)
 
       col += 1
-      if col >= 4:
+      if col >= max_columns:
         col = 0
         row += 1
 
-    addKeywordButton = QPushButton("+")
+    # Place the '+' button in a new row, spanning all columns
+    row += 1
+    self.keywordsGridLayout.addItem(QSpacerItem(
+      0, 0, QSizePolicy.Minimum, QSizePolicy.Minimum), row, 0)
+
+    addKeywordButton = QPushButton("+", self)
+    addKeywordButton.setObjectName("addKeywordButton")
+    addKeywordButton.setCursor(Qt.PointingHandCursor)
+    addKeywordButton.setFixedHeight(30)
+    addKeywordButton.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     addKeywordButton.clicked.connect(self.show_keyword_dialog)
-    self.keywords_gridLayout.addWidget(addKeywordButton, row + 1, 0, 1, 4)
+    self.keywordsGridLayout.addWidget(addKeywordButton, row, 0, 1, max_columns)
 
-  def keyword_mouse_release_event(self, event, button):
-    """ Override mouseReleaseEvent to handle right-click. """
-    if event.button() == Qt.RightButton:
-      self.delete_keyword(button)
-    else:
-      # Call the original mouseReleaseEvent for other mouse buttons
-      QPushButton.mouseReleaseEvent(button, event)
+  def show_keyword_context_menu(self, index, button, pos):
+    menu = QMenu()
+    delete_action = QAction('Delete', self)
+    delete_action.triggered.connect(partial(self.delete_keyword, index))
+    menu.addAction(delete_action)
+    menu.exec_(button.mapToGlobal(pos))
 
-  def edit_keyword(self, keyword):
-    # if editing category pass by id
-    if self._viewmodel._category.id:
-      dialog = KeywordDialogView(
-        self, self._viewmodel._keyword_service, keyword_id=keyword.id)
-    # if creating new category pass by keyword
-    else:
-      dialog = KeywordDialogView(
-        self, self._viewmodel._keyword_service, keyword=keyword)
-    result = dialog.exec_()
-    if result == QDialog.Accepted:
-      updated_keyword = dialog._viewmodel.get_keyword()
-      if updated_keyword != keyword:
-        self._viewmodel.update_keyword(updated_keyword)
-    elif result == KeywordDialogView.Deleted():
-      self._viewmodel.remove_keyword(keyword.id)
-
-  def delete_keyword(self, button):
-    # if editing category pass by id
-    if self._viewmodel._category.id:
-      keyword_id = int(button.objectName().split('_')[-1])
-      self._viewmodel.remove_keyword(keyword_id)
-    # if creating new category pass by name
-    else:
-      keyword_name = button.text()
-      self._viewmodel.remove_keyword(keyword_name=keyword_name)
-
-  def show_keyword_dialog(self):  # TODO rename to add_keyword ?
-    dialog = KeywordDialogView(self, self._viewmodel._keyword_service)
+  def edit_keyword(self, index):
+    keyword = self._viewmodel.keywords[index]
+    dialog = KeywordDialogView(self, keyword=keyword)
+    dialog.keyword_deleted.connect(partial(self.delete_keyword, index))
     if dialog.exec_() == QDialog.Accepted:
-      new_keyword = dialog._viewmodel.get_keyword()
-      self._viewmodel.add_keyword(new_keyword)
+      updated_keyword = dialog.keyword_data
+      self._viewmodel.update_keyword(
+          index, updated_keyword.name, updated_keyword.match_case)
+      self.setup_keyword_grid()
+
+  def delete_keyword(self, index):
+    self._viewmodel.remove_keyword(index)
+    self.setup_keyword_grid()
+
+  def show_keyword_dialog(self):
+    dialog = KeywordDialogView(self)
+    if dialog.exec_() == QDialog.Accepted:
+      new_keyword = dialog.keyword_data
+      self._viewmodel.add_keyword(new_keyword.name, new_keyword.match_case)
+      self.setup_keyword_grid()
 
   def accept(self):
     if self._viewmodel.save_category():
@@ -346,9 +286,6 @@ class CategoryDialogView(QDialog):
 
   def show_color_dialog(self):
     color = QColorDialog.getColor(QColor(
-      self._viewmodel.color) if self._viewmodel.color else QColor(Qt.white), self)
+        self._viewmodel.color) if self._viewmodel.color else QColor(Qt.white), self)
     if color.isValid():
       self._viewmodel.color = color.name()
-
-  def on_parent_changed(self, index):
-    self._viewmodel.parent_category_id = self.parent_comboBox.itemData(index)

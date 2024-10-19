@@ -1,0 +1,132 @@
+QDialog {
+    background-color: #1e1e1e;
+}
+
+QLabel {
+    color: #F9F9F9;
+}
+
+QToolTip {
+    background-color: #1b1c1e;
+    color: #F9F9F9;
+    border: 1px solid #363739;
+    padding: 5px;
+    border-radius: 4px;
+    font-family: Arial;
+    font-size: 12px;
+}
+
+QLineEdit, QComboBox {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    font-size: 14px;
+    color: #F9F9F9;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+QComboBox QAbstractItemView {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    color: #F9F9F9;
+    selection-background-color: #252628;
+    selection-color: #F9F9F9;
+    outline: none;
+}
+
+QPushButton {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    border-radius: 4px;
+    color: #F9F9F9;
+    font-family: Arial;
+    font-size: 14px;
+    padding: 5px 10px;
+    text-decoration: none;
+}
+
+QPushButton:hover {
+    background-color: #252628;
+}
+
+QPushButton:active {
+    position: relative;
+    top: 1px;
+}
+
+QPushButton#deleteButton {
+    background-color: #D9534F;
+    color: #FFFFFF;
+    border: none;
+}
+
+QPushButton#deleteButton:hover {
+    background-color: #C9302C;
+}
+
+QPushButton#selectColorButton {
+    border: none;
+    width: 40px;
+    height: 20px;
+    background-color: #1b1c1e;
+}
+
+QPushButton#selectColorButton:hover {
+    background-color: #252628;
+}
+
+QPushButton#addKeywordButton {
+    font-size: 14pt;
+}
+
+QPushButton.keywordButton {
+    padding: 5px;
+    border: 1px solid #363739;
+    border-radius: 4px;
+    background-color: #2A2A2A;
+    color: #F9F9F9;
+}
+
+QPushButton.keywordButton:hover {
+    background-color: #252628;
+}
+
+QFrame#keywordFrame {
+    border: 1px solid #363739;
+    border-radius: 4px;
+    background-color: #1e1e1e;
+}
+
+QScrollArea {
+    background-color: #1e1e1e;
+    border: none;
+}
+
+QWidget#scrollContent {
+    background-color: #1e1e1e;
+}
+
+QLabel#noteLabel {
+    font-size: 10pt;
+    color: #A0A0A0;
+}
+
+QDialogButtonBox {
+    button-layout: 0; /* Align buttons to the right */
+}
+
+QLabel#titleLabel {
+    font-size: 18pt;
+    font-weight: bold;
+}
+
+QMenu {
+    background-color: #1b1c1e;
+    color: #F9F9F9;
+    border: 1px solid #363739;
+}
+
+QMenu::item:selected {
+    background-color: #252628;
+}
+
