@@ -6,9 +6,7 @@ from PySide6.QtCore import Property, Signal, Slot
 
 from focuswatch.models.category import Category
 from focuswatch.models.keyword import Keyword
-from focuswatch.services.activity_service import ActivityService
-from focuswatch.services.category_service import CategoryService
-from focuswatch.services.keyword_service import KeywordService
+from focuswatch.services.categorization_service import CategorizationService
 from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 
 logger = logging.getLogger(__name__)
@@ -32,6 +30,8 @@ class CategoriesViewModel(BaseViewModel):
     self._category_service = category_service
     self._keyword_service = keyword_service
     self._classifier = classifier_service
+    self._categorization_service = CategorizationService(
+      activity_service, self._classifier)
 
     self._categories: List[Category] = []
     self._filter_text: str = ""
@@ -146,52 +146,12 @@ class CategoriesViewModel(BaseViewModel):
     self.load_categories()
     return True
 
-  def retroactive_categorization(self) -> bool:
-    """ Perform retroactive categorization of activities. """
-    # Fetch all activities
-    activities = self._activity_service.get_all_activities()
-    total_activities = len(activities)
-    self.retroactive_categorization_progress.emit(0, total_activities)
-
-    # Group activities by (window_class, window_name)
-
-    activity_groups = defaultdict(list)
-    for activity in activities:
-      key = (activity.window_class, activity.window_name)
-      activity_groups[key].append(activity)
-
-    # Process each group
-    processed_activities = 0
-    total_groups = len(activity_groups)
-    self.retroactive_categorization_progress.emit(0, total_activities)
-
-    for i, (key, group_activities) in enumerate(activity_groups.items(), start=1):
-      window_class, window_name = key
-      # Classify once per group
-      category_id = self._classifier.classify_entry(
-        window_class, window_name)
-
-      # Find activities that need updating
-      activities_to_update = [
-          activity for activity in group_activities if activity.category_id != category_id
-      ]
-
-      if activities_to_update:
-        # Update all activities in one query
-        activity_ids = [activity.id for activity in activities_to_update]
-        self._activity_service.bulk_update_category(
-          activity_ids, category_id)
-
-      processed_activities += len(group_activities)
-
-      # Emit progress signal
-      self.retroactive_categorization_progress.emit(
-        processed_activities, total_activities)
-
-    # Final progress update
-    self.retroactive_categorization_progress.emit(
-      total_activities, total_activities)
-    return True
+  @Slot(result=bool)
+  def retroactive_categorization(self):
+    """ Perform retroactive categorization. """
+    return self._categorization_service.retroactive_categorization(
+        progress_callback=self.retroactive_categorization_progress.emit
+      )
 
   def get_top_uncategorized_window_classes(self, limit: int = 10) -> List[tuple]:
     """ Get the top uncategorized window classes. """
