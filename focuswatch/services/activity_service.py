@@ -79,7 +79,7 @@ class ActivityService:
       bool: True if the categories were updated successfully, False otherwise.
     """
     if not activity_ids:
-        return True
+      return True
 
     # Construct placeholders for parameterized query
     placeholders = ','.join(['?'] * len(activity_ids))
@@ -88,11 +88,11 @@ class ActivityService:
     params = [category_id] + activity_ids
 
     try:
-        self._db_conn.execute_update(query, params)
-        return True
+      self._db_conn.execute_update(query, params)
+      return True
     except Exception as e:
-        logger.error(f"Failed to bulk update categories for activities: {e}")
-        return False
+      logger.error(f"Failed to bulk update categories for activities: {e}")
+      return False
 
   def get_all_activities(self) -> List[Activity]:
     """Return all activity entries in the database.
@@ -367,54 +367,57 @@ class ActivityService:
                    window_class} in period: {e}")
       return None
 
-  def get_top_uncategorized_window_classes(self, limit: int = 10) -> List[Tuple[int, str, int]]:
-    """Return the top uncategorized window classes sorted by total time spent.
-
-    Args:
-      limit: The maximum number of window classes to return.
-
-    Returns:
-      List[Tuple[int, str, int]]: A list of tuples containing (id, window_class, total_time_seconds).
-    """
+  def get_top_uncategorized_window_classes(self, limit: int = 10, offset: int = 0) -> List[Tuple[str, int]]:
+    """ Return the top uncategorized window classes sorted by total time spent. """
     query = """
-      SELECT id, window_class,
+      SELECT window_class,
       SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
       FROM activity_log
       WHERE category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized')
       GROUP BY window_class
       ORDER BY total_time_seconds DESC
-      LIMIT ?
+      LIMIT ? OFFSET ?
     """
-    params = (limit,)
-
+    params = (limit, offset)
     try:
       return self._db_conn.execute_query(query, params)
     except Exception as e:
       logger.error(f"Failed to retrieve top uncategorized window classes: {e}")
       return []
 
-  def get_top_uncategorized_window_names(self, limit: int = 10) -> List[Tuple[int, str, int]]:
-    """Return the top uncategorized window names sorted by total time spent.
-
-    Args:
-      limit: The maximum number of window names to return.
-
-    Returns:
-      List[Tuple[int, str, int]]: A list of tuples containing (id, window_name, total_time_seconds).
-    """
+  def get_top_uncategorized_window_names(self, limit: int = 10, offset: int = 0) -> List[Tuple[str, int]]:
+    """ Return the top uncategorized window names sorted by total time spent. """
     query = """
-      SELECT id, window_name,
+      SELECT window_name,
       SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
       FROM activity_log
       WHERE category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized')
       GROUP BY window_name
       ORDER BY total_time_seconds DESC
-      LIMIT ?
+      LIMIT ? OFFSET ?
     """
-    params = (limit,)
-
+    params = (limit, offset)
     try:
       return self._db_conn.execute_query(query, params)
     except Exception as e:
       logger.error(f"Failed to retrieve top uncategorized window names: {e}")
+      return []
+
+  def get_top_uncategorized_entries(self, limit: int = 10, offset: int = 0) -> List[Tuple[str, str, int]]:
+    """ Return the top uncategorized entries sorted by total time spent. """
+    query = """
+        SELECT window_class, window_name,
+              SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
+        FROM activity_log
+        WHERE category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized')
+        GROUP BY window_class, window_name
+        ORDER BY total_time_seconds DESC
+        LIMIT ? OFFSET ?
+      """
+    params = (limit, offset)
+    try:
+      rows = self._db_conn.execute_query(query, params)
+      return [(row[0], row[1], row[2]) for row in rows]
+    except Exception as e:
+      logger.error(f"Failed to retrieve top uncategorized entries: {e}")
       return []
