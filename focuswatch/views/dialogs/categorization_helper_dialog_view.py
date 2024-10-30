@@ -193,6 +193,7 @@ class CategorizationHelperDialogView(QDialog):
     match_case_label = QLabel("Match Case")
     match_case_label.setAlignment(Qt.AlignCenter)
     match_case_label.setFixedWidth(100)
+    match_case_label.setFixedHeight(30)
     match_case_label.setObjectName("headerLabel")
     header_layout.addWidget(match_case_label)
 
@@ -341,7 +342,18 @@ class CategorizationHelperDialogView(QDialog):
   def update_categories(self):
     """ Update categories in all combo boxes. """
     for category_combo in self.category_combos:
+      # Save the current selection
+      current_category_id = category_combo.currentData()
       self.populate_category_combo(category_combo)
+      # Restore the selection if it still exists
+      index = category_combo.findData(current_category_id)
+      if index != -1:
+        category_combo.setCurrentIndex(index)
+      else:
+        # If the previously selected category was deleted, default to 'Uncategorized'
+        index = category_combo.findText("Uncategorized")
+        if index != -1:
+          category_combo.setCurrentIndex(index)
 
   @Slot()
   def apply_changes(self):
