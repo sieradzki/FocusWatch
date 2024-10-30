@@ -7,14 +7,12 @@ from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout, QLineEdit,
                                QScrollArea, QSizePolicy, QSpacerItem,
                                QVBoxLayout, QWidget)
 
-from focuswatch.ui.categorization_helper_dialog import \
-    CategorizationHelperDialog
 from focuswatch.ui.utils import (get_category_color_or_parent,
                                  get_contrasting_text_color)
 from focuswatch.utils.resource_utils import apply_styles, apply_stylesheet
 from focuswatch.viewmodels.categories_viewmodel import CategoriesViewModel
 from focuswatch.views.dialogs.categorization_helper_dialog_view import \
-    CategorizationHelperView
+    CategorizationHelperDialogView
 from focuswatch.views.dialogs.category_dialog_view import CategoryDialogView
 
 logger = logging.getLogger(__name__)
@@ -337,8 +335,8 @@ class CategoriesView(QWidget):
 
   def show_categorization_helper(self):
     """ Show the categorization helper dialog. """
-    dialog = CategorizationHelperView(self, self._viewmodel._activity_service,
-                                      self._viewmodel._category_service, self._viewmodel._keyword_service)
+    dialog = CategorizationHelperDialogView(self, self._viewmodel._activity_service,
+                                            self._viewmodel._category_service, self._viewmodel._keyword_service, self._viewmodel._classifier)
     dialog.exec_()
     self._viewmodel.load_categories()
 
