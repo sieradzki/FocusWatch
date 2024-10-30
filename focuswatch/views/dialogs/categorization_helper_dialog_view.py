@@ -61,10 +61,10 @@ class CategorizationHelperDialogView(QDialog):
     self.main_layout.setSpacing(5)
 
     # Note to user #TODO this looks bad
-    note_label = QLabel(
-        "Categorize entries or save them as keywords.")
-    note_label.setWordWrap(True)
-    self.main_layout.addWidget(note_label)
+    # note_label = QLabel(
+    #     "Categorize entries or save them as keywords.")
+    # note_label.setWordWrap(True)
+    # self.main_layout.addWidget(note_label)
 
     # Tabs for window classes and window names
     self.tab_widget = QTabWidget(self)
