@@ -27,8 +27,8 @@ class ActivityService:
       bool: True if the activity was inserted successfully, False otherwise.
     """
     query = '''
-      INSERT INTO activity_log 
-      (time_start, time_stop, window_class, window_name, category_id, project_id) 
+      INSERT INTO activity_log
+      (time_start, time_stop, window_class, window_name, category_id, project_id)
       VALUES (?, ?, ?, ?, ?, ?)
     '''
     params = (
@@ -69,7 +69,7 @@ class ActivityService:
       return False
 
   def bulk_update_category(self, activity_ids: List[int], category_id: int) -> bool:
-    """Bulk update the category_id for multiple activities.
+    """ Bulk update the category_id for multiple activities.
 
     Args:
       activity_ids: List of activity IDs to update.
@@ -92,6 +92,28 @@ class ActivityService:
       return True
     except Exception as e:
       logger.error(f"Failed to bulk update categories for activities: {e}")
+      return False
+
+  # TODO the name sucks
+  def bulk_update_category_by_name(self, activity_name: str, category_id: int) -> bool:
+    """ Bulk update the category_id for multiple activities by activity name.
+
+    Args:
+      activity_name: Name of the activity.
+      category_id: The new category ID.
+
+    Returns:
+      bool: True if the categories were updated successfully, False otherwise.
+    """
+    query = 'UPDATE activity_log SET category_id = ? WHERE window_class = ? OR window_name = ?'
+    params = (category_id, activity_name, activity_name)
+
+    try:
+      self._db_conn.execute_update(query, params)
+      return True
+    except Exception as e:
+      logger.error(f"Failed to bulk update categories for activity_name {
+                   activity_name}: {e}")
       return False
 
   def get_all_activities(self) -> List[Activity]:
@@ -198,7 +220,7 @@ class ActivityService:
       date: The date to retrieve entries for.
 
     Returns:
-      List[Tuple[str, Optional[int], int]]: A list of tuples containing 
+      List[Tuple[str, Optional[int], int]]: A list of tuples containing
       (window_class, category_id, total_time_seconds).
     """
     formatted_date = date.strftime("%Y-%m-%d")
@@ -227,7 +249,7 @@ class ActivityService:
       period_end: The end date of the period. If None, only period_start is considered.
 
     Returns:
-      List[Tuple[str, Optional[int], int]]: A list of tuples containing 
+      List[Tuple[str, Optional[int], int]]: A list of tuples containing
       (window_class, category_id, total_time_seconds).
     """
     if period_end:
@@ -265,7 +287,7 @@ class ActivityService:
       period_end: The end date of the period. If None, only period_start is considered.
 
     Returns:
-      List[Tuple[str, Optional[int], int]]: A list of tuples containing 
+      List[Tuple[str, Optional[int], int]]: A list of tuples containing
       (window_name, category_id, total_time_seconds).
     """
     if period_end:
@@ -367,36 +389,64 @@ class ActivityService:
                    window_class} in period: {e}")
       return None
 
-  def get_top_uncategorized_window_classes(self, limit: int = 10, offset: int = 0) -> List[Tuple[str, int]]:
-    """ Return the top uncategorized window classes sorted by total time spent. """
+  def get_top_uncategorized_window_classes(
+      self, limit: int = 10, offset: int = 0, threshold_seconds: int = 60
+  ) -> List[Tuple[str, int]]:
+    """Return the top uncategorized window classes sorted by total time spent.
+
+    Entries with total time less than the threshold are excluded.
+
+    Args:
+      limit: The maximum number of entries to return.
+      offset: The number of entries to skip before starting to collect the result set.
+      threshold_seconds: The minimum total time in seconds for an entry to be included.
+
+    Returns:
+      A list of tuples containing the window class and total time in seconds.
+    """
     query = """
       SELECT window_class,
-      SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
+             SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
       FROM activity_log
-      WHERE category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized')
+      WHERE (category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized'))
       GROUP BY window_class
+      HAVING total_time_seconds >= ?
       ORDER BY total_time_seconds DESC
       LIMIT ? OFFSET ?
     """
-    params = (limit, offset)
+    params = (threshold_seconds, limit, offset)
     try:
       return self._db_conn.execute_query(query, params)
     except Exception as e:
       logger.error(f"Failed to retrieve top uncategorized window classes: {e}")
       return []
 
-  def get_top_uncategorized_window_names(self, limit: int = 10, offset: int = 0) -> List[Tuple[str, int]]:
-    """ Return the top uncategorized window names sorted by total time spent. """
+  def get_top_uncategorized_window_names(
+      self, limit: int = 10, offset: int = 0, threshold_seconds: int = 60
+  ) -> List[Tuple[str, int]]:
+    """Return the top uncategorized window names sorted by total time spent.
+
+    Entries with total time less than the threshold are excluded.
+
+    Args:
+      limit: The maximum number of entries to return.
+      offset: The number of entries to skip before starting to collect the result set.
+      threshold_seconds: The minimum total time in seconds for an entry to be included.
+
+    Returns:
+      A list of tuples containing the window name and total time in seconds.
+    """
     query = """
       SELECT window_name,
-      SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
+             SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
       FROM activity_log
-      WHERE category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized')
+      WHERE (category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized'))
       GROUP BY window_name
+      HAVING total_time_seconds >= ?
       ORDER BY total_time_seconds DESC
       LIMIT ? OFFSET ?
     """
-    params = (limit, offset)
+    params = (threshold_seconds, limit, offset)
     try:
       return self._db_conn.execute_query(query, params)
     except Exception as e:
