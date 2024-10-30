@@ -9,7 +9,7 @@ if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
   from focuswatch.services.category_service import CategoryService
   from focuswatch.services.keyword_service import KeywordService
-  from focuswatch.classifier import Classifier
+  from focuswatch.services.classifier_service import ClassifierService
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +22,7 @@ class CategorizationHelperDialogViewModel(QObject):
                activity_service: "ActivityService",
                category_service: "CategoryService",
                keyword_service: "KeywordService",
-               classifier: 'Classifier'
+               classifier: 'ClassifierService'
                ):
     super().__init__()
     self._activity_service = activity_service
