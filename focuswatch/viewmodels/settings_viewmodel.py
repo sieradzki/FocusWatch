@@ -23,6 +23,8 @@ class SettingsViewModel(BaseViewModel):
       self.config.get_value('General', 'afk_timeout'))
     self._autostart_enabled: bool = is_in_autostart()
 
+    self._filter_text: str = ""
+
   @property
   def watch_interval(self) -> float:
     return self._watch_interval
@@ -60,6 +62,26 @@ class SettingsViewModel(BaseViewModel):
   @autostart_enabled.setter
   def autostart_enabled(self, value: bool):
     self._set_property('_autostart_enabled', value)
+
+  @property
+  def filter_text(self) -> str:
+    """ Get the current filter text.
+
+    Returns:
+      The filter text as a string.
+    """
+    return self._filter_text
+
+  @filter_text.setter
+  def filter_text(self, value: str) -> None:
+    """ Set a new filter text and notify observers.
+
+    Args:
+      value: The new filter text.
+    """
+    if self._filter_text != value:
+      self._filter_text = value
+      self.property_changed.emit('filter_text')
 
   def is_autostart_available(self) -> bool:
     """ Check if autostart is available based on the application's state.
