@@ -5,7 +5,7 @@ from PySide6.QtCore import Property, Slot
 
 from focuswatch.models.category import Category
 from focuswatch.models.keyword import Keyword
-from focuswatch.ui.utils import get_category_color
+from focuswatch.utils.ui_utils import get_category_color
 from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 
 if TYPE_CHECKING:
