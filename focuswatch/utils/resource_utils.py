@@ -46,7 +46,7 @@ def apply_styles(target, stylesheet_paths: list[str]) -> None:
 
 
 def load_stylesheets(stylesheet_paths: list[str]) -> str:
-  """ 
+  """
   Loads and concatenates multiple stylesheets into a single string.
 
   Args:
@@ -101,4 +101,22 @@ def load_icon(icon_name: str) -> QIcon:
     QIcon: The loaded icon.
   """
   icon_path = os.path.join(BASE_ICONS_DIR, icon_name)
-  return QIcon(icon_path)
+
+  try:
+    if not os.path.exists(icon_path):
+      logger.error(f"Icon file not found: {icon_path}")
+      return QIcon()
+
+    icon = QIcon(icon_path)
+
+    if icon.isNull():
+      logger.error(f"Failed to load icon (isNull): {icon_path}")
+      return QIcon()
+
+    logger.debug(f"Successfully loaded icon: {icon_path}")
+    return icon
+
+  except Exception as e:
+    logger.exception(f"Exception occurred while loading icon '{
+        icon_path}': {e}")
+    return QIcon()

@@ -7,8 +7,7 @@ from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout, QLineEdit,
                                QScrollArea, QSizePolicy, QSpacerItem,
                                QVBoxLayout, QWidget)
 
-from focuswatch.ui.utils import (get_category_color_or_parent,
-                                 get_contrasting_text_color)
+from focuswatch.utils.ui_utils import get_category_color_or_parent, get_contrasting_text_color
 from focuswatch.utils.resource_utils import apply_styles, apply_stylesheet
 from focuswatch.viewmodels.categories_viewmodel import CategoriesViewModel
 from focuswatch.views.dialogs.categorization_helper_dialog_view import \

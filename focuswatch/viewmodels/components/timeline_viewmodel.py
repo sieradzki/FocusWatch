@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from focuswatch.models.activity import Activity
-from focuswatch.ui.utils import get_category_color_or_parent
+from focuswatch.utils.ui_utils import get_category_color_or_parent
 from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 
 if TYPE_CHECKING:

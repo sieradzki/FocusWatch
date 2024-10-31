@@ -1,0 +1,162 @@
+QWidget#navigation_panel {
+    background-color: #2A2A2A;
+    padding: 10px;
+}
+
+QToolButton#sidebar_button_general,
+QToolButton#sidebar_button_watcher {
+    background-color: transparent;
+    border: none;
+    font-size: 14px;
+    color: #F9F9F9;
+    padding: 8px;
+    border-radius: 8px;
+}
+
+QToolButton#sidebar_button_general:hover,
+QToolButton#sidebar_button_watcher:hover {
+    background-color: #27282C;
+}
+
+QToolButton#sidebar_button_general:checked,
+QToolButton#sidebar_button_watcher:checked {
+    background-color: #27282C;
+}
+
+/* Scroll Area Styles */
+QScrollArea#settings_scroll_area {
+    background-color: #1e1e1e;
+    border: none;
+}
+
+QWidget#scroll_content {
+    background-color: #1e1e1e;
+}
+
+/* Labels and Checkboxes */
+QLabel {
+    color: #F9F9F9;
+    font-size: 12pt;
+}
+
+QCheckBox {
+    color: #F9F9F9;
+    font-size: 11pt;
+}
+
+QGroupBox {
+    border: 1px solid #363739;
+    border-radius: 5px;
+    margin-top: 10px;
+    background-color: #1e1e1e;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    padding: 0 0px;
+}
+
+QGroupBox#general_group_box,
+QGroupBox#watcher_group_box {
+    margin-top: 20px; /* Adjust spacing above the group box */
+}
+
+/* Adjustments for Header Labels inside GroupBoxes */
+QGroupBox QLabel#general_header,
+QGroupBox QLabel#watcher_header {
+    font-size: 14pt;
+    font-weight: bold;
+    color: #F9F9F9;
+    background-color: transparent; /* Ensure background is transparent */
+    padding: 0;
+    margin: 0;
+}
+
+/* Disabled Control Styling */
+QCheckBox[disabled_control="true"]::indicator,
+QCheckBox[disabled_control="true"] {
+    color: #A0A0A0;
+}
+
+QLabel[disabled_note="true"] {
+    color: #A0A0A0;
+    font-style: italic;
+}
+
+/* GroupBoxes */
+QGroupBox {
+    border: 1px solid #363739;
+    border-radius: 5px;
+    color: #F9F9F9;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left; 
+    padding: 0 3px;
+}
+
+/* Apply Button Styles */
+QDialogButtonBox QPushButton {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    border-radius: 4px;
+    margin: 5px;
+    color: #F9F9F9;
+    font-family: Arial;
+    font-size: 14px;
+    padding: 5px 10px;/* Increased padding */
+    text-decoration: none;
+}
+
+QDialogButtonBox QPushButton:hover {
+    background-color: #252628;
+}
+
+QDialogButtonBox QPushButton:active {
+    position: relative;
+    top: 1px;
+}
+
+/* Note Label */
+QLabel#noteLabel {
+    font-size: 10pt;
+    color: #A0A0A0;
+}
+
+/* Section Headers */
+QLabel#general_header,
+QLabel#watcher_header {
+    font-size: 14pt;
+    font-weight: bold;
+    color: #F9F9F9;
+}
+
+/* SpinBoxes */
+QDoubleSpinBox, QSpinBox {
+    background-color: #2A2A2A;
+    color: #F9F9F9;
+    border: 1px solid #363739;
+    border-radius: 4px;
+    font-size: 11pt;
+}
+
+/* Adjust disabled spinbox */
+QDoubleSpinBox:disabled, QSpinBox:disabled {
+    color: #A0A0A0;
+}
+
+QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {
+  color: #F9F9F9;
+}
+
+QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
+  color: #F9F9F9;
+}
+
+QSpinBox[disabled_control="true"] {
+    color: #A0A0A0;
+    background-color: #2A2A2A;
+    border: 1px solid #363739;
+}

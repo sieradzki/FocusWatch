@@ -28,7 +28,10 @@ logger = logging.getLogger(__name__)
 
 
 class HomeView(QWidget):
-  def __init__(self, viewmodel: 'HomeViewModel', parent=None):
+  def __init__(self,
+               viewmodel: "HomeViewModel",
+               parent=None
+               ):
     super().__init__(parent)
     self._viewmodel = viewmodel
     self._timeline_view = None
