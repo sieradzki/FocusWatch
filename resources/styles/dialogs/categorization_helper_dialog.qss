@@ -36,29 +36,6 @@ QComboBox QAbstractItemView {
     border: 1px solid #363739;
 }
 
-QCheckBox {
-    color: #F9F9F9;
-    font-size: 14px;
-    spacing: 5px;
-}
-
-QCheckBox::indicator {
-    width: 16px;
-    height: 16px;
-}
-
-QCheckBox::indicator:unchecked {
-    background-color: #1b1c1e;
-    border: 1px solid #363739;
-    border-radius: 2px;
-}
-
-QCheckBox::indicator:checked {
-    background-color: #007ACC;
-    border: 1px solid #007ACC;
-    border-radius: 2px;
-}
-
 QPushButton {
     background-color: #1b1c1e;
     border: 1px solid #363739;

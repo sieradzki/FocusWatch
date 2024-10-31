@@ -16,15 +16,6 @@ QToolTip {
     font-size: 12px;
 }
 
-QLineEdit, QComboBox {
-    background-color: #1b1c1e;
-    border: 1px solid #363739;
-    font-size: 14px;
-    color: #F9F9F9;
-    padding: 5px 10px;
-    border-radius: 4px;
-}
-
 QComboBox QAbstractItemView {
     background-color: #1b1c1e;
     border: 1px solid #363739;
