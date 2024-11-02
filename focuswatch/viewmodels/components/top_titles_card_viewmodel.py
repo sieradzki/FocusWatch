@@ -28,7 +28,7 @@ class TopNamesCardViewModel(TopItemsCardViewModel):
     top_titles = self._activity_service.get_period_entries_name_time_total(
       self._period_start, self._period_end)[:self._top_items_limit]
 
-    for name, category, time in top_titles:
+    for name, category, time, focused in top_titles:
       self._top_items[name] = (
         time, None, None)
 

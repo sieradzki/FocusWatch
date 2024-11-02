@@ -59,6 +59,7 @@ class DatabaseManager:
           "window_name" TEXT NOT NULL,
           "category_id" INTEGER,
           "project_id" INTEGER,
+          "focused" INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY("category_id") REFERENCES "categories"("id"),
           PRIMARY KEY("id" AUTOINCREMENT)
       );''',
@@ -68,6 +69,7 @@ class DatabaseManager:
           "name" TEXT NOT NULL,
           "parent_category" INTEGER,
           "color" TEXT,
+          "focused" INTEGER NOT NULL DEFAULT 0,
           FOREIGN KEY("parent_category") REFERENCES "categories"("id"),
           PRIMARY KEY("id" AUTOINCREMENT)
       );''',
