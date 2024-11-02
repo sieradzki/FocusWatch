@@ -33,7 +33,7 @@ def create_service_file() -> str:
   [Service]
   Environment=DISPLAY=:0
   ExecStart={sys.executable}
-  Restart=always
+  Restart=on-failure
   User={os.getenv("USER")}
 
   [Install]

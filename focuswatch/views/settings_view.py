@@ -496,7 +496,7 @@ class SettingsView(QWidget):
     Args:
         state: The state of the checkbox (Qt.Checked or Qt.Unchecked).
     """
-    self.viewmodel.autostart_enabled = state == Qt.Checked
+    self.viewmodel.autostart_enabled = state == 2
 
   def on_watch_interval_changed(self, value: float) -> None:
     """
