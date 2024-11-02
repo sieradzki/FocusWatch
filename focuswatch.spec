@@ -5,7 +5,15 @@ block_cipher = None
 a = Analysis(['focuswatch/__main__.py'],
              pathex=['.'],
              binaries=[],
-             datas=[('logging.json', '.'), ('icon.png', '.'), ('focuswatch', 'focuswatch')],
+             datas=[
+                 ('logging.json', '.'),
+                 ('icon.png', '.'),
+                 ('focuswatch', 'focuswatch'),
+                 ('resources/icons/*.png', 'resources/icons'),
+                 ('resources/styles/*.qss', 'resources/styles'),
+                 ('resources/styles/components/*.qss', 'resources/styles/components'),
+                 ('resources/styles/dialogs/*.qss', 'resources/styles/dialogs')
+             ],
              hiddenimports=['PySide6.QtXml', 'PySide6.QtSvg'],
              hookspath=[],
              hooksconfig={},

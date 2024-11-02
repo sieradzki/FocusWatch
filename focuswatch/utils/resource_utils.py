@@ -7,9 +7,25 @@ from PySide6.QtGui import QIcon
 
 logger = logging.getLogger(__name__)
 
-BASE_RESOURCES_DIR = "resources"
-BASE_STYLES_DIR = f"{BASE_RESOURCES_DIR}/styles"
-BASE_ICONS_DIR = f"{BASE_RESOURCES_DIR}/icons"
+
+def get_base_path() -> str:
+  """ Get base path for resources, depending on whether the app is frozen.
+
+  Returns:
+    The base path as a string.
+  """
+  if getattr(sys, 'frozen', False):
+    base_path = sys._MEIPASS
+  else:
+    base_path = os.path.abspath(os.path.join(
+      os.path.dirname(__file__), '..', '..'))
+  return base_path
+
+
+BASE_DIR = get_base_path()
+BASE_RESOURCES_DIR = os.path.join(BASE_DIR, 'resources')
+BASE_STYLES_DIR = os.path.join(BASE_RESOURCES_DIR, 'styles')
+BASE_ICONS_DIR = os.path.join(BASE_RESOURCES_DIR, 'icons')
 
 
 def apply_stylesheet(target, style_path: str) -> None:
