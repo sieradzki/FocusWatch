@@ -1,145 +1,249 @@
 import logging
-from typing import Dict, List
+from datetime import datetime, timedelta
+from typing import TYPE_CHECKING, Dict, List, Optional
 
-from PySide6.QtCore import Qt, QTimer, Slot
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout,
-                               QScrollArea, QSizePolicy, QVBoxLayout, QWidget)
+from PySide6.QtCore import QObject, QSize, Qt, Signal, Slot, QTimer
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QScrollArea,
+                               QSpacerItem, QSizePolicy, QVBoxLayout, QWidget)
 
-from focuswatch.ui.utils import get_contrasting_text_color
-from focuswatch.viewmodels.components.timeline_viewmodel import \
-    TimelineViewModel
+from focuswatch.utils.resource_utils import apply_stylesheet
+from focuswatch.views.components.activity_card import ActivityCard
+
+if TYPE_CHECKING:
+  from focuswatch.viewmodels.components.timeline_viewmodel import \
+      TimelineViewModel
 
 logger = logging.getLogger(__name__)
 
 
-class TimelineView(QFrame):
-  def __init__(self, viewmodel: TimelineViewModel, parent=None):
+class TimelineView(QWidget):
+  """ A widget that displays a 24-hour timeline with activity cards. """
+
+  def __init__(
+    self,
+    viewmodel: 'TimelineViewModel',
+    minutes_per_chunk: int = 10,
+    hour_height: int = 120,
+    parent: Optional[QWidget] = None,
+  ) -> None:
+    """
+    Initialize the TimelineView.
+
+    Args:
+      viewmodel (TimelineViewModel): The ViewModel for the timeline.
+      minutes_per_chunk (int): Minutes per time chunk.
+      hour_height (int): Height of an hour in pixels.
+      parent (QWidget, optional): Parent widget.
+    """
     super().__init__(parent)
     self._viewmodel = viewmodel
-    self._scroll_area = None
-    self._main_layout = None
-    self._hour_widgets = {}
-    self._entry_labels = {}
-    self.setupUi()
-    self.connect_signals()
+    self._minutes_per_chunk = minutes_per_chunk
+    self._hour_height: int = hour_height  # Pixels per hour
+    self._minute_height: float = self._hour_height / 60  # Pixels per minute
+    self._chunks_per_hour: int = 60 // self._minutes_per_chunk
+    self._total_chunks: int = 24 * self._chunks_per_hour
+    self._setup_ui()
+    self._connect_signals()
 
-  def setupUi(self):
-    self.setObjectName("timeline_frame")
-    sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Preferred)
-    sizePolicy.setHorizontalStretch(0)
-    sizePolicy.setVerticalStretch(0)
-    sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
-    self.setSizePolicy(sizePolicy)
-    self.setMinimumSize(300, 0)
-    self.setFrameShape(QFrame.StyledPanel)
-    self.setFrameShadow(QFrame.Raised)
-
-    layout = QHBoxLayout(self)
-    layout.setContentsMargins(0, 0, 0, 0)
-
-    self._scroll_area = QScrollArea(self)
-    self._scroll_area.setWidgetResizable(True)
-
-    scroll_content = QWidget()
-    self._scroll_area.setWidget(scroll_content)
-
-    self._main_layout = QVBoxLayout(scroll_content)
-    self._main_layout.setSpacing(0)
-
-    # Create layouts and labels for all 24 hours
-    for hour in range(24):
-      hour_widget = QWidget()
-      hour_layout = QHBoxLayout(hour_widget)
-      hour_layout.setContentsMargins(0, 0, 0, 0)
-      hour_layout.setSizeConstraint(QLayout.SetDefaultConstraint)
-
-      hour_label = QLabel(f"{hour:02d}:00")
-      hour_label.setMaximumSize(30, 90)
-      hour_label.setMinimumSize(30, 90)
-      hour_label.setAlignment(Qt.AlignTop)
-      hour_label.setObjectName(f"hour_label_{hour}")
-      hour_layout.addWidget(hour_label)
-
-      line = QFrame()
-      line.setFrameShape(QFrame.VLine)
-      line.setFrameShadow(QFrame.Sunken)
-      hour_layout.addWidget(line)
-
-      entries_widget = QWidget()
-      entries_layout = QVBoxLayout(entries_widget)
-      entries_layout.setContentsMargins(0, 0, 0, 0)
-      entries_layout.setSizeConstraint(QLayout.SetDefaultConstraint)
-
-      self._entry_labels[hour] = []
-      for _ in range(6):  # 6 quarters per hour
-        entry_label = QLabel()
-        entry_label.setAlignment(Qt.AlignCenter)
-        entry_label.setMaximumHeight(15)  # 90 / 6
-        entries_layout.addWidget(entry_label)
-        self._entry_labels[hour].append(entry_label)
-
-      hour_layout.addWidget(entries_widget)
-      self._hour_widgets[hour] = hour_widget
-      self._main_layout.addWidget(hour_widget)
-
-    layout.addWidget(self._scroll_area)
-
+    self.update_timeline()
     self.scroll_to_current_hour()
+    apply_stylesheet(self, "components/timeline.qss")
 
-  def connect_signals(self):
+  def _setup_ui(self) -> None:
+    """ Initialize the user interface. """
+    self._scroll_area = QScrollArea(self)
+    self._scroll_area.setMinimumWidth(300)
+    self._scroll_area.setWidgetResizable(True)
+    self._scroll_area.setObjectName("timeline_view")
+    self._scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    self._scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+
+    self._timeline_widget = QWidget()
+    self._timeline_widget.setObjectName("timeline_widget")
+    self._scroll_area.setWidget(self._timeline_widget)
+
+    self._layout = QVBoxLayout(self)
+    self._layout.addWidget(self._scroll_area)
+    self._layout.setContentsMargins(0, 0, 0, 0)
+    self._layout.setSpacing(0)
+
+    self._timeline_layout = QVBoxLayout(self._timeline_widget)
+    self._timeline_layout.setContentsMargins(0, 0, 0, 0)
+    self._timeline_layout.setSpacing(0)
+
+    # Create the current time indicator line
+    self._current_time_line = QFrame(self._timeline_widget)
+    self._current_time_line.setObjectName("current_time_line")
+    self._current_time_line.setFrameShape(QFrame.HLine)
+    self._current_time_line.setFrameShadow(QFrame.Plain)
+    self._current_time_line.setLineWidth(2)
+    # self._current_time_line.raise_()  # Bring to front
+
+    # Update the position of the line
+    self._update_current_time_line()
+
+    # Start a timer to update the line every minute
+    self._current_time_timer = QTimer(self)
+    self._current_time_timer.timeout.connect(
+        self._update_current_time_line)
+    self._current_time_timer.start(60000)  # minute
+
+    self._create_time_grid()
+
+  def _connect_signals(self) -> None:
+    """ Connect signals to slots. """
     self._viewmodel.data_changed.connect(self.update_timeline)
+    self._viewmodel.property_changed.connect(self.on_property_changed)
 
   @Slot()
-  def update_timeline(self):
-    self.populate_timeline(self._viewmodel.timeline_data)
-    QTimer.singleShot(0, self.scroll_to_current_hour)
+  def on_property_changed(self, property_name: str) -> None:
+    """ Handle property changes in the ViewModel. """
+    if property_name in ["period_start", "period_end"]:
+      self.update_timeline()
+      self._update_current_time_line()
 
-  def populate_timeline(self, hour_entries: Dict[int, List[int]]):
-    for hour, entries in hour_entries.items():
-      hour_widget = self._hour_widgets[hour]
-      hour_widget.show()
+  def _create_time_grid(self) -> None:
+    """ Create the time grid representing 24 hours. """
+    for hour in range(24):
+      hour_widget = QWidget(self._timeline_widget)
+      hour_widget.setFixedHeight(self._hour_height)
+      hour_widget.setObjectName(f"hour_widget_{hour}")
+      # Set custom property for styling
+      hour_widget.setProperty('cssClass', 'hour_widget')
 
-      for i, entry in enumerate(entries):
-        entry_label = self._entry_labels[hour][i]
-        entry_label.show()
-        style = []
+      hour_layout = QHBoxLayout(hour_widget)
+      hour_layout.setContentsMargins(0, 0, 0, 0)
+      hour_layout.setSpacing(0)
 
-        if entry != 0 and entry is not None:
-          category_name = self._viewmodel.get_category_name(entry)
-          color = self._viewmodel.get_category_color(entry)
+      # Hour label
+      hour_label = QLabel(f"{hour:02d}:00", hour_widget)
+      hour_label.setObjectName(f"hour_label_{hour}")
+      hour_label.setFixedWidth(50)
+      hour_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+      hour_layout.addWidget(hour_label)
 
-          if i > 0 and entry != entries[i - 1]:
-            entry_label.setText(category_name)
-          elif i == 0 and (hour == 0 or entry != hour_entries.get(hour - 1, [])[-1]):
-            entry_label.setText(category_name)
-          else:
-            entry_label.setText("")
+      hour_label.setProperty('cssClass', 'hour_label')
 
-          if color:
-            style.append(f"background-color: {color};")
-            text_color = get_contrasting_text_color(color)
-            style.append(f"color: {text_color};")
-        else:
-          style.append("background-color: rgba(0,0,0,0);")
-          entry_label.setText("")
+      # Spacer to fill the rest of the space
+      hour_spacer = QSpacerItem(
+        0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum
+      )
+      hour_layout.addItem(hour_spacer)
 
-        if i == len(entries) - 1:
-          style.append("border-bottom: 1px dashed #141414;")
+      self._timeline_layout.addWidget(hour_widget)
 
-        entry_label.setStyleSheet(''.join(style))
+  @Slot()
+  def update_timeline(self) -> None:
+    """ Update the timeline with activity cards based on the ViewModel data. """
+    # Clear existing activity cards
+    for child in self._timeline_widget.findChildren(QWidget):
+      if isinstance(child, ActivityCard):
+        child.setParent(None)
+        child.deleteLater()
 
-  def scroll_to_current_hour(self):
-    current_hour = self._viewmodel.get_current_hour()
-    current_hour_widget = self._hour_widgets.get(max(0, current_hour - 2))
+    timeline_data = self._viewmodel.timeline_data
 
-    if current_hour_widget:
-      y_position = current_hour_widget.pos().y()
+    # Build a flat list of chunks for the entire day
+    full_chunks: List[int] = []
+    for hour in range(24):
+      chunks_in_hour = timeline_data.get(hour, [0] * self._chunks_per_hour)
+      full_chunks.extend(chunks_in_hour)
 
-      if y_position == 0:
-        # If the position is still zero, defer scrolling to allow layout to update
-        QTimer.singleShot(100, self.scroll_to_current_hour)
-      else:
-        self._scroll_area.verticalScrollBar().setValue(y_position)
+    index = 0
+    while index < len(full_chunks):
+      category_id = full_chunks[index]
+      if not category_id:
+        index += 1
+        continue  # No activity in this chunk
+
+      # Start of a new activity block
+      start_index = index
+      duration = self._minutes_per_chunk  # Start with minutes per chunk
+      index += 1
+
+      # Accumulate duration for adjacent chunks with the same category
+      while index < len(full_chunks) and full_chunks[index] == category_id:
+        duration += self._minutes_per_chunk
+        index += 1
+
+      # Calculate position and size
+      start_minutes = start_index * self._minutes_per_chunk
+      y_position = start_minutes * self._minute_height
+      height = int(duration * self._minute_height)
+
+      parent_id = self._viewmodel.get_parent_category(category_id)
+      parent_name = self._viewmodel.get_category_name(parent_id)
+
+      # Calculate actual time range
+      start_hour = start_minutes // 60
+      start_minutes %= 60
+
+      duration_hours = duration // 60
+      duration_minutes = duration % 60
+
+      end_hour = start_hour + duration_hours
+      end_minutes = start_minutes + duration_minutes
+
+      if end_minutes >= 60:
+        end_minutes -= 60
+        end_hour += 1
+
+      time_range = f"{start_hour:02d}:{
+          start_minutes:02d} - {end_hour:02d}:{end_minutes:02d}"
+
+      # Create the activity card
+      activity_card = ActivityCard(
+        category_id=category_id,
+        category_name=self._viewmodel.get_category_name(category_id),
+        color=self._viewmodel.get_category_color(category_id),
+        parent_category=parent_name,
+        time_range=time_range,
+        duration=duration,
+        parent=self._timeline_widget,
+      )
+
+      activity_card.setGeometry(
+        50,  # Starting after the hour labels
+        int(y_position),
+        self.width() - 80,
+        height,
+      )
+
+      activity_card.show()
+    self._current_time_line.raise_()
+
+  def scroll_to_current_hour(self) -> None:
+    """ Scroll to the current hour in the timeline. """
+    current_hour = datetime.now().hour
+    # Scroll 2 hours earlier for context
+    y_position = max(0, (current_hour - 2)) * self._hour_height
+
+    # Ensure the scroll area has updated before scrolling
+    def set_scroll_position():
+      self._scroll_area.verticalScrollBar().setValue(int(y_position))
+
+    QTimer.singleShot(0, set_scroll_position)
+
+  def _update_current_time_line(self):
+    """Update the position of the current time indicator line."""
+    if self._viewmodel.period_start.date() == datetime.now().date():
+      now = datetime.now()
+      total_minutes = now.hour * 60 + now.minute
+      y_position = total_minutes * self._minute_height
+
+      self._current_time_line.setGeometry(
+          50,  # Starting after the hour labels
+          int(y_position),
+          self._timeline_widget.width() - 50,
+          1  # Line thickness
+      )
+      self._current_time_line.show()
     else:
-      logger.warning(f"Could not find widget for hour {current_hour}")
+      self._current_time_line.hide()
+
+  def resizeEvent(self, event) -> None:
+    """Handle widget resizing to adjust activity cards."""
+    super().resizeEvent(event)
+    self.update_timeline()
+    self._update_current_time_line()

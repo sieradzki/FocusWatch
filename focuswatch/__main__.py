@@ -18,9 +18,11 @@ from focuswatch.services.activity_service import ActivityService
 from focuswatch.services.category_service import CategoryService
 from focuswatch.services.keyword_service import KeywordService
 from focuswatch.services.watcher_service import WatcherService
+from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.viewmodels.main_viewmodel import MainViewModel
 from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 from focuswatch.views.mainwindow_view import MainWindowView
+from focuswatch.services.classifier_service import ClassifierService
 
 # from qt_material import apply_stylesheet
 
@@ -94,7 +96,11 @@ def main():
   logger.info("Creating QApplication")
   app = QApplication([])
 
+  # TODO theme.qss ?
+  apply_stylesheet(app, "mainwindow.qss")
+
   if not QSystemTrayIcon.isSystemTrayAvailable():
+    # TODO retry - in wms like dwm tray might be not immediately available
     QMessageBox.critical(
       None, "Systray", "Couldn't detect any system tray on this system.")
     logger.error("Couldn't detect any system tray on this system.")
@@ -117,33 +123,40 @@ def main():
   menu = QMenu()
 
   # Create Services, ViewModels and MainWindowView
-  watcher_service = WatcherService(args.watch_interval if args.watch_interval else None,
-                                   args.verbose if args.verbose else None)
   activity_service = ActivityService()
   category_service = CategoryService()
   keyword_service = KeywordService()
+  classifier_service = ClassifierService(category_service, keyword_service)
+
+  watcher_service = WatcherService(
+    activity_service,
+    category_service,
+    classifier_service,
+    args.watch_interval if args.watch_interval else None,
+    args.verbose if args.verbose else None, )
 
   main_viewmodel = MainViewModel(
     watcher_service, activity_service, category_service, keyword_service)
+
   mainwindow_viewmodel = MainWindowViewModel(
-      main_viewmodel, activity_service, category_service, keyword_service)
+      main_viewmodel, activity_service, category_service, keyword_service, classifier_service)
   main_window = MainWindowView(mainwindow_viewmodel)
 
   # Add actions to the menu
-  open_dashboard = QAction("Open")
-  open_dashboard.triggered.connect(main_window.show)
-  menu.addAction(open_dashboard)
+  open_mainwindow = QAction("Open")
+  open_mainwindow .triggered.connect(main_window.show)
+  menu.addAction(open_mainwindow)
 
-  # Open or hide dashboard on double-click
+  # Open or hide home on double-click
   tray.activated.connect(
       lambda reason: main_window.hide() if reason == QSystemTrayIcon.Trigger and main_window.isVisible()
       else main_window.show() if reason == QSystemTrayIcon.Trigger else None
   )
 
   # Logs action
-  logs = QAction("Log")
-  logs.setEnabled(False)
-  menu.addAction(logs)
+  # logs = QAction("Log")
+  # logs.setEnabled(False)
+  # menu.addAction(logs)
 
   # Quit action
   quit_action = QAction("Quit")

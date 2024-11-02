@@ -9,15 +9,19 @@ import subprocess
 import time
 from datetime import datetime
 from sys import platform
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 import psutil
 
 from focuswatch.config import Config
 from focuswatch.models.activity import Activity
-from focuswatch.services.activity_service import ActivityService
-from focuswatch.services.category_service import CategoryService
-from focuswatch.services.classifier_service import ClassifierService
+
+if TYPE_CHECKING:
+  from focuswatch.services.activity_service import ActivityService
+  from focuswatch.services.category_service import CategoryService
+  from focuswatch.services.keyword_service import KeywordService
+  from focuswatch.services.classifier_service import ClassifierService
+
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +59,13 @@ class WatcherService():
   Currently, the Watcher class supports Linux with xorg and Windows platforms.
   """
 
-  def __init__(self, watch_interval: Optional[float] = None, verbose: Optional[int] = None):
+  def __init__(self, 
+              activity_service: 'ActivityService',
+              category_service: 'CategoryService',
+              classifier_service: 'ClassifierService',
+               watch_interval: Optional[float] = None,
+               verbose: Optional[int] = None
+               ):
     # Load configuration
     self._config = Config()
     self._watch_interval = float(
@@ -67,11 +77,9 @@ class WatcherService():
       self._config.get_value("General", "afk_timeout"))
 
     # Initialize services
-    self._category_service = CategoryService()
-    self._activity_service = ActivityService()
-
-    self._classifier_service = ClassifierService(
-      self._category_service)
+    self._activity_service = activity_service
+    self._category_service = category_service
+    self._classifier_service = classifier_service
 
     # Initialize activity variables
     self._window_name = self.get_active_window_name()
@@ -160,7 +168,8 @@ class WatcherService():
       window_class=self._window_class,
       window_name=self._window_name,
       time_start=datetime.fromtimestamp(self._time_start),
-      time_stop=datetime.fromtimestamp(self._time_stop) if self._time_stop else None,
+      time_stop=datetime.fromtimestamp(
+        self._time_stop) if self._time_stop else None,
       category_id=self._category,
       project_id=None  # TODO: Implement project functionality
     )

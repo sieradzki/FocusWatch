@@ -6,9 +6,9 @@ This module provides a class for managing the database for FocusWatch.
 import logging
 import sqlite3
 
-from focuswatch.database.category_manager import CategoryManager
 from focuswatch.database.database_connection import DatabaseConnection
-from focuswatch.database.keyword_manager import KeywordManager
+from focuswatch.services.category_service import CategoryService
+from focuswatch.services.keyword_service import KeywordService
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +26,11 @@ class DatabaseManager:
       logger.info("Database does not exist. Creating database.")
       self._create_db()
 
-      self._category_manager = CategoryManager()
-      self._keyword_manager = KeywordManager()
+      self._category_service = CategoryService()
+      self._keyword_service = KeywordService()
 
-      self._category_manager.insert_default_categories()
-      self._keyword_manager.insert_default_keywords()
+      self._category_service.insert_default_categories()
+      self._keyword_service.insert_default_keywords()
 
   def database_exists(self) -> bool:
     """ Check if the database and tables exist. 

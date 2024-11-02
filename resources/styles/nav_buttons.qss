@@ -1,0 +1,28 @@
+/* nav_buttons.qss */
+#date_prev_button,
+#date_button,
+#date_next_button {
+  border-radius: 0px;
+  padding: 5px 10px;
+}
+
+#period_type_button {
+  padding: 5px 10px;
+}
+
+#date_prev_button {
+  border-right: none;
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+}
+
+#date_button {
+  border-left: none;
+  border-right: none;
+}
+
+#date_next_button {
+  border-left: none;
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+}

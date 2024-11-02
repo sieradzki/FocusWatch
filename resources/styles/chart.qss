@@ -1,0 +1,32 @@
+QChartView {
+  background: transparent;
+  border: none;
+}
+
+QPieSlice {
+  /* border-width: 5px; */
+  /* border: 1px solid #2a2a2a; */
+  label: { 
+    color: #F9F9F9;
+    font-size: 12px;
+    font-weight: bold;
+  }
+}
+
+QLegend {
+  background: transparent;
+  color: #F9F9F9;
+}
+
+QLegendMarker {
+  background: transparent;
+  border: none;
+}
+
+QToolTip {
+    background-color: #2a2a2a;
+    color: #F9F9F9;
+    border: 1px solid #F9F9F9;
+    border-radius: 4px;
+    padding: 4px;
+}

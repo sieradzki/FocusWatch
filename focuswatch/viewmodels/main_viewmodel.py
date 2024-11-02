@@ -38,10 +38,10 @@ class MainViewModel(BaseViewModel):
       # self._watcher_service.stop() # TODO: Implement stop method in WatcherService
       self.is_monitoring = False
 
-  def export_data(self, file_path: str) -> bool: # TODO
+  def export_data(self, file_path: str) -> bool:  # TODO
     """ Export data to a file. """
     pass
 
-  def import_data(self, file_path: str) -> bool: # TODO
+  def import_data(self, file_path: str) -> bool:  # TODO
     """ Import data from a file. """
     pass

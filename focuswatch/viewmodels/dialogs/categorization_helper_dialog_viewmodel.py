@@ -1,69 +1,112 @@
+from typing import List, Tuple, TYPE_CHECKING
+from PySide6.QtCore import QObject, Signal, Property
 import logging
-from typing import List, Tuple, Dict
 
-from PySide6.QtCore import Property, Signal, Slot
-
-from focuswatch.models.category import Category
+from focuswatch.services.categorization_service import CategorizationService
 from focuswatch.models.keyword import Keyword
-from focuswatch.services.activity_service import ActivityService
-from focuswatch.services.category_service import CategoryService
-from focuswatch.services.keyword_service import KeywordService
-from focuswatch.viewmodels.base_viewmodel import BaseViewModel
+
+if TYPE_CHECKING:
+  from focuswatch.services.activity_service import ActivityService
+  from focuswatch.services.category_service import CategoryService
+  from focuswatch.services.keyword_service import KeywordService
+  from focuswatch.services.classifier_service import ClassifierService
 
 logger = logging.getLogger(__name__)
 
 
-class CategorizationHelperViewModel(BaseViewModel):
-  categorization_progress = Signal(int, int)
+class CategorizationHelperDialogViewModel(QObject):
+  property_changed = Signal(str)
+  retroactive_categorization_progress = Signal(int, int)
 
-  def __init__(self, activity_service: ActivityService, category_service: CategoryService,
-               keyword_service: KeywordService):
+  def __init__(self,
+               activity_service: "ActivityService",
+               category_service: "CategoryService",
+               keyword_service: "KeywordService",
+               classifier: 'ClassifierService'
+               ):
     super().__init__()
     self._activity_service = activity_service
     self._category_service = category_service
     self._keyword_service = keyword_service
-    self._uncategorized_applications: List[Tuple[int, str, int]] = []
-    self._uncategorized_titles: List[Tuple[int, str, int]] = []
-    self._categories: List[Category] = []
-    self.load_data()
+    self._classifier = classifier
+    self._categorization_service = CategorizationService(
+      self._activity_service, self._classifier)
 
-  def load_data(self):
-    self._uncategorized_applications = self._activity_service.get_top_uncategorized_window_classes(
-      10)
-    self.property_changed.emit('uncategorized_applications')
+    self.categories = []
+    self._uncategorized_window_classes = []
+    self._uncategorized_window_names = []
+    self._limit = 20
+    self._offset_classes = 0
+    self._offset_names = 0
+    self.has_more_classes = True
+    self.has_more_names = True
+    self._threshold_seconds = 60
 
-    self._uncategorized_titles = self._activity_service.get_top_uncategorized_window_names(
-      10)
-    self.property_changed.emit('uncategorized_titles')
-
-    self._categories = self._category_service.get_all_categories()
+  def load_categories(self):
+    self.categories = self._category_service.get_all_categories()
     self.property_changed.emit('categories')
-    logger.info("CategorizationHelperViewModel loaded")
 
-  @Property(list, notify=BaseViewModel.property_changed)
-  def uncategorized_applications(self):
-    return self._uncategorized_applications
+  def load_window_classes(self):
+    """ Load uncategorized window classes into the ViewModel. """
+    new_entries = self._activity_service.get_top_uncategorized_window_classes(
+        limit=self._limit,
+        offset=self._offset_classes,
+        threshold_seconds=self._threshold_seconds
+    )
+    if new_entries:
+      self._uncategorized_window_classes.extend(new_entries)
+      self._offset_classes += len(new_entries)
+      if len(new_entries) < self._limit:
+        self.has_more_classes = False
+        self.property_changed.emit('no_more_window_classes')
+      else:
+        self.has_more_classes = True
+      self.property_changed.emit('uncategorized_window_classes')
+    else:
+      self.has_more_classes = False
+      self.property_changed.emit('no_more_window_classes')
 
-  @Property(list, notify=BaseViewModel.property_changed)
-  def uncategorized_titles(self):
-    return self._uncategorized_titles
+  def load_window_names(self):
+    """ Load uncategorized window names into the ViewModel. """
+    new_entries = self._activity_service.get_top_uncategorized_window_names(
+        limit=self._limit,
+        offset=self._offset_names,
+        threshold_seconds=self._threshold_seconds
+    )
+    if new_entries:
+      self._uncategorized_window_names.extend(new_entries)
+      self._offset_names += len(new_entries)
+      if len(new_entries) < self._limit:
+        self.has_more_names = False
+        self.property_changed.emit('no_more_window_names')
+      else:
+        self.has_more_names = True
+      self.property_changed.emit('uncategorized_window_names')
+    else:
+      self.has_more_names = False
+      self.property_changed.emit('no_more_window_names')
 
-  @Property(list, notify=BaseViewModel.property_changed)
-  def categories(self):
-    return self._categories
+  @property
+  def uncategorized_window_classes(self):
+    return self._uncategorized_window_classes
 
-  @Slot(str, int, bool)
-  def save_categorization(self, name: str, category_id: int, match_case: bool):
-    keyword = Keyword(name=name, category_id=category_id,
-                      match_case=match_case)
-    self._keyword_service.add_keyword(keyword)
-    logger.info(f"Saved categorization: {name} to category {category_id}")
+  @property
+  def uncategorized_window_names(self):
+    return self._uncategorized_window_names
 
-  @Slot(result=bool)
-  def perform_retroactive_categorization(self) -> bool:
-    pass
-    # return self._retroactive_categorization_service.categorize_all_activities(self.categorization_progress.emit)
+  def save_categorization(self, activity_name: str, category_id: int, match_case: bool, save_as_keyword: bool):
+    """ Classify entries with activity_name or save as a new keyword """
 
-  @Slot(result=int)
-  def get_uncategorized_category_id(self) -> int:
-    return self._category_service.get_uncategorized_category_id()
+    if save_as_keyword:
+      keyword = Keyword(name=activity_name,
+                        category_id=category_id, match_case=match_case)
+
+      self._keyword_service.add_keyword(keyword)
+    else:
+      self._activity_service.bulk_update_category_by_name(
+        activity_name, category_id)
+
+  def perform_retroactive_categorization(self):
+    return self._categorization_service.retroactive_categorization(
+      progress_callback=self.retroactive_categorization_progress.emit
+    )

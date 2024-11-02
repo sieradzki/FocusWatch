@@ -33,9 +33,8 @@ class DatabaseConnection:
     """ Connect to the database.
 
     Raises:
-      sqlite3.OperationalError: If there is an error connecting to the database.
+      ConnectionError: If there is an error connecting to the database.
     """
-
     try:
       dburi = f"file:{self.db_name}?mode=rw"
       self.conn = sqlite3.connect(
@@ -54,7 +53,7 @@ class DatabaseConnection:
         self.db_name, check_same_thread=False, timeout=1)
 
   def execute_query(self, query: str, params: tuple = ()) -> list:
-    """ Execute a query on the database. 
+    """ Execute a query on the database.
 
     Args:
       query (str): The SQL query to execute.
@@ -76,15 +75,16 @@ class DatabaseConnection:
       cur.close()
     return result
 
-  def execute_update(self, query: str, params: tuple = ()) -> int:
-    """ Execute an update query on the database. 
+  def execute_update(self, query: str, params: tuple = (), return_cursor: bool = False):
+    """ Execute an update query on the database.
 
     Args:
       query (str): The SQL query to execute.
       params (tuple): The parameters to pass to the query.
+      return_cursor (bool): Whether to return the cursor object.
 
     Returns:
-      int: The number of rows affected by the update, or -1 if an error occurred.
+      int or sqlite3.Cursor: The number of rows affected by the update, or the cursor if return_cursor is True.
     """
     if not self.conn:
       raise ConnectionError("Database connection is not established.")
@@ -95,11 +95,17 @@ class DatabaseConnection:
       rows_affected = cur.rowcount
       logger.debug(
         f"Execute update - Query: {query}, Params: {params}, Rows affected: {rows_affected}")
-      return rows_affected
+      if return_cursor:
+        return cur
+      else:
+        cur.close()
+        return rows_affected
     except sqlite3.OperationalError as e:
       logger.error(f"Error executing update {
                    query} with params: {params}: {e}")
       self.conn.rollback()
-      return -1
-    finally:
       cur.close()
+      if return_cursor:
+        return None
+      else:
+        return -1
