@@ -57,7 +57,7 @@ class KeywordService:
     Returns:
         Optional[Keyword]: A Keyword object if found, None otherwise.
     """
-    query = 'SELECT id, name, category_id, match_case FROM keywords WHERE id = ?'
+    query = 'SELECT name, category_id, id, match_case FROM keywords WHERE id = ?'
     params = (keyword_id,)
     try:
       result = self._db_conn.execute_query(query, params)
@@ -87,14 +87,14 @@ class KeywordService:
 
     if existing_keywords:
       logger.debug(f"Keyword with name {keyword.name} already exists in category {
-          keyword.category_id}.")
+                  keyword.category_id}.")
       return True  # Consider it a success if the keyword already exists
 
     insert_query = 'INSERT INTO keywords (category_id, name, match_case) VALUES (?, ?, ?)'
     insert_params = (keyword.category_id, keyword.name, keyword.match_case)
 
     logger.debug(f"Executing insert query: {
-        insert_query} with params: {insert_params}")
+                insert_query} with params: {insert_params}")
     rows_affected = self._db_conn.execute_update(insert_query, insert_params)
     logger.debug(f"Rows affected by insert: {rows_affected}")
 
@@ -172,7 +172,7 @@ class KeywordService:
     Returns:
         List[Keyword]: A list of all Keyword objects in the database.
     """
-    query = "SELECT id, name, category_id, match_case FROM keywords"
+    query = "SELECT name, category_id, id, match_case FROM keywords"
     try:
       results = self._db_conn.execute_query(query)
       return [Keyword(*row) for row in results]
@@ -189,7 +189,7 @@ class KeywordService:
     Returns:
         List[Keyword]: A list of Keyword objects for the specified category.
     """
-    query = "SELECT id, name, category_id, match_case FROM keywords WHERE category_id = ?"
+    query = "SELECT name, category_id, id, match_case FROM keywords WHERE category_id = ?"
     params = (category_id,)
     try:
       results = self._db_conn.execute_query(query, params)
