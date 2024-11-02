@@ -30,6 +30,8 @@ class SettingsView(QWidget):
 
     apply_stylesheet(self, "settings_view.qss")
 
+    # TODO can we dynamically create sections for config settings?
+
   def setup_ui(self) -> None:
     # Main Horizontal Layout
     self.main_layout = QHBoxLayout(self)

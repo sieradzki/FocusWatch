@@ -154,9 +154,9 @@ def main():
   )
 
   # Logs action
-  logs = QAction("Log")
-  logs.setEnabled(False)
-  menu.addAction(logs)
+  # logs = QAction("Log")
+  # logs.setEnabled(False)
+  # menu.addAction(logs)
 
   # Quit action
   quit_action = QAction("Quit")

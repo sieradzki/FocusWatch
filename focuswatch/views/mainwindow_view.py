@@ -98,9 +98,6 @@ class MainWindowView(QMainWindow):
       self._viewmodel.categories_viewmodel)
     self.page_settings = SettingsView(self._viewmodel.settings_viewmodel)
 
-    # Mock Pages for testing
-    # self.page_settings = self.create_mock_page("Settings Page")
-
     # Add pages to the stacked widget
     self.stackedWidget.addWidget(self.page_home)
     self.stackedWidget.addWidget(self.page_categories)
