@@ -38,7 +38,7 @@ class DatabaseManager:
     Returns:
       bool: True if the database and tables exist, False otherwise.
     """
-    query = "SELECT name FROM sqlite_master WHERE type='table' AND name='activity_log';"
+    query = "SELECT name FROM sqlite_master WHERE type='table' AND name='activity';"
     result = self._db_conn.execute_query(query)
     try:
       result = self._db_conn.execute_query(query)
@@ -51,7 +51,7 @@ class DatabaseManager:
     """ Create the database. """
     create_table_queries = [
       '''
-      CREATE TABLE "activity_log" (
+      CREATE TABLE "activity" (
           "id" INTEGER NOT NULL UNIQUE,
           "time_start" TEXT NOT NULL,
           "time_stop" TEXT NOT NULL,

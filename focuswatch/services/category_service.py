@@ -228,7 +228,7 @@ class CategoryService:
     query = """
       SELECT category_id,
       SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-      FROM activity_log
+      FROM activity
       WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', 'now')
       GROUP BY category_id
       ORDER BY total_time_seconds DESC;
@@ -248,7 +248,7 @@ class CategoryService:
     query = """
       SELECT category_id,
       SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-      FROM activity_log
+      FROM activity
       WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
       GROUP BY category_id
       ORDER BY total_time_seconds DESC;
@@ -272,7 +272,7 @@ class CategoryService:
       query = """
         SELECT category_id,
         SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-        FROM activity_log
+        FROM activity
         WHERE strftime('%Y-%m-%d', time_start) BETWEEN ? AND ?
         GROUP BY category_id
         ORDER BY total_time_seconds DESC;
@@ -282,7 +282,7 @@ class CategoryService:
       query = """
         SELECT category_id,
         SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-        FROM activity_log
+        FROM activity
         WHERE strftime('%Y-%m-%d', time_start) = ?
         GROUP BY category_id
         ORDER BY total_time_seconds DESC;

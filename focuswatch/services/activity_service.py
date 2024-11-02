@@ -27,7 +27,7 @@ class ActivityService:
       bool: True if the activity was inserted successfully, False otherwise.
     """
     query = '''
-      INSERT INTO activity_log
+      INSERT INTO activity
       (time_start, time_stop, window_class, window_name, category_id, project_id)
       VALUES (?, ?, ?, ?, ?, ?)
     '''
@@ -58,7 +58,7 @@ class ActivityService:
     Returns:
       bool: True if the category id was updated successfully, False otherwise.
     """
-    query = 'UPDATE activity_log SET category_id = ? WHERE id = ?'
+    query = 'UPDATE activity SET category_id = ? WHERE id = ?'
     params = (category_id, activity_id)
 
     try:
@@ -83,7 +83,7 @@ class ActivityService:
 
     # Construct placeholders for parameterized query
     placeholders = ','.join(['?'] * len(activity_ids))
-    query = f'UPDATE activity_log SET category_id = ? WHERE id IN ({
+    query = f'UPDATE activity SET category_id = ? WHERE id IN ({
         placeholders})'
     params = [category_id] + activity_ids
 
@@ -105,7 +105,7 @@ class ActivityService:
     Returns:
       bool: True if the categories were updated successfully, False otherwise.
     """
-    query = 'UPDATE activity_log SET category_id = ? WHERE window_class = ? OR window_name = ?'
+    query = 'UPDATE activity SET category_id = ? WHERE window_class = ? OR window_name = ?'
     params = (category_id, activity_name, activity_name)
 
     try:
@@ -122,7 +122,7 @@ class ActivityService:
     Returns:
       List[Activity]: A list of all Activity objects in the database.
     """
-    query = "SELECT * FROM activity_log"
+    query = "SELECT * FROM activity"
 
     try:
       results = self._db_conn.execute_query(query)
@@ -140,7 +140,7 @@ class ActivityService:
     Returns:
       List[Activity]: A list of Activity objects with the specified category id.
     """
-    query = "SELECT * FROM activity_log WHERE category_id = ?"
+    query = "SELECT * FROM activity WHERE category_id = ?"
     params = (category_id,)
 
     try:
@@ -158,7 +158,7 @@ class ActivityService:
       List[Activity]: A list of Activity objects for today.
     """
     today = datetime.now().strftime("%Y-%m-%d")
-    query = "SELECT * FROM activity_log WHERE time_start LIKE ?"
+    query = "SELECT * FROM activity WHERE time_start LIKE ?"
     params = (f'{today}%',)
 
     try:
@@ -178,7 +178,7 @@ class ActivityService:
       List[Activity]: A list of Activity objects for the specified date.
     """
     formatted_date = date.strftime("%Y-%m-%d")
-    query = "SELECT * FROM activity_log WHERE time_start LIKE ?"
+    query = "SELECT * FROM activity WHERE time_start LIKE ?"
     params = (f'{formatted_date}%',)
 
     try:
@@ -200,10 +200,10 @@ class ActivityService:
       List[Activity]: A list of Activity objects for the specified period.
     """
     if period_end:
-      query = "SELECT * FROM activity_log WHERE time_start BETWEEN ? AND ?"
+      query = "SELECT * FROM activity WHERE time_start BETWEEN ? AND ?"
       params = (period_start.isoformat(), period_end.isoformat())
     else:
-      query = "SELECT * FROM activity_log WHERE date(time_start) = date(?)"
+      query = "SELECT * FROM activity WHERE date(time_start) = date(?)"
       params = (period_start.isoformat(),)
 
     try:
@@ -227,7 +227,7 @@ class ActivityService:
     query = """
       SELECT window_class, category_id,
       SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
-      FROM activity_log
+      FROM activity
       WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
       GROUP BY window_class
       ORDER BY total_time_seconds DESC
@@ -256,7 +256,7 @@ class ActivityService:
       query = """
         SELECT window_class, category_id,
         SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
-        FROM activity_log
+        FROM activity
         WHERE time_start BETWEEN ? AND ?
         GROUP BY window_class
         ORDER BY total_time_seconds DESC
@@ -266,7 +266,7 @@ class ActivityService:
       query = """
         SELECT window_class, category_id,
         SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
-        FROM activity_log
+        FROM activity
         WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
         GROUP BY window_class
         ORDER BY total_time_seconds DESC
@@ -294,7 +294,7 @@ class ActivityService:
       query = """
         SELECT window_name, category_id,
         SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
-        FROM activity_log
+        FROM activity
         WHERE time_start BETWEEN ? AND ?
         GROUP BY window_name
         ORDER BY total_time_seconds DESC
@@ -304,7 +304,7 @@ class ActivityService:
       query = """
         SELECT window_name, category_id,
         SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
-        FROM activity_log
+        FROM activity
         WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
         GROUP BY window_name
         ORDER BY total_time_seconds DESC
@@ -330,7 +330,7 @@ class ActivityService:
     formatted_date = date.strftime("%Y-%m-%d")
     query = """
       SELECT category_id
-      FROM activity_log
+      FROM activity
       WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
         AND window_class = ?
       GROUP BY category_id
@@ -361,7 +361,7 @@ class ActivityService:
     if period_end:
       query = """
         SELECT category_id
-        FROM activity_log
+        FROM activity
         WHERE time_start BETWEEN ? AND ?
           AND window_class = ?
         GROUP BY category_id
@@ -372,7 +372,7 @@ class ActivityService:
     else:
       query = """
         SELECT category_id
-        FROM activity_log
+        FROM activity
         WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
           AND window_class = ?
         GROUP BY category_id
@@ -407,7 +407,7 @@ class ActivityService:
     query = """
       SELECT window_class,
              SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-      FROM activity_log
+      FROM activity
       WHERE (category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized'))
       GROUP BY window_class
       HAVING total_time_seconds >= ?
@@ -439,7 +439,7 @@ class ActivityService:
     query = """
       SELECT window_name,
              SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-      FROM activity_log
+      FROM activity
       WHERE (category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized'))
       GROUP BY window_name
       HAVING total_time_seconds >= ?
@@ -458,7 +458,7 @@ class ActivityService:
     query = """
         SELECT window_class, window_name,
               SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-        FROM activity_log
+        FROM activity
         WHERE category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized')
         GROUP BY window_class, window_name
         ORDER BY total_time_seconds DESC
