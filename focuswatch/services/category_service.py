@@ -306,3 +306,18 @@ class CategoryService:
     params = (category_name,)
     result = self._db_conn.execute_query(query, params)
     return result[0][0] if result else None
+
+  # TODO remove on watcher service refactor
+  def get_category_focused(self, category_id: int) -> bool:
+    """ Return whether a category is focused.
+
+    Args:
+      category_id: The ID of the category.
+
+    Returns:
+      bool: True if the category is focused, False otherwise.
+    """
+    query = 'SELECT focused FROM categories WHERE id = ?'
+    params = (category_id,)
+    result = self._db_conn.execute_query(query, params)
+    return bool(result[0][0]) if result else False

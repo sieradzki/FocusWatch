@@ -59,10 +59,10 @@ class WatcherService():
   Currently, the Watcher class supports Linux with xorg and Windows platforms.
   """
 
-  def __init__(self, 
-              activity_service: 'ActivityService',
-              category_service: 'CategoryService',
-              classifier_service: 'ClassifierService',
+  def __init__(self,
+               activity_service: 'ActivityService',
+               category_service: 'CategoryService',
+               classifier_service: 'ClassifierService',
                watch_interval: Optional[float] = None,
                verbose: Optional[int] = None
                ):
@@ -164,6 +164,9 @@ class WatcherService():
       print(f"[{self._time_stop - self._time_start:.3f}] [{self._window_class}] {
             self._window_name[:32]} {self._category}")
 
+    # get focused from category.focused
+    is_focused = self._category_service.get_category_focused(self._category)
+
     activity = Activity(
       window_class=self._window_class,
       window_name=self._window_name,
@@ -171,7 +174,8 @@ class WatcherService():
       time_stop=datetime.fromtimestamp(
         self._time_stop) if self._time_stop else None,
       category_id=self._category,
-      project_id=None  # TODO: Implement project functionality
+      project_id=None,
+      focused=is_focused
     )
     self._activity_service.insert_activity(activity)
 
