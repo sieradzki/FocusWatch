@@ -23,30 +23,28 @@ class CardWidget(QWidget):
     self.frame_container = QFrame(self)
     self.frame_container.setObjectName("frame_container")
 
-    verticalLayout = QVBoxLayout(self.frame_container)
-    verticalLayout.setContentsMargins(0, 0, 0, 0)
-    verticalLayout.setSpacing(0)
+    self.verticalLayout = QVBoxLayout(self.frame_container)
+    self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+    self.verticalLayout.setSpacing(0)
 
     self.label_title = QLabel(self.title, self.frame_container)
     self.label_title.setObjectName("label_title")
     self.label_title.setFont(self.font())
-    verticalLayout.addWidget(self.label_title)
+    self.verticalLayout.addWidget(self.label_title)
 
     self.separator = QFrame(self.frame_container)
     self.separator.setObjectName("separator")
     self.separator.setFrameShape(QFrame.Shape.HLine)
     self.separator.setFrameShadow(QFrame.Shadow.Sunken)
     self.separator.setFixedHeight(2)
-    verticalLayout.addWidget(self.separator)
+    self.verticalLayout.addWidget(self.separator)
 
     # Stacked widget to hold multiple content views
     self.stacked_widget = QStackedWidget(self.frame_container)
     self.stacked_widget.setObjectName("stacked_widget")
-    # self.stacked_widget.setMinimumSize(QSize(300, 200))
-    # self.stacked_widget.setMaximumHeight(300)
-    verticalLayout.addWidget(self.stacked_widget)
+    self.verticalLayout.addWidget(self.stacked_widget)
 
-    # Navigation buttons for switching content views
+    # Navigation layout for switching content views
     self.navigation_layout = QHBoxLayout()
     self.navigation_layout.setContentsMargins(0, 0, 0, 0)
     self.navigation_layout.setSpacing(10)
@@ -66,7 +64,7 @@ class CardWidget(QWidget):
     # Spacer to push buttons to the right
     self.navigation_layout.addSpacerItem(QSpacerItem(
       20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
-    verticalLayout.addLayout(self.navigation_layout)
+    self.verticalLayout.addLayout(self.navigation_layout)
 
     # Initially hide the navigation layout
     self.toggle_navigation_buttons(False)
@@ -80,7 +78,15 @@ class CardWidget(QWidget):
     self.toggle_navigation_buttons(len(self.content_views) > 1)
 
   def toggle_navigation_buttons(self, show):
-    """ Show or hide navigation buttons based on the number of content views. """
+    """ Show or hide the navigation layout based on the number of content views. """
+    if show:
+      # If the navigation layout isn't already in the vertical layout, add it.
+      if self.navigation_layout not in [self.verticalLayout.itemAt(i).layout() for i in range(self.verticalLayout.count())]:
+        self.verticalLayout.addLayout(self.navigation_layout)
+    else:
+      # If there's only one view, remove the navigation layout from the vertical layout
+      self.verticalLayout.removeItem(self.navigation_layout)
+
     self.prev_button.setVisible(show)
     self.next_button.setVisible(show)
 
