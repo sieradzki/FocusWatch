@@ -1,28 +1,33 @@
 import logging
+from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import QCoreApplication, QMetaObject, QRect, QSize, Qt
+from PySide6.QtCore import QCoreApplication, QMetaObject, QSize, Qt, QObject
 from PySide6.QtGui import QFont, QIcon
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
                                QMenuBar, QPushButton, QSizePolicy, QSpacerItem,
-                               QStackedWidget, QStatusBar, QTabWidget,
-                               QToolButton, QVBoxLayout, QWidget)
+                               QStackedWidget, QStatusBar, QToolButton,
+                               QVBoxLayout, QWidget)
 
 from focuswatch.utils.resource_utils import apply_stylesheet, load_icon
-from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 from focuswatch.views.categories_view import CategoriesView
 from focuswatch.views.home_view import HomeView
 from focuswatch.views.settings_view import SettingsView
+
+if TYPE_CHECKING:
+  from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 
 logger = logging.getLogger(__name__)
 
 
 class MainWindowView(QMainWindow):
-  def __init__(self, viewmodel: MainWindowViewModel, parent=None):
+  def __init__(self,
+               viewmodel: "MainWindowViewModel",
+               parent: Optional[QObject] = None):
     super().__init__(parent)
     self._viewmodel = viewmodel
     self.setupUi()
-    self.retranslateUi()
-    self.connect_signals()
+    self._retranslateUi()
+    self._connect_signals()
 
   def setupUi(self):
     if not self.objectName():
@@ -64,13 +69,13 @@ class MainWindowView(QMainWindow):
     self.sidebarLayout.addWidget(self.logo_label)
 
     # Sidebar Buttons
-    self.sidebar_button_home = self.create_sidebar_button(
+    self.sidebar_button_home = self._create_sidebar_button(
       "Home", "home.png")
-    self.sidebar_button_categories = self.create_sidebar_button(
+    self.sidebar_button_categories = self._create_sidebar_button(
       "Categories", "categories.png")
     # self.sidebar_button_help = self.create_sidebar_button(
     # "Help", "help.png")
-    self.sidebar_button_settings = self.create_sidebar_button(
+    self.sidebar_button_settings = self._create_sidebar_button(
       "Settings", "settings.png")
 
     # Add buttons to layout
@@ -106,11 +111,9 @@ class MainWindowView(QMainWindow):
     # Set the central widget
     self.setCentralWidget(self.centralwidget)
 
-    self.update_sidebar_buttons()  # TODO Should I just setChecked the home button?
+    self._update_sidebar_buttons()
 
-    QMetaObject.connectSlotsByName(self)
-
-  def retranslateUi(self):
+  def _retranslateUi(self):
     self.logo_label.setText(QCoreApplication.translate(
       "MainWindow", u"focuswatch", None))
     self.sidebar_button_home.setText(
@@ -122,7 +125,7 @@ class MainWindowView(QMainWindow):
     self.sidebar_button_settings.setText(
       QCoreApplication.translate("MainWindow", u"Settings", None))
 
-  def create_sidebar_button(self, text: str, icon_path: str) -> QToolButton:
+  def _create_sidebar_button(self, text: str, icon_path: str) -> QToolButton:
     """ Helper method to create sidebar buttons. """
     button = QToolButton(self.sidebar)
     button.setObjectName(f"sidebar_button_{text.lower()}")
@@ -143,7 +146,7 @@ class MainWindowView(QMainWindow):
 
     return button
 
-  def create_mock_page(self, page_name: str) -> QWidget:
+  def _create_mock_page(self, page_name: str) -> QWidget:
     """ Helper method to create a mock page with a label for distinguishing pages. """
     page = QWidget()
     layout = QVBoxLayout(page)
@@ -156,20 +159,29 @@ class MainWindowView(QMainWindow):
     self._viewmodel.exit_application()
     super().closeEvent(event)
 
-  def connect_signals(self):
-    self._viewmodel.property_changed.connect(self.on_property_changed)
-    """ Connect button signals to slots for page switching. """
-    self.sidebar_button_home.clicked.connect(lambda: self.switch_page("home"))
-    self.sidebar_button_categories.clicked.connect(
-      lambda: self.switch_page("categories"))
-    self.sidebar_button_settings.clicked.connect(
-      lambda: self.switch_page("settings"))
+  def _connect_signals(self):
+    """ Connect signals to their respective slots. """
+    # Connect ViewModel signals
+    self._viewmodel.current_page_index_changed.connect(
+        self._on_current_page_index_changed)
+    self._viewmodel.window_title_changed.connect(
+        self._on_window_title_changed)
+    self._viewmodel.window_size_changed.connect(
+        self._on_window_size_changed)
 
-  def switch_page(self, name: str):
+    # Connect button signals to slots for page switching
+    self.sidebar_button_home.clicked.connect(
+        lambda: self._switch_page("home"))
+    self.sidebar_button_categories.clicked.connect(
+        lambda: self._switch_page("categories"))
+    self.sidebar_button_settings.clicked.connect(
+        lambda: self._switch_page("settings"))
+
+  def _switch_page(self, name: str):
     """ Switch the page in the stacked widget. """
     self._viewmodel.current_page_index = self._viewmodel.page_index(name)
 
-  def update_sidebar_buttons(self,):
+  def _update_sidebar_buttons(self,):
     """ Update the sidebar buttons to reflect the current page. """
     buttons = self.sidebar.findChildren(QToolButton)
     for button in buttons:
@@ -178,7 +190,15 @@ class MainWindowView(QMainWindow):
       else:
         button.setChecked(False)
 
-  def on_property_changed(self, property_name):
-    if property_name == '_current_page_index':
-      self.stackedWidget.setCurrentIndex(self._viewmodel.current_page_index)
-      self.update_sidebar_buttons()
+  def _on_current_page_index_changed(self):
+    """ Handle changes to the current page index. """
+    self.stackedWidget.setCurrentIndex(self._viewmodel.current_page_index)
+    self._update_sidebar_buttons()
+
+  def _on_window_title_changed(self):
+    """ Handle changes to the window title. """
+    self.setWindowTitle(self._viewmodel.window_title)
+
+  def _on_window_size_changed(self):
+    """ Handle changes to the window size. """
+    self.resize(*self._viewmodel.window_size)
