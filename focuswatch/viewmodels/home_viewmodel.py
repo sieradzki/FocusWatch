@@ -9,6 +9,7 @@ from focuswatch.viewmodels.components.timeline_viewmodel import TimelineViewMode
 from focuswatch.viewmodels.components.top_categories_card_viewmodel import TopCategoriesCardViewModel
 from focuswatch.viewmodels.components.top_applications_card_viewmodel import TopApplicationsCardViewModel
 from focuswatch.viewmodels.components.top_titles_card_viewmodel import TopNamesCardViewModel
+from focuswatch.viewmodels.components.focus_trend_viewmodel import FocusTrendViewModel
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
@@ -55,6 +56,11 @@ class HomeViewModel(BaseViewModel):
       self._period_end
     )
 
+    self._focus_trend_viewmodel = FocusTrendViewModel(
+      self._activity_service,
+      self._category_service
+    )
+
     self.connect_period_changed()
     self.connect_refresh_triggered()
 
@@ -86,12 +92,17 @@ class HomeViewModel(BaseViewModel):
   def top_titles_card_viewmodel(self) -> TopNamesCardViewModel:
     return self._top_titles_card_viewmodel
 
+  @Property('QVariant', notify=BaseViewModel.property_changed)
+  def focus_trend_viewmodel(self) -> FocusTrendViewModel:
+    return self._focus_trend_viewmodel
+
   def connect_period_changed(self):
     for viewmodel in [
         self._timeline_viewmodel,
         self._top_categories_card_viewmodel,
         self._top_applications_card_viewmodel,
-        self._top_titles_card_viewmodel
+        self._top_titles_card_viewmodel,
+        self._focus_trend_viewmodel
     ]:
       self.period_changed.connect(viewmodel.update_period)
 
@@ -104,6 +115,8 @@ class HomeViewModel(BaseViewModel):
         self._top_titles_card_viewmodel
     ]:
       self.refresh_triggered.connect(viewmodel._update_top_items)
+    self._focus_trend_viewmodel.data_changed.connect(
+      self._focus_trend_viewmodel._compute_focus_trend)
 
   def _update_period(self, start: datetime, end: Optional[datetime], period_type: str) -> None:
     self._period_start = start

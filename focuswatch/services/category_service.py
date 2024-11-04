@@ -10,14 +10,14 @@ logger = logging.getLogger(__name__)
 
 
 class CategoryService:
-  """Service class for managing categories in the FocusWatch application."""
+  """ Service class for managing categories in the FocusWatch application."""
 
   def __init__(self):
     self._db_conn = DatabaseConnection()
     self._db_conn.connect()
 
   def create_category(self, category: Category) -> bool:
-    """Create a new category in the database.
+    """ Create a new category in the database.
 
     Args:
       category: The Category object to be created.
@@ -45,9 +45,9 @@ class CategoryService:
         f"Category already exists within current scope: {category.name}")
       return False
 
-    insert_query = 'INSERT INTO categories (name, parent_category, color) VALUES (?, ?, ?)'
+    insert_query = 'INSERT INTO categories (name, parent_category, color, focused) VALUES (?, ?, ?, ?)'
     insert_params = (
-        category.name, category.parent_category_id, category.color)
+        category.name, category.parent_category_id, category.color, category.focused)
 
     try:
       cursor = self._db_conn.execute_update(
@@ -61,7 +61,7 @@ class CategoryService:
       return None
 
   def get_category_by_id(self, category_id: int) -> Optional[Category]:
-    """Retrieve a category by its ID.
+    """ Retrieve a category by its ID.
 
     Args:
       category_id: The ID of the category to retrieve.
@@ -69,36 +69,36 @@ class CategoryService:
     Returns:
       Optional[Category]: A Category object if found, None otherwise.
     """
-    query = "SELECT id, name, parent_category, color FROM categories WHERE id = ?"
+    query = "SELECT * FROM categories WHERE id = ?"
     params = (category_id,)
 
     try:
       result = self._db_conn.execute_query(query, params)
       if result:
         # name and id are swapped in the category model
-        return Category(name=result[0][1], id=result[0][0], parent_category_id=result[0][2], color=result[0][3])
+        return Category(*result[0])
       return None
     except Exception as e:
       logger.error(f"Failed to retrieve category: {e}")
       return None
 
   def get_all_categories(self) -> List[Category]:
-    """Retrieve all categories from the database.
+    """ Retrieve all categories from the database.
 
     Returns:
         List[Category]: A list of all Category objects in the database.
     """
-    query = "SELECT id, name, parent_category, color FROM categories"
+    query = "SELECT * FROM categories"
 
     try:
       results = self._db_conn.execute_query(query)
-      return [Category(name=row[1], id=row[0], parent_category_id=row[2], color=row[3]) for row in results]
+      return [Category(*row) for row in results]
     except Exception as e:
       logger.error(f"Failed to retrieve categories: {e}")
       return []
 
   def update_category(self, category: Category) -> bool:
-    """Update an existing category in the database.
+    """ Update an existing category in the database.
 
     Args:
       category: The Category object with updated information.
@@ -126,10 +126,10 @@ class CategoryService:
       return False
 
     update_query = '''UPDATE categories 
-                      SET name = ?, parent_category = ?, color = ? 
+                      SET name = ?, parent_category = ?, color = ?, focused = ?
                       WHERE id = ?'''
     update_params = (category.name, category.parent_category_id,
-                     category.color, category.id)
+                     category.color, category.focused, category.id)
 
     try:
       self._db_conn.execute_update(update_query, update_params)
@@ -165,7 +165,7 @@ class CategoryService:
       return False
 
   def get_category_depth(self, category_id: int) -> int:
-    """Get the depth of a category in the hierarchy.
+    """ Get the depth of a category in the hierarchy.
 
     Args:
       category_id: The ID of the category.
@@ -192,27 +192,29 @@ class CategoryService:
       return 0
 
   def insert_default_categories(self) -> None:
-    """Insert default categories into the database."""
+    """ Insert default categories into the database."""
     logger.info("Inserting default categories.")
     self._db_conn.execute_update('DELETE FROM categories;')
     self._db_conn.execute_update('DELETE FROM keywords;')
 
     categories = [
-      ("Work", None, "#00cc00"), ("Programming", "Work", None),
-      ("Documents", "Work", None), ("Image", "Work", None),
-      ("Audio", "Work", None), ("3D", "Work", None),
-      ("Comms", None, "#33ccff"), ("IM", "Comms", None),
-      ("Email", "Comms", None), ("Media", None, "#ff0000"),
-      ("Games", "Media", None), ("Video", "Media", None),
-      ("Social media", "Media", None), ("Music", "Media", None),
-      ("Productivity", None, "#5546B5"), ("Uncategorized", None, "#8c8c8c"),
-      ("AFK", None, "#3d3d3d")
+      ("Work", None, "#00cc00", True), ("Programming", "Work", None, True),
+      ("Documents", "Work", None, True), ("Image", "Work", None, True),
+      ("Audio", "Work", None, True), ("3D", "Work", None, True),
+      ("Comms", None, "#33ccff", False), ("IM", "Comms", None, False),
+      ("Email", "Comms", None, False), ("Media", None, "#ff0000", False),
+      ("Games", "Media", None, False), ("Video", "Media", None, False),
+      ("Social media", "Media", None, False), ("Music", "Media", None, False),
+      ("Productivity", None, "#5546B5",
+       True), ("Uncategorized", None, "#8c8c8c", False),
+      ("AFK", None, "#3d3d3d", False)
     ]
 
     category_ids = {}
-    for name, parent_name, color in categories:
+    for name, parent_name, color, focused in categories:
       parent_id = category_ids.get(parent_name)
-      category = Category(name=name, parent_category_id=parent_id, color=color)
+      category = Category(
+        name=name, parent_category_id=parent_id, color=color, focused=focused)
       if self.create_category(category):
         category_id = self.get_category_id_from_name(name)
         category_ids[name] = category_id
@@ -220,7 +222,7 @@ class CategoryService:
         logger.warning(f"Failed to create category: {name}")
 
   def get_daily_category_time_totals(self) -> List[Tuple[int, int]]:
-    """Return the total time spent on each category for today.
+    """ Return the total time spent on each category for today.
 
     Returns:
       List[Tuple[int, int]]: A list of tuples containing (category_id, total_time_seconds).
@@ -228,7 +230,7 @@ class CategoryService:
     query = """
       SELECT category_id,
       SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-      FROM activity_log
+      FROM activity
       WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', 'now')
       GROUP BY category_id
       ORDER BY total_time_seconds DESC;
@@ -236,7 +238,7 @@ class CategoryService:
     return self._db_conn.execute_query(query)
 
   def get_date_category_time_totals(self, date: datetime) -> List[Tuple[int, int]]:
-    """Return the total time spent on each category for a given date.
+    """ Return the total time spent on each category for a given date.
 
     Args:
       date: The date to retrieve entries for.
@@ -248,7 +250,7 @@ class CategoryService:
     query = """
       SELECT category_id,
       SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-      FROM activity_log
+      FROM activity
       WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
       GROUP BY category_id
       ORDER BY total_time_seconds DESC;
@@ -257,7 +259,7 @@ class CategoryService:
     return self._db_conn.execute_query(query, params)
 
   def get_period_category_time_totals(self, start_date: datetime, end_date: Optional[datetime] = None) -> List[Tuple[int, int]]:
-    """Return the total time spent on each category for a given period.
+    """ Return the total time spent on each category for a given period.
 
     Args:
       start_date: The start date of the period.
@@ -272,7 +274,7 @@ class CategoryService:
       query = """
         SELECT category_id,
         SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-        FROM activity_log
+        FROM activity
         WHERE strftime('%Y-%m-%d', time_start) BETWEEN ? AND ?
         GROUP BY category_id
         ORDER BY total_time_seconds DESC;
@@ -282,7 +284,7 @@ class CategoryService:
       query = """
         SELECT category_id,
         SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-        FROM activity_log
+        FROM activity
         WHERE strftime('%Y-%m-%d', time_start) = ?
         GROUP BY category_id
         ORDER BY total_time_seconds DESC;
@@ -292,7 +294,7 @@ class CategoryService:
     return self._db_conn.execute_query(query, params)
 
   def get_category_id_from_name(self, category_name: str) -> Optional[int]:
-    """Return the id of a category given its name.
+    """ Return the id of a category given its name.
 
     Args:
       category_name: The name of the category.
@@ -304,3 +306,18 @@ class CategoryService:
     params = (category_name,)
     result = self._db_conn.execute_query(query, params)
     return result[0][0] if result else None
+
+  # TODO remove on watcher service refactor
+  def get_category_focused(self, category_id: int) -> bool:
+    """ Return whether a category is focused.
+
+    Args:
+      category_id: The ID of the category.
+
+    Returns:
+      bool: True if the category is focused, False otherwise.
+    """
+    query = 'SELECT focused FROM categories WHERE id = ?'
+    params = (category_id,)
+    result = self._db_conn.execute_query(query, params)
+    return bool(result[0][0]) if result else False

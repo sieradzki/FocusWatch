@@ -18,6 +18,7 @@ from focuswatch.views.components.top_applications_card_view import \
 from focuswatch.views.components.top_categories_card_view import \
     TopCategoriesCardView
 from focuswatch.views.components.top_titles_card_view import TopNamesCardView
+from focuswatch.views.components.focus_trend_view import FocusTrendView
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
@@ -160,15 +161,17 @@ class HomeView(QWidget):
       self._viewmodel.top_titles_card_viewmodel, self)
     self.grid_layout.addWidget(self.top_titles_card, 0, 2)
 
-    # Placeholders for now
-    self.focus_trend_card = CardWidget("Focus Trend", self)
-    self.grid_layout.addWidget(self.focus_trend_card, 1, 0, 1, 2)
+    # Focus trend
+    self.focus_trend_card = FocusTrendView(
+      self._viewmodel.focus_trend_viewmodel, self)
+    self.grid_layout.addWidget(self.focus_trend_card, 1, 0, 2, 2)
 
+    # Placeholders for now
     self.daily_summary_card = CardWidget("Daily Summary", self)
     self.grid_layout.addWidget(self.daily_summary_card, 1, 2, 2, 1)
 
-    self.daily_scores_card = CardWidget("Daily Scores", self)
-    self.grid_layout.addWidget(self.daily_scores_card, 2, 0, 1, 2)
+    # self.daily_scores_card = CardWidget("Daily Scores", self)
+    # self.grid_layout.addWidget(self.daily_scores_card, 2, 0, 1, 2)
 
     # Add the grid layout to the content frame
     self.content_layout.addLayout(self.grid_layout)

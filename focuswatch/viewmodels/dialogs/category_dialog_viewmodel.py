@@ -62,6 +62,16 @@ class CategoryDialogViewModel(BaseViewModel):
       self._category.color = value
       self.property_changed.emit('color')
 
+  @Property(str, notify=BaseViewModel.property_changed)
+  def focused(self) -> bool:
+    return self._category.focused
+
+  @focused.setter
+  def focused(self, value: bool):
+    if self._category.focused != value:
+      self._category.focused = value
+      self.property_changed.emit('focused')
+
   @Property(list, notify=BaseViewModel.property_changed)
   def keywords(self) -> List[Keyword]:
     return self._keywords

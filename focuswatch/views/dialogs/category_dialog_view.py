@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QColorDialog, QComboBox, QDialog,
                                QDialogButtonBox, QFormLayout, QFrame,
                                QGridLayout, QHBoxLayout, QLabel, QLineEdit,
                                QMenu, QMessageBox, QPushButton, QScrollArea,
-                               QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
+                               QSizePolicy, QSpacerItem, QVBoxLayout, QWidget, QCheckBox)
 
 from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.viewmodels.dialogs.category_dialog_viewmodel import \
@@ -80,6 +80,12 @@ class CategoryDialogView(QDialog):
     colorLayout.addStretch()
     formLayout.addRow("Color:", colorLayout)
 
+    # Focused checkbox
+    self.focusedCheckBox = QCheckBox("", self)
+    self.focusedCheckBox.setObjectName("focusedCheckBox")
+    self.focusedCheckBox.setChecked(self._viewmodel.focused)
+    formLayout.addRow("Focused:", self.focusedCheckBox)
+
     mainLayout.addLayout(formLayout)
 
     # Keywords Section
@@ -140,6 +146,8 @@ class CategoryDialogView(QDialog):
     self.nameLineEdit.textChanged.connect(self.on_name_changed)
     self.parentComboBox.currentIndexChanged.connect(self.on_parent_changed)
     self.selectColorButton.clicked.connect(self.show_color_dialog)
+    self.focusedCheckBox.stateChanged.connect(
+      self.on_focused_changed)
 
     self.buttonBox.accepted.connect(self.accept)
     self.buttonBox.rejected.connect(self.reject)
@@ -155,6 +163,8 @@ class CategoryDialogView(QDialog):
       self.populate_parent_combo()
     elif property_name == 'color':
       self.update_color_button()
+    elif property_name == 'focused':
+      self.focusedCheckBox.setChecked(self._viewmodel.focused)
     elif property_name == 'keywords':
       self.setup_keyword_grid()
 
@@ -165,6 +175,10 @@ class CategoryDialogView(QDialog):
   @Slot(int)
   def on_parent_changed(self, index):
     self._viewmodel.parent_category_id = self.parentComboBox.itemData(index)
+
+  @Slot(int)
+  def on_focused_changed(self, state):
+    self._viewmodel.focused = state == 2
 
   def populate_parent_combo(self):
     self.parentComboBox.blockSignals(True)

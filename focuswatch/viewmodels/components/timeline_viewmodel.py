@@ -28,8 +28,6 @@ class TimelineViewModel(BaseViewModel):
     self._period_end: Optional[datetime] = None
     self._timeline_data: Dict[int, List[int]] = {}
 
-    self.property_changed.connect(self._update_timeline_data)
-
     self._update_timeline_data()
 
   @Slot(datetime, datetime)
@@ -74,10 +72,6 @@ class TimelineViewModel(BaseViewModel):
     for entry in period_entries:
       timestamp_start = entry.time_start
       timestamp_stop = entry.time_stop
-      timestamp_start = datetime.strptime(
-        timestamp_start, "%Y-%m-%dT%H:%M:%S.%f")
-      timestamp_stop = datetime.strptime(
-        timestamp_stop, "%Y-%m-%dT%H:%M:%S.%f")
       category_id = entry.category_id
 
       while timestamp_start < timestamp_stop:

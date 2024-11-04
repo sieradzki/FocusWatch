@@ -29,7 +29,7 @@ class TopApplicationsCardViewModel(TopItemsCardViewModel):
 
     # clear top items
     self._top_items.clear()
-    for application, category, time in top_applications:
+    for application, category, time, focused in top_applications:
       self._top_items[application] = (
         time, None, None)
 
