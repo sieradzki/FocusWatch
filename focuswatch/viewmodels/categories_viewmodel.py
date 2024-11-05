@@ -2,12 +2,10 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from PySide6.QtCore import Property, Signal, Slot
+from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from focuswatch.models.category import Category
-from focuswatch.models.keyword import Keyword
 from focuswatch.services.categorization_service import CategorizationService
-from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 
 logger = logging.getLogger(__name__)
 
@@ -18,13 +16,16 @@ if TYPE_CHECKING:
   from focuswatch.services.keyword_service import KeywordService
 
 
-class CategoriesViewModel(BaseViewModel):
+class CategoriesViewModel(QObject):
   retroactive_categorization_progress = Signal(int, int)
+  categories_changed = Signal()
+  filter_text_changed = Signal()
+  organized_categories_changed = Signal()
 
-  def __init__(self, activity_service: 'ActivityService',
-               category_service: 'CategoryService',
-               keyword_service: 'KeywordService',
-               classifier_service: 'ClassifierService'):
+  def __init__(self, activity_service: "ActivityService",
+               category_service: "CategoryService",
+               keyword_service: "KeywordService",
+               classifier_service: "ClassifierService"):
     super().__init__()
     self._activity_service = activity_service
     self._category_service = category_service
@@ -37,13 +38,20 @@ class CategoriesViewModel(BaseViewModel):
     self._filter_text: str = ""
     self._organized_categories: Dict[int, Dict[str, Any]] = {}
 
-    self.load_categories()
+    self._load_categories()
 
-  @Property(list, notify=BaseViewModel.property_changed)
+  @Property(list, notify=categories_changed)
   def categories(self) -> List[Category]:
+    """ Get the list of categories. """
     return self._categories
 
-  @Property(str, notify=BaseViewModel.property_changed)
+  @categories.setter
+  def categories(self, value: List[Category]):
+    if self._categories != value:
+      self._categories = value
+      self.categories_changed.emit()
+
+  @Property(str, notify=filter_text_changed)
   def filter_text(self) -> str:
     return self._filter_text
 
@@ -51,18 +59,18 @@ class CategoriesViewModel(BaseViewModel):
   def filter_text(self, value: str):
     if self._filter_text != value.lower():
       self._filter_text = value.lower()
-      self.property_changed.emit('filter_text')
+      self.filter_text_changed.emit()
 
-  @Property(dict, notify=BaseViewModel.property_changed)
+  @Property(dict, notify=organized_categories_changed)
   def organized_categories(self) -> Dict:
     return self._organized_categories
 
-  def load_categories(self):
+  def _load_categories(self):
     self._categories = self._category_service.get_all_categories()
-    self.organize_categories()
-    self.property_changed.emit('categories')
+    self._organize_categories()
+    self.categories_changed.emit()
 
-  def organize_categories(self):
+  def _organize_categories(self):
     """ Organize categories into a hierarchical structure. """
     cat_key: Dict[int, List[str]] = defaultdict(list)
     for category in self._categories:
@@ -109,8 +117,9 @@ class CategoriesViewModel(BaseViewModel):
 
     self._organized_categories = cat_dict
 
-    self.property_changed.emit('organized_categories')
+    self.organized_categories_changed.emit()
 
+  @Slot(int, result=int)
   def get_category_depth(self, category_id: int) -> int:
     """ Get the depth of a category in the category hierarchy. """
     return self._category_service.get_category_depth(category_id)
@@ -121,29 +130,31 @@ class CategoriesViewModel(BaseViewModel):
     """ Add a new category. """
     result = self._category_service.create_category(name, parent_id, color)
     if result:
-      self.load_categories()
+      self._load_categories()
     return result
 
   def update_category(self, category: Category) -> bool:
     """ Update an existing category. """
     result = self._category_service.update_category(category)
     if result:
-      self.load_categories()
+      self._load_categories()
     return result
 
+  @Slot(int, result=bool)
   def delete_category(self, category_id: int) -> bool:
     """ Delete a category by its ID. """
     result = self._category_service.delete_category(category_id)
     if result:
-      self.load_categories()
+      self._load_categories()
     return result
 
+  @Slot(result=bool)
   def restore_defaults(self) -> bool:
     """ Restore default categories and perform retroactive categorization. """
     self._category_service.insert_default_categories()
     self._keyword_service.insert_default_keywords()
     self.retroactive_categorization()
-    self.load_categories()
+    self._load_categories()
     return True
 
   @Slot(result=bool)
