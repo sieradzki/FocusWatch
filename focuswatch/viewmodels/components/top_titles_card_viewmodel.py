@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class TopNamesCardViewModel(TopItemsCardViewModel):
+class TopTitlesCardViewModel(TopItemsCardViewModel):
   """ ViewModel for the Top Applications Card component """
 
   def __init__(self,
@@ -20,9 +20,9 @@ class TopNamesCardViewModel(TopItemsCardViewModel):
     super().__init__(period_start, period_end)
     self._activity_service = activity_service
 
-    self._update_top_items()
+    self.update_top_items()
 
-  def _update_top_items(self) -> None:
+  def update_top_items(self) -> None:
     """ Update the list of top items."""
     self._top_items.clear()
     top_titles = self._activity_service.get_period_entries_name_time_total(

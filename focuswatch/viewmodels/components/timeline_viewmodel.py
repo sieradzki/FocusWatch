@@ -28,7 +28,7 @@ class TimelineViewModel(BaseViewModel):
     self._period_end: Optional[datetime] = None
     self._timeline_data: Dict[int, List[int]] = {}
 
-    self._update_timeline_data()
+    self.update_timeline_data()
 
   @Slot(datetime, datetime)
   def update_period(self, start: datetime, end: Optional[datetime]) -> None:
@@ -37,6 +37,7 @@ class TimelineViewModel(BaseViewModel):
     self.period_end = end
     self.property_changed.emit("period_start")
     self.property_changed.emit("period_end")
+    self.update_timeline_data()
 
   @Property(datetime, notify=data_changed)
   def period_start(self) -> datetime:
@@ -62,7 +63,7 @@ class TimelineViewModel(BaseViewModel):
   def timeline_data(self) -> Dict[int, List[int]]:
     return self._timeline_data
 
-  def _update_timeline_data(self) -> None:
+  def update_timeline_data(self) -> None:
     period_entries: List[Activity] = self._activity_service.get_period_entries(
       self._period_start, self._period_end)
     hour_chunk_entries = defaultdict(dict)

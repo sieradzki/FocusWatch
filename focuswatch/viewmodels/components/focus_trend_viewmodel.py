@@ -33,7 +33,7 @@ class FocusTrendViewModel(BaseViewModel):
     self._afk_category_id = self._category_service.get_category_id_from_name(
       "AFK")
 
-    self._compute_focus_trend()
+    self.compute_focus_trend()
 
   @Slot(datetime, datetime)
   def update_period(self, start: datetime, end: Optional[datetime]) -> None:
@@ -67,7 +67,7 @@ class FocusTrendViewModel(BaseViewModel):
   def trend_data(self) -> List[Dict[str, float]]:
     return self._trend_data
 
-  def _compute_focus_trend(self) -> None:
+  def compute_focus_trend(self) -> None:
     """ Compute the focus trend data for the specified period. """
     activities = self._activity_service.get_period_entries(
       self._period_start, self._period_end)

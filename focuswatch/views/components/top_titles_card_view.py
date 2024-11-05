@@ -5,7 +5,7 @@ from focuswatch.views.components.top_items_card_view import TopItemsCardView
 logger = logging.getLogger(__name__)
 
 
-class TopNamesCardView(TopItemsCardView):
+class TopTitlesCardView(TopItemsCardView):
   def __init__(self, viewmodel, parent=None):
     super().__init__("Top Titles", viewmodel, parent)
 

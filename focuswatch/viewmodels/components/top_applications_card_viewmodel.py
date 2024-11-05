@@ -20,9 +20,9 @@ class TopApplicationsCardViewModel(TopItemsCardViewModel):
     super().__init__(period_start, period_end)
     self._activity_service = activity_service
 
-    self._update_top_items()
+    self.update_top_items()
 
-  def _update_top_items(self) -> None:
+  def update_top_items(self) -> None:
     """ Update the list of top items."""
     top_applications = self._activity_service.get_period_entries_class_time_total(
       self._period_start, self._period_end)[:self._top_items_limit]

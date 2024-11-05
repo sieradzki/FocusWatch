@@ -27,13 +27,13 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
     self._category_service = category_service
     self._organized_categories: Dict[int, Dict] = {}
 
-    self._update_top_items()
+    self.update_top_items()
 
   @Property(dict, notify=TopItemsCardViewModel.property_changed)
   def organized_categories(self) -> Dict[int, Dict]:
     return self._organized_categories
 
-  def _update_top_items(self) -> None:
+  def update_top_items(self) -> None:
     """ Update the list of top items."""
     top_categories = self._category_service.get_period_category_time_totals(
       self._period_start, self._period_end)[:self._top_items_limit]
