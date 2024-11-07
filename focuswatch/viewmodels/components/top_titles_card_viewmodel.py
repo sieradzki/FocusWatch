@@ -14,7 +14,7 @@ class TopTitlesCardViewModel(TopItemsCardViewModel):
   """ ViewModel for the Top Applications Card component """
 
   def __init__(self,
-               activity_service: 'ActivityService',
+               activity_service: "ActivityService",
                period_start: datetime,
                period_end: Optional[datetime] = None):
     super().__init__(period_start, period_end)
@@ -32,4 +32,4 @@ class TopTitlesCardViewModel(TopItemsCardViewModel):
       self._top_items[name] = (
         time, None, None)
 
-    self.property_changed.emit('top_items')
+    self.top_items_changed.emit()
