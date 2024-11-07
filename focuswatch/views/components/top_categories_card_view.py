@@ -28,7 +28,7 @@ class TopCategoriesCardView(TopItemsCardView):
   def _update_chart(self) -> None:
     """ Update the pie chart with the organized categories in a multi-level fashion. """
     chart = QChart()
-    self.slice_tooltips.clear()
+    self._slice_tooltips.clear()
     organized_categories = self._viewmodel.organized_categories
     total_time = sum(data['time'] for data in organized_categories.values())
 
@@ -74,7 +74,7 @@ class TopCategoriesCardView(TopItemsCardView):
                 child_data['time'] / total_time) * 100
               child_tooltip = f"{child_category.name}\n{
                 self._format_time(child_data['time'])} ({child_percentage:.1f}%)"
-              self.slice_tooltips[child_slice] = child_tooltip
+              self._slice_tooltips[child_slice] = child_tooltip
 
               # Update scrollable legend with nesting for child categories
               self.scrollable_legend.add_item(
@@ -94,7 +94,7 @@ class TopCategoriesCardView(TopItemsCardView):
         percentage = (category_data['time'] / total_time) * 100
         tooltip = f"{category.name}\n{self._format_time(
           category_data['time'])} ({percentage:.1f}%)"
-        self.slice_tooltips[parent_slice] = tooltip
+        self._slice_tooltips[parent_slice] = tooltip
 
         parent_slice.hovered.connect(
           lambda state, s=parent_slice: self._on_slice_hover(state, s, True))

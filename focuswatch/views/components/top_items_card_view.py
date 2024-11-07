@@ -5,7 +5,7 @@ import logging
 from typing import Optional
 
 from PySide6.QtCharts import QChart, QChartView, QPieSeries, QPieSlice
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize, Qt, Slot
 from PySide6.QtGui import QBrush, QColor, QCursor, QFontMetrics, QPainter, QPen
 from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QLayout,
                                QProgressBar, QSizePolicy, QSpacerItem,
@@ -22,13 +22,16 @@ logger = logging.getLogger(__name__)
 class TopItemsCardView(CardWidget):
   """ Base class for Top Items card views (Categories, Applications, Names). """
 
-  def __init__(self, title: str, viewmodel, parent: Optional[QWidget] = None):
+  def __init__(self,
+               title: str,
+               viewmodel,
+               parent: Optional[QWidget] = None):
     super().__init__(title, parent)
     self._viewmodel = viewmodel
     self._setup_ui()
     self._connect_signals()
-    self.show_event_connected = False
-    self.slice_tooltips = {}
+    self._show_event_connected = False
+    self._slice_tooltips = {}
 
   def _setup_ui(self) -> None:
     """ Set up the UI components. """
@@ -66,17 +69,18 @@ class TopItemsCardView(CardWidget):
 
   def showEvent(self, event) -> None:
     super().showEvent(event)
-    if not self.show_event_connected:  # only update view once on window show
+    if not self._show_event_connected:  # only update view once on window show
       self._update_view()
-      self.show_event_connected = True
+      self._show_event_connected = True
 
   def _connect_signals(self) -> None:
     """ Connect signals from the ViewModel to the View. """
     raise NotImplementedError(
         "This method should be implemented in derived classes.")
 
-  def on_property_changed(self, property_name: str) -> None:
-    """ Handle property changes from the ViewModel. """
+  @Slot()
+  def _on_period_changed(self):
+    """ Handle changes to the period start or end. """
     raise NotImplementedError(
         "This method should be implemented in derived classes.")
 
@@ -88,7 +92,7 @@ class TopItemsCardView(CardWidget):
   def _update_chart(self) -> None:
     """ Update the pie chart with the given items. """
     chart = QChart()
-    self.slice_tooltips.clear()
+    self._slice_tooltips.clear()
     items = self._viewmodel.top_items
     total_time = sum(data[0] for data in items.values())
 
@@ -119,7 +123,7 @@ class TopItemsCardView(CardWidget):
 
       percentage = time / total_time * 100
       tooltip = f"{application}\n{self._format_time(time)} ({percentage:.1f}%)"
-      self.slice_tooltips[slice] = tooltip
+      self._slice_tooltips[slice] = tooltip
 
       slice.hovered.connect(
         lambda state, s=slice: self._on_slice_hover(state, s))
@@ -153,7 +157,7 @@ class TopItemsCardView(CardWidget):
       else:
         slice.setExploded(True)
         slice.setExplodeDistanceFactor(0.02)
-      tooltip_text = self.slice_tooltips.get(slice, "")
+      tooltip_text = self._slice_tooltips.get(slice, "")
       QToolTip.showText(QCursor.pos(), tooltip_text)
     else:
       slice.setExploded(False)
