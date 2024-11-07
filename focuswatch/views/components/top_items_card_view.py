@@ -78,12 +78,6 @@ class TopItemsCardView(CardWidget):
     raise NotImplementedError(
         "This method should be implemented in derived classes.")
 
-  # @Slot()
-  # def _on_period_changed(self):
-  #   """ Handle changes to the period start or end. """
-  #   raise NotImplementedError(
-  #       "This method should be implemented in derived classes.")
-
   def _update_view(self) -> None:
     """ Update the view with the latest data. """
     self._update_list()

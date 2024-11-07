@@ -1,11 +1,13 @@
 import logging
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 
-from PySide6.QtCore import Property, Slot
+from PySide6.QtCore import Property, Signal, Slot
+
 from focuswatch.utils.ui_utils import get_category_color_or_parent
-from focuswatch.viewmodels.components.top_items_card_viewmodel import TopItemsCardViewModel
+from focuswatch.viewmodels.components.top_items_card_viewmodel import \
+    TopItemsCardViewModel
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
@@ -16,10 +18,12 @@ logger = logging.getLogger(__name__)
 
 class TopCategoriesCardViewModel(TopItemsCardViewModel):
   """ ViewModel for the Top Categories Card component """
+  organized_categories_changed = Signal()
+  visible_categories_changed = Signal()
 
   def __init__(self,
-               activity_service: 'ActivityService',
-               category_service: 'CategoryService',
+               activity_service: "ActivityService",
+               category_service: "CategoryService",
                period_start: datetime,
                period_end: Optional[datetime] = None):
     super().__init__(period_start, period_end)
@@ -29,7 +33,7 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
 
     self.update_top_items()
 
-  @Property(dict, notify=TopItemsCardViewModel.property_changed)
+  @Property(dict, notify=organized_categories_changed)
   def organized_categories(self) -> Dict[int, Dict]:
     return self._organized_categories
 
@@ -45,7 +49,7 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
       self._top_items[str(category_id)] = (time, color, None)
 
     self.organize_categories()  # uh, trigger on property changed?
-    self.property_changed.emit('top_items')
+    self.top_items_changed.emit()
 
   def get_category_color(self, category_id: int) -> Optional[str]:
     """ Get the color for a category. """
@@ -93,7 +97,7 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
     for category_data in category_hierarchy.values():
       category_data['children'].sort(key=lambda x: x['time'], reverse=True)
 
-    self.property_changed.emit("organized_categories")
+    self.organized_categories_changed.emit()
 
   def _find_category_data(self, category_id: int, categories: Dict[int, Dict]) -> Optional[Dict]:
     """ Recursively find category data by ID in organized 'categories' dict. """
@@ -123,7 +127,7 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
       category_id, self._organized_categories)
     if cat_data:
       cat_data['visible'] = not cat_data['visible']
-      self.property_changed.emit('visible_categories')
+      self.visible_categories_changed.emit()
 
   def is_category_visible(self, category_id: int) -> bool:
     """ Check if a category is currently visible. """
