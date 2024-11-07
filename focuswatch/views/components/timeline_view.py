@@ -22,7 +22,7 @@ class TimelineView(QWidget):
 
   def __init__(
     self,
-    viewmodel: 'TimelineViewModel',
+    viewmodel: "TimelineViewModel",
     minutes_per_chunk: int = 10,
     hour_height: int = 120,
     parent: Optional[QWidget] = None,
@@ -46,7 +46,7 @@ class TimelineView(QWidget):
     self._setup_ui()
     self._connect_signals()
 
-    self.update_timeline()
+    self._update_timeline()
     self.scroll_to_current_hour()
     apply_stylesheet(self, "components/timeline.qss")
 
@@ -93,15 +93,13 @@ class TimelineView(QWidget):
 
   def _connect_signals(self) -> None:
     """ Connect signals to slots. """
-    self._viewmodel.data_changed.connect(self.update_timeline)
-    self._viewmodel.property_changed.connect(self.on_property_changed)
+    self._viewmodel.timeline_data_changed.connect(
+      self.on_timeline_data_changed)
 
   @Slot()
-  def on_property_changed(self, property_name: str) -> None:
-    """ Handle property changes in the ViewModel. """
-    if property_name in ["period_start", "period_end"]:
-      self.update_timeline()
-      self._update_current_time_line()
+  def on_timeline_data_changed(self):
+    self._update_timeline()
+    self._update_current_time_line()
 
   def _create_time_grid(self) -> None:
     """ Create the time grid representing 24 hours. """
@@ -110,7 +108,7 @@ class TimelineView(QWidget):
       hour_widget.setFixedHeight(self._hour_height)
       hour_widget.setObjectName(f"hour_widget_{hour}")
       # Set custom property for styling
-      hour_widget.setProperty('cssClass', 'hour_widget')
+      hour_widget.setProperty("cssClass", "hour_widget")
 
       hour_layout = QHBoxLayout(hour_widget)
       hour_layout.setContentsMargins(0, 0, 0, 0)
@@ -123,7 +121,7 @@ class TimelineView(QWidget):
       hour_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
       hour_layout.addWidget(hour_label)
 
-      hour_label.setProperty('cssClass', 'hour_label')
+      hour_label.setProperty("cssClass", "hour_label")
 
       # Spacer to fill the rest of the space
       hour_spacer = QSpacerItem(
@@ -134,7 +132,7 @@ class TimelineView(QWidget):
       self._timeline_layout.addWidget(hour_widget)
 
   @Slot()
-  def update_timeline(self) -> None:
+  def _update_timeline(self) -> None:
     """ Update the timeline with activity cards based on the ViewModel data. """
     # Clear existing activity cards
     for child in self._timeline_widget.findChildren(QWidget):
@@ -245,5 +243,5 @@ class TimelineView(QWidget):
   def resizeEvent(self, event) -> None:
     """Handle widget resizing to adjust activity cards."""
     super().resizeEvent(event)
-    self.update_timeline()
+    self._update_timeline()
     self._update_current_time_line()
