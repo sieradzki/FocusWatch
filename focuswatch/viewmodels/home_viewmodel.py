@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
-from focuswatch.viewmodels.components.focus_trend_viewmodel import \
-    FocusTrendViewModel
+from focuswatch.viewmodels.components.focus_breakdown_viewmodel import \
+    FocusBreakdownViewModel
 from focuswatch.viewmodels.components.timeline_viewmodel import \
     TimelineViewModel
 from focuswatch.viewmodels.components.top_applications_card_viewmodel import \
@@ -67,7 +67,7 @@ class HomeViewModel(QObject):
       self._period_end
     )
 
-    self._focus_trend_viewmodel = FocusTrendViewModel(
+    self._focus_breakdown_viewmodel = FocusBreakdownViewModel(
       self._activity_service,
       self._category_service
     )
@@ -131,9 +131,9 @@ class HomeViewModel(QObject):
     return self._top_titles_card_viewmodel
 
   @Property(QObject, constant=True)
-  def focus_trend_viewmodel(self) -> FocusTrendViewModel:
-    """ ViewModel for the focus trend component. """
-    return self._focus_trend_viewmodel
+  def focus_breakdown_viewmodel(self) -> FocusBreakdownViewModel:
+    """ ViewModel for the focus breakdown component. """
+    return self._focus_breakdown_viewmodel
 
   def _connect_period_changed(self):
     """ Connect the period_changed signal to child ViewModels. """
@@ -142,7 +142,7 @@ class HomeViewModel(QObject):
         self._top_categories_card_viewmodel,
         self._top_applications_card_viewmodel,
         self._top_titles_card_viewmodel,
-        self._focus_trend_viewmodel
+        self._focus_breakdown_viewmodel
     ]:
       self.period_changed.connect(viewmodel.update_period)
 
@@ -157,7 +157,7 @@ class HomeViewModel(QObject):
     ]:
       self.refresh_triggered.connect(viewmodel.update_top_items)
     self.refresh_triggered.connect(
-        self._focus_trend_viewmodel.compute_focus_trend)
+        self._focus_breakdown_viewmodel.compute_focus_breakdown)
 
   def _update_period(self, start: datetime, end: Optional[datetime], period_type: str) -> None:
     """ Update the period and emit period_changed signal. """
