@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, List, Optional, Tuple
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
-from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 from focuswatch.viewmodels.components.focus_trend_viewmodel import \
     FocusTrendViewModel
 from focuswatch.viewmodels.components.timeline_viewmodel import \

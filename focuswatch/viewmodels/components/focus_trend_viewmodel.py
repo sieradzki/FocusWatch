@@ -2,9 +2,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Dict, List, Optional
 
-from PySide6.QtCore import Property, Signal, Slot
-
-from focuswatch.viewmodels.base_viewmodel import BaseViewModel
+from PySide6.QtCore import Property, QObject, Signal, Slot
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
@@ -13,9 +11,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class FocusTrendViewModel(BaseViewModel):
+class FocusTrendViewModel(QObject):
   """ ViewModel for the Focus Trend card. """
-  data_changed = Signal()
+  trend_data_changed = Signal()
 
   def __init__(self,
                activity_service: "ActivityService",
@@ -43,7 +41,7 @@ class FocusTrendViewModel(BaseViewModel):
     self.property_changed.emit("period_start")
     self.property_changed.emit("period_end")
 
-  @Property(datetime, notify=data_changed)
+  @Property(datetime, notify=trend_data_changed)
   def period_start(self) -> datetime:
     return self._period_start
 
@@ -53,7 +51,7 @@ class FocusTrendViewModel(BaseViewModel):
       self._period_start = value
       self.property_changed.emit("period_start")
 
-  @Property(datetime, notify=data_changed)
+  @Property(datetime, notify=trend_data_changed)
   def period_end(self) -> Optional[datetime]:
     return self._period_end
 
@@ -63,7 +61,7 @@ class FocusTrendViewModel(BaseViewModel):
       self._period_end = value
       self.property_changed.emit("period_end")
 
-  @Property(list, notify=data_changed)
+  @Property(list, notify=trend_data_changed)
   def trend_data(self) -> List[Dict[str, float]]:
     return self._trend_data
 
@@ -121,4 +119,4 @@ class FocusTrendViewModel(BaseViewModel):
       })
 
     self._trend_data = trend_data
-    self.property_changed.emit("trend_data")
+    self.trend_data_changed.emit()
