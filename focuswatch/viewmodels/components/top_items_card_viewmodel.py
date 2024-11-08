@@ -43,7 +43,6 @@ class TopItemsCardViewModel(QObject):
     if self._period_start != value:
       self._period_start = value
       self.period_start_changed.emit()
-      self.update_top_items()
 
   @Property(datetime, notify=period_end_changed)
   def period_end(self) -> Optional[datetime]:
@@ -54,7 +53,6 @@ class TopItemsCardViewModel(QObject):
     if self._period_end != value:
       self._period_end = value
       self.period_end_changed.emit()
-      self.update_top_items()
 
   @Property(dict, notify=top_items_changed)
   def top_items(self) -> List[Tuple[str, float, Optional[QColor], Optional[str]]]:
