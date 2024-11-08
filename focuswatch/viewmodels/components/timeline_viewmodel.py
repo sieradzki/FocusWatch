@@ -7,7 +7,6 @@ from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from focuswatch.models.activity import Activity
 from focuswatch.utils.ui_utils import get_category_color_or_parent
-from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
@@ -16,10 +15,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class TimelineViewModel(BaseViewModel):
-  data_changed = Signal()
+class TimelineViewModel(QObject):
+  period_start_changed = Signal()
+  period_end_changed = Signal()
+  timeline_data_changed = Signal()
 
-  def __init__(self, activity_service: 'ActivityService', category_service: 'CategoryService'):
+  def __init__(self,
+               activity_service: "ActivityService",
+               category_service: "CategoryService"):
     super().__init__()
     self._activity_service = activity_service
     self._category_service = category_service
@@ -28,17 +31,16 @@ class TimelineViewModel(BaseViewModel):
     self._period_end: Optional[datetime] = None
     self._timeline_data: Dict[int, List[int]] = {}
 
-    self._update_timeline_data()
+    self.update_timeline_data()
 
   @Slot(datetime, datetime)
   def update_period(self, start: datetime, end: Optional[datetime]) -> None:
     """ Update the time period. """
     self.period_start = start
     self.period_end = end
-    self.property_changed.emit("period_start")
-    self.property_changed.emit("period_end")
+    self.update_timeline_data()
 
-  @Property(datetime, notify=data_changed)
+  @Property(datetime, notify=period_start_changed)
   def period_start(self) -> datetime:
     return self._period_start
 
@@ -46,9 +48,9 @@ class TimelineViewModel(BaseViewModel):
   def period_start(self, value: datetime) -> None:
     if self._period_start != value:
       self._period_start = value
-      self.property_changed.emit("period_start")
+      self.period_start_changed.emit()
 
-  @Property(datetime, notify=data_changed)
+  @Property(datetime, notify=period_end_changed)
   def period_end(self) -> Optional[datetime]:
     return self._period_end
 
@@ -56,13 +58,13 @@ class TimelineViewModel(BaseViewModel):
   def period_end(self, value: Optional[datetime]) -> None:
     if self._period_end != value:
       self._period_end = value
-      self.property_changed.emit("period_end")
+      self.period_end_changed.emit()
 
-  @Property(dict, notify=data_changed)
+  @Property(dict, notify=timeline_data_changed)
   def timeline_data(self) -> Dict[int, List[int]]:
     return self._timeline_data
 
-  def _update_timeline_data(self) -> None:
+  def update_timeline_data(self) -> None:
     period_entries: List[Activity] = self._activity_service.get_period_entries(
       self._period_start, self._period_end)
     hour_chunk_entries = defaultdict(dict)
@@ -98,7 +100,7 @@ class TimelineViewModel(BaseViewModel):
 
     self._timeline_data = dict(hour_entries)
     # logger.info(f"Timeline data updated")
-    self.data_changed.emit()
+    self.timeline_data_changed.emit()
 
   @Slot(int, result=str)
   def get_category_name(self, category_id: int) -> str:

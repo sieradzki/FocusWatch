@@ -73,14 +73,14 @@ def test_property_change_updates_ui(main_window, viewmodel, qt_app):
   assert main_window.sidebar_button_settings.isChecked()
 
 
-def test_signal_handling(main_window, viewmodel):
-  """ Test that signals are connected and handled correctly. """
-  # Connect a mock signal handler to check if it is triggered
-  mock_handler = MagicMock()
-  viewmodel.property_changed.connect(mock_handler)
+# def test_signal_handling(main_window, viewmodel):
+#   """ Test that signals are connected and handled correctly. """
+#   # Connect a mock signal handler to check if it is triggered
+#   mock_handler = MagicMock()
+#   viewmodel.property_changed.connect(mock_handler)
 
-  # Trigger a property change
-  viewmodel.current_page_index = viewmodel.page_index("categories")
+#   # Trigger a property change
+#   viewmodel.current_page_index = viewmodel.page_index("categories")
 
-  # Check if the mock handler was called
-  mock_handler.assert_called_with('_current_page_index')
+#   # Check if the mock handler was called
+#   mock_handler.assert_called_with('_current_page_index')

@@ -1,31 +1,35 @@
 import logging
+from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import QCoreApplication, QRect, QSize, Qt, Slot
+from PySide6.QtCore import QCoreApplication, QObject, QRect, QSize, Qt, Slot
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout, QLineEdit,
                                QMessageBox, QProgressDialog, QPushButton,
                                QScrollArea, QSizePolicy, QSpacerItem,
                                QVBoxLayout, QWidget)
 
-from focuswatch.utils.ui_utils import get_category_color_or_parent, get_contrasting_text_color
-from focuswatch.utils.resource_utils import apply_styles, apply_stylesheet
-from focuswatch.viewmodels.categories_viewmodel import CategoriesViewModel
+from focuswatch.utils.resource_utils import apply_stylesheet
+from focuswatch.utils.ui_utils import get_category_color_or_parent
 from focuswatch.views.dialogs.categorization_helper_dialog_view import \
     CategorizationHelperDialogView
 from focuswatch.views.dialogs.category_dialog_view import CategoryDialogView
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+  from focuswatch.viewmodels.categories_viewmodel import CategoriesViewModel
+
 
 class CategoriesView(QWidget):
-  def __init__(self, viewmodel: CategoriesViewModel, parent=None):
+  def __init__(self, viewmodel: "CategoriesViewModel",
+               parent: Optional[QObject] = None):
     super().__init__(parent)
     self._viewmodel = viewmodel
     self._max_keywords_display = 10
     self._setup_ui()
     self._connect_signals()
 
-    apply_styles(self, ["categories_view.qss"])
+    apply_stylesheet(self, "categories_view.qss")
 
   def _setup_ui(self):
     """ Set up the UI components. """
@@ -147,27 +151,39 @@ class CategoriesView(QWidget):
     self.main_layout.addWidget(self.bottom_bar)
 
   def _connect_signals(self):
-    """ Connect signals and slots. """
-    self._viewmodel.property_changed.connect(self.on_property_changed)
+    """Connect signals and slots."""
+    # Connect ViewModel signals
+    self._viewmodel.categories_changed.connect(self._on_categories_changed)
+    self._viewmodel.filter_text_changed.connect(self._on_filter_text_changed)
+    self._viewmodel.organized_categories_changed.connect(
+      self._on_organized_categories_changed)
 
-    self.filter_input.textChanged.connect(self.on_filter_changed)
-    self.button_add_category.clicked.connect(self.show_category_dialog)
-    self.button_helper.clicked.connect(self.show_categorization_helper)
-    self.button_retroactive.clicked.connect(
-        self.retroactive_categorization)
-    self.button_restore_defaults.clicked.connect(self.restore_defaults)
+    # Connect UI signals
+    self.filter_input.textChanged.connect(self._on_filter_changed)
+    self.button_add_category.clicked.connect(self._show_category_dialog)
+    self.button_helper.clicked.connect(self._show_categorization_helper)
+    self.button_retroactive.clicked.connect(self._retroactive_categorization)
+    self.button_restore_defaults.clicked.connect(self._restore_defaults)
 
-  @Slot(str)
-  def on_filter_changed(self, text):
-    """ Handle filter text changes. """
-    self._viewmodel.filter_text = text
+  @Slot()
+  def _on_categories_changed(self):
+    """ Handle categories_changed signal from the ViewModel. """
+    self._populate_categories()
+
+  @Slot()
+  def _on_filter_text_changed(self):
+    """ Handle filter_text_changed signal from the ViewModel. """
+    self._populate_categories()
+
+  @Slot()
+  def _on_organized_categories_changed(self):
+    """ Handle organized_categories_changed signal from the ViewModel. """
     self._populate_categories()
 
   @Slot(str)
-  def on_property_changed(self, property_name):
-    """ Handle property changes from the ViewModel. """
-    if property_name in ['filter_text', 'organized_categories']:
-      self._populate_categories()
+  def _on_filter_changed(self, text):
+    """ Handle filter text changes. """
+    self._viewmodel.filter_text = text
 
   def _populate_categories(self):
     """ Populate the categories in the main content area. """
@@ -236,7 +252,7 @@ class CategoriesView(QWidget):
         category_button = QPushButton(category.name)
         category_button.setObjectName(f"category_button_{category_id}")
         category_button.clicked.connect(
-            lambda checked, c_id=category_id: self.show_category_dialog(
+            lambda checked, c_id=category_id: self._show_category_dialog(
               c_id)
         )
         category_button.setFont(QFont('Arial', 12))
@@ -325,21 +341,21 @@ class CategoriesView(QWidget):
       elif item.layout():
         self._clear_layout(item.layout())
 
-  def show_category_dialog(self, category_id=None):
+  def _show_category_dialog(self, category_id=None):
     """ Show the category dialog to add or edit a category. """
     dialog = CategoryDialogView(
         self, self._viewmodel._category_service, self._viewmodel._keyword_service, category_id)
     if dialog.exec_():
-      self._viewmodel.load_categories()
+      self._viewmodel._load_categories()
 
-  def show_categorization_helper(self):
+  def _show_categorization_helper(self):
     """ Show the categorization helper dialog. """
     dialog = CategorizationHelperDialogView(self, self._viewmodel._activity_service,
                                             self._viewmodel._category_service, self._viewmodel._keyword_service, self._viewmodel._classifier)
     dialog.exec_()
-    self._viewmodel.load_categories()
+    self._viewmodel._load_categories()
 
-  def retroactive_categorization(self):
+  def _retroactive_categorization(self):
     """ Perform retroactive categorization with confirmation and progress dialog. """
     dialog = QMessageBox()
     dialog.setWindowTitle("Retroactive Categorization")
@@ -401,7 +417,7 @@ class CategoriesView(QWidget):
     QCoreApplication.processEvents()
     return progress_dialog
 
-  def restore_defaults(self):
+  def _restore_defaults(self):
     """ Restore default categories with confirmation. """
     dialog = QMessageBox(self)
     dialog.setWindowTitle("Restore Defaults")

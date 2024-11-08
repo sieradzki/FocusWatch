@@ -2,14 +2,18 @@ import logging
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, List, Optional, Tuple
 
-from PySide6.QtCore import Property, Slot, Signal
+from PySide6.QtCore import Property, QObject, Signal, Slot
 
-from focuswatch.viewmodels.base_viewmodel import BaseViewModel
-from focuswatch.viewmodels.components.timeline_viewmodel import TimelineViewModel
-from focuswatch.viewmodels.components.top_categories_card_viewmodel import TopCategoriesCardViewModel
-from focuswatch.viewmodels.components.top_applications_card_viewmodel import TopApplicationsCardViewModel
-from focuswatch.viewmodels.components.top_titles_card_viewmodel import TopNamesCardViewModel
-from focuswatch.viewmodels.components.focus_trend_viewmodel import FocusTrendViewModel
+from focuswatch.viewmodels.components.focus_trend_viewmodel import \
+    FocusTrendViewModel
+from focuswatch.viewmodels.components.timeline_viewmodel import \
+    TimelineViewModel
+from focuswatch.viewmodels.components.top_applications_card_viewmodel import \
+    TopApplicationsCardViewModel
+from focuswatch.viewmodels.components.top_categories_card_viewmodel import \
+    TopCategoriesCardViewModel
+from focuswatch.viewmodels.components.top_titles_card_viewmodel import \
+    TopTitlesCardViewModel
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService
@@ -18,13 +22,20 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class HomeViewModel(BaseViewModel):
+class HomeViewModel(QObject):
+  """ Viewmodel for the Home view."""
+  # Signals for property changes
+  period_start_changed = Signal()
+  period_end_changed = Signal()
+  period_type_changed = Signal()
+
+  # Custom signals
   period_changed = Signal(datetime, datetime, str)
   refresh_triggered = Signal()
 
   def __init__(self,
-               activity_service: 'ActivityService',
-               category_service: 'CategoryService'):
+               activity_service: "ActivityService",
+               category_service: "CategoryService"):
     super().__init__()
     self._activity_service = activity_service
     self._category_service = category_service
@@ -50,7 +61,7 @@ class HomeViewModel(BaseViewModel):
       self._period_end
     )
 
-    self._top_titles_card_viewmodel = TopNamesCardViewModel(
+    self._top_titles_card_viewmodel = TopTitlesCardViewModel(
       self._activity_service,
       self._period_start,
       self._period_end
@@ -61,42 +72,71 @@ class HomeViewModel(BaseViewModel):
       self._category_service
     )
 
-    self.connect_period_changed()
-    self.connect_refresh_triggered()
+    self._connect_period_changed()
+    self._connect_refresh_triggered()
 
-  @Property(datetime, notify=BaseViewModel.property_changed)
+  # Properties with individual notify signals
+  @Property(datetime, notify=period_start_changed)
   def period_start(self) -> datetime:
+    """ Start of the period. """
     return self._period_start
 
-  @Property(datetime, notify=BaseViewModel.property_changed)
+  @period_start.setter
+  def period_start(self, value: datetime) -> None:
+    if self._period_start != value:
+      self._period_start = value
+      self.period_start_changed.emit()
+
+  @Property(datetime, notify=period_end_changed)
   def period_end(self) -> Optional[datetime]:
+    """ End of the period. """
     return self._period_end
 
-  @Property(str, notify=BaseViewModel.property_changed)
+  @period_end.setter
+  def period_end(self, value: Optional[datetime]) -> None:
+    if self._period_end != value:
+      self._period_end = value
+      self.period_end_changed.emit()
+
+  @Property(str, notify=period_type_changed)
   def period_type(self) -> str:
+    """ Type of the period (e.g., Day, Week, Month, Year). """
     return self._period_type
 
-  @Property('QVariant', notify=BaseViewModel.property_changed)
+  @period_type.setter
+  def period_type(self, value: str) -> None:
+    if self._period_type != value:
+      self._period_type = value
+      self.period_type_changed.emit()
+
+  # Child ViewModels as properties
+  @Property(QObject, constant=True)
   def timeline_viewmodel(self) -> TimelineViewModel:
+    """ ViewModel for the timeline component. """
     return self._timeline_viewmodel
 
-  @Property('QVariant', notify=BaseViewModel.property_changed)
+  @Property(QObject, constant=True)
   def top_categories_card_viewmodel(self) -> TopCategoriesCardViewModel:
+    """ ViewModel for the top categories card. """
     return self._top_categories_card_viewmodel
 
-  @Property('QVariant', notify=BaseViewModel.property_changed)
+  @Property(QObject, constant=True)
   def top_applications_card_viewmodel(self) -> TopApplicationsCardViewModel:
+    """ ViewModel for the top applications card. """
     return self._top_applications_card_viewmodel
 
-  @Property('QVariant', notify=BaseViewModel.property_changed)
-  def top_titles_card_viewmodel(self) -> TopNamesCardViewModel:
+  @Property(QObject, constant=True)
+  def top_titles_card_viewmodel(self) -> TopTitlesCardViewModel:
+    """ ViewModel for the top titles card. """
     return self._top_titles_card_viewmodel
 
-  @Property('QVariant', notify=BaseViewModel.property_changed)
+  @Property(QObject, constant=True)
   def focus_trend_viewmodel(self) -> FocusTrendViewModel:
+    """ ViewModel for the focus trend component. """
     return self._focus_trend_viewmodel
 
-  def connect_period_changed(self):
+  def _connect_period_changed(self):
+    """ Connect the period_changed signal to child ViewModels. """
     for viewmodel in [
         self._timeline_viewmodel,
         self._top_categories_card_viewmodel,
@@ -106,50 +146,60 @@ class HomeViewModel(BaseViewModel):
     ]:
       self.period_changed.connect(viewmodel.update_period)
 
-  def connect_refresh_triggered(self):
+  def _connect_refresh_triggered(self):
+    """ Connect the refresh_triggered signal to update methods in child ViewModels. """
     self.refresh_triggered.connect(
-      self._timeline_viewmodel._update_timeline_data)
+        self._timeline_viewmodel.update_timeline_data)
     for viewmodel in [
         self._top_categories_card_viewmodel,
         self._top_applications_card_viewmodel,
         self._top_titles_card_viewmodel
     ]:
-      self.refresh_triggered.connect(viewmodel._update_top_items)
-    self._focus_trend_viewmodel.data_changed.connect(
-      self._focus_trend_viewmodel._compute_focus_trend)
+      self.refresh_triggered.connect(viewmodel.update_top_items)
+    self.refresh_triggered.connect(
+        self._focus_trend_viewmodel.compute_focus_trend)
 
   def _update_period(self, start: datetime, end: Optional[datetime], period_type: str) -> None:
-    self._period_start = start
-    self._period_end = end
-    self._period_type = period_type
+    """ Update the period and emit period_changed signal. """
+    self.period_start = start
+    self.period_end = end
+    self.period_type = period_type
     self.period_changed.emit(start, end, period_type)
 
   @Slot(int)
   def shift_period(self, direction: int) -> None:
-    if self._period_type == "Day":
-      new_start = self._period_start + timedelta(days=direction)
+    """ Shift the period forward or backward. """
+    if self.period_type == "Day":
+      new_start = self.period_start + timedelta(days=direction)
       self._update_period(new_start, None, "Day")
-    elif self._period_type == "Week":
-      new_start = self._period_start + timedelta(weeks=direction)
+    elif self.period_type == "Week":
+      new_start = self.period_start + timedelta(weeks=direction)
       new_end = new_start + timedelta(days=6)
       self._update_period(new_start, new_end, "Week")
-    elif self._period_type == "Month":
-      new_month = self._period_start.month + direction
-      new_year = self._period_start.year + (new_month - 1) // 12
-      new_month = ((new_month - 1) % 12) + 1
-      new_start = self._period_start.replace(
+    elif self.period_type == "Month":
+      month_increment = direction
+      year_increment = (self.period_start.month -
+                        1 + month_increment) // 12
+      new_month = (self.period_start.month -
+                   1 + month_increment) % 12 + 1
+      new_year = self.period_start.year + year_increment
+      new_start = self.period_start.replace(
         year=new_year, month=new_month, day=1)
-      new_end = (new_start + timedelta(days=32)
-                 ).replace(day=1) - timedelta(days=1)
+      next_month = new_month % 12 + 1
+      next_month_year = new_year + (new_month // 12)
+      new_end = datetime(next_month_year, next_month,
+                         1) - timedelta(days=1)
       self._update_period(new_start, new_end, "Month")
-    elif self._period_type == "Year":
-      new_start = self._period_start.replace(
-        year=self._period_start.year + direction, month=1, day=1)
-      new_end = new_start.replace(year=new_start.year + 1) - timedelta(days=1)
+    elif self.period_type == "Year":
+      new_start = self.period_start.replace(
+          year=self.period_start.year + direction, month=1, day=1)
+      new_end = new_start.replace(
+        year=new_start.year + 1) - timedelta(days=1)
       self._update_period(new_start, new_end, "Year")
 
   @Slot(str)
   def set_period_type(self, period_type: str) -> None:
+    """ Set the period type and update the period accordingly. """
     today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     if period_type == "Day":
       self._update_period(today, None, "Day")
@@ -159,7 +209,9 @@ class HomeViewModel(BaseViewModel):
       self._update_period(start, end, "Week")
     elif period_type == "Month":
       start = today.replace(day=1)
-      end = (start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+      next_month = (start.month % 12) + 1
+      next_month_year = start.year + (start.month // 12)
+      end = datetime(next_month_year, next_month, 1) - timedelta(days=1)
       self._update_period(start, end, "Month")
     elif period_type == "Year":
       start = today.replace(month=1, day=1)
@@ -168,18 +220,21 @@ class HomeViewModel(BaseViewModel):
 
   @Slot(datetime)
   def update_period_from_selected_date(self, date: datetime) -> None:
+    """ Update the period based on a selected date. """
     date = date.replace(hour=0, minute=0, second=0, microsecond=0)
-    if self._period_type == "Day":
-        self._update_period(date, None, "Day")
-    elif self._period_type == "Week":
+    if self.period_type == "Day":
+      self._update_period(date, None, "Day")
+    elif self.period_type == "Week":
       start = date - timedelta(days=date.weekday())
       end = start + timedelta(days=6)
       self._update_period(start, end, "Week")
-    elif self._period_type == "Month":
+    elif self.period_type == "Month":
       start = date.replace(day=1)
-      end = (start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+      next_month = (start.month % 12) + 1
+      next_month_year = start.year + (start.month // 12)
+      end = datetime(next_month_year, next_month, 1) - timedelta(days=1)
       self._update_period(start, end, "Month")
-    else:  # Year
+    elif self.period_type == "Year":
       start = date.replace(month=1, day=1)
       end = start.replace(year=start.year + 1) - timedelta(days=1)
       self._update_period(start, end, "Year")

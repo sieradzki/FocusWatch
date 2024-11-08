@@ -5,27 +5,33 @@ from focuswatch.autostart_manager import (add_to_autostart, is_frozen,
                                           is_in_autostart,
                                           remove_from_autostart)
 from focuswatch.config import Config
-from focuswatch.viewmodels.base_viewmodel import BaseViewModel
+from PySide6.QtCore import QObject, Signal, Property, Slot
 
 logger = logging.getLogger(__name__)
 
 
-class SettingsViewModel(BaseViewModel):
+class SettingsViewModel(QObject):
+  watch_interval_changed = Signal()
+  watch_afk_changed = Signal()
+  afk_timeout_changed = Signal()
+  autostart_enabled_changed = Signal()
+  filter_text_changed = Signal()
+  settings_applied = Signal()
 
   def __init__(self):
     super().__init__()
     self.config: Config = Config()
     self._watch_interval: float = float(
-      self.config.get_value('General', 'watch_interval'))
+      self.config.get_value("General", "watch_interval"))
     self._watch_afk: bool = self.config.get_value(
-      'General', 'watch_afk') == 'True'
+      "General", "watch_afk") == "True"
     self._afk_timeout: float = float(
-      self.config.get_value('General', 'afk_timeout'))
+      self.config.get_value("General", "afk_timeout"))
     self._autostart_enabled: bool = is_in_autostart()
 
     self._filter_text: str = ""
 
-  @property
+  @Property(float, notify=watch_interval_changed)
   def watch_interval(self) -> float:
     return self._watch_interval
 
@@ -34,17 +40,21 @@ class SettingsViewModel(BaseViewModel):
     if value <= 0:
       logger.warning("Attempted to set a non-positive watch interval.")
       return
-    self._set_property('_watch_interval', value)
+    if self._watch_interval != value:
+      self._watch_interval = value
+      self.watch_interval_changed.emit()
 
-  @property
+  @Property(bool, notify=watch_afk_changed)
   def watch_afk(self) -> bool:
     return self._watch_afk
 
   @watch_afk.setter
   def watch_afk(self, value: bool):
-    self._set_property('_watch_afk', value)
+    if self._watch_afk != value:
+      self._watch_afk = value
+      self.watch_afk_changed.emit()
 
-  @property
+  @Property(float, notify=afk_timeout_changed)
   def afk_timeout(self) -> float:
     return self._afk_timeout
 
@@ -53,54 +63,50 @@ class SettingsViewModel(BaseViewModel):
     if value < 0:
       logger.warning("Attempted to set a negative AFK timeout.")
       return
-    self._set_property('_afk_timeout', value)
+    if self._afk_timeout != value:
+      self._afk_timeout = value
+      self.afk_timeout_changed.emit()
 
-  @property
+  @Property(bool, notify=autostart_enabled_changed)
   def autostart_enabled(self) -> bool:
     return self._autostart_enabled
 
   @autostart_enabled.setter
   def autostart_enabled(self, value: bool):
-    self._set_property('_autostart_enabled', value)
+    if self._autostart_enabled != value:
+      self._autostart_enabled = value
+      self.autostart_enabled_changed.emit()
 
-  @property
+  @Property(str, notify=filter_text_changed)
   def filter_text(self) -> str:
-    """ Get the current filter text.
-
-    Returns:
-      The filter text as a string.
-    """
+    """Get the current filter text."""
     return self._filter_text
 
   @filter_text.setter
   def filter_text(self, value: str) -> None:
-    """ Set a new filter text and notify observers.
-
-    Args:
-      value: The new filter text.
-    """
+    """ Set a new filter text and notify observers. """
     if self._filter_text != value:
       self._filter_text = value
-      self.property_changed.emit('filter_text')
+      self.filter_text_changed.emit()
 
   def is_autostart_available(self) -> bool:
     """ Check if autostart is available based on the application's state.
 
-      Returns:
+    Returns:
         True if autostart is available; False otherwise.
     """
     return is_frozen()
 
+  @Slot()
   def apply_settings(self):
-    self.config.set_value('General', 'watch_interval',
+    self.config.set_value("General", "watch_interval",
                           str(self._watch_interval))
-    self.config.set_value('General', 'watch_afk', str(self._watch_afk))
-    self.config.set_value('General', 'afk_timeout', str(self._afk_timeout))
+    self.config.set_value("General", "watch_afk", str(self._watch_afk))
+    self.config.set_value("General", "afk_timeout", str(self._afk_timeout))
 
     if self._autostart_enabled:
       add_to_autostart()
     else:
       remove_from_autostart()
 
-    # Notify observers that settings have been applied
-    self.property_changed.emit('settings_applied')
+    self.settings_applied.emit()

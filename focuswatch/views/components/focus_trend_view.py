@@ -36,7 +36,7 @@ class FocusTrendView(CardWidget):
     self.stacked_widget.addWidget(self.chart_view)
 
   def connect_signals(self) -> None:
-    self._viewmodel.data_changed.connect(self.update_chart)
+    self._viewmodel.trend_data_changed.connect(self.update_chart)
 
   def on_property_changed(self, property_name: str) -> None:
     print(f"property_name: {property_name}")

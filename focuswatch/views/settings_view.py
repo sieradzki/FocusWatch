@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from PySide6.QtCore import (QCoreApplication, QEasingCurve, QPropertyAnimation,
-                            QSize, Qt, QTimer)
+                            QSize, Qt, QTimer, QObject)
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QCheckBox, QDialogButtonBox, QDoubleSpinBox,
                                QGroupBox, QHBoxLayout, QLabel, QLineEdit,
@@ -17,22 +17,23 @@ logger = logging.getLogger(__name__)
 
 class SettingsView(QWidget):
 
-  def __init__(self, viewmodel, parent=None):
+  def __init__(self, viewmodel,
+               parent: Optional[QObject] = None):
     super().__init__(parent)
-    self.viewmodel = viewmodel
+    self._viewmodel = viewmodel
     self.current_animation = None
-    self.setup_ui()
+    self._setup_ui()
     self.sections = [  # TODO put it somewhere else maybe?
         {"label": self.general_header, "widget": self.general_section},
         {"label": self.watcher_header, "widget": self.watcher_section},
     ]
-    self.connect_signals()
+    self._connect_signals()
 
     apply_stylesheet(self, "settings_view.qss")
 
     # TODO can we dynamically create sections for config settings?
 
-  def setup_ui(self) -> None:
+  def _setup_ui(self) -> None:
     # Main Horizontal Layout
     self.main_layout = QHBoxLayout(self)
     self.main_layout.setContentsMargins(0, 0, 0, 0)
@@ -46,14 +47,14 @@ class SettingsView(QWidget):
     self.navigation_layout.setSpacing(0)
 
     # Navigation Buttons using QToolButton
-    self.nav_general_button = self.create_sidebar_button(
+    self.nav_general_button = self._create_sidebar_button(
         text="General",
         icon_path="general_icon.png"
     )
     self.nav_general_button.clicked.connect(
         lambda: self.scroll_to_section("general"))
 
-    self.nav_watcher_button = self.create_sidebar_button(
+    self.nav_watcher_button = self._create_sidebar_button(
         text="Watcher",
         icon_path="watcher_icon.png"
     )
@@ -78,11 +79,11 @@ class SettingsView(QWidget):
     self.scroll_layout.setSpacing(8)
 
     # General Settings Section
-    self.general_section = self.create_general_section()
+    self.general_section = self._create_general_section()
     self.scroll_layout.addWidget(self.general_section)
 
     # Watcher Settings Section
-    self.watcher_section = self.create_watcher_section()
+    self.watcher_section = self._create_watcher_section()
     self.scroll_layout.addWidget(self.watcher_section)
 
     # Spacer at the bottom
@@ -141,47 +142,39 @@ class SettingsView(QWidget):
     # Initially set General as active
     self.scroll_to_section("general")
 
-  def connect_signals(self) -> None:
+  def _connect_signals(self) -> None:
     """ Connect signals between the ViewModel and the View. """
-    self.viewmodel.property_changed.connect(self.on_property_changed)
-    self.filter_input.textChanged.connect(self.on_filter_text_changed)
-    self.autostart_checkbox.stateChanged.connect(self.on_autostart_changed)
-    self.watch_interval.valueChanged.connect(self.on_watch_interval_changed)
-    self.watch_afk.stateChanged.connect(self.on_watch_afk_changed)
-    self.afk_timeout.valueChanged.connect(self.on_afk_timeout_changed)
+    # Connect ViewModel signals
+    self._viewmodel.settings_applied.connect(self._on_settings_applied)
+    self._viewmodel.filter_text_changed.connect(self._apply_filter)
+
+    # Connect UI signals
+    self.filter_input.textChanged.connect(self._on_filter_text_changed)
+    self.autostart_checkbox.stateChanged.connect(self._on_autostart_changed)
+    self.watch_interval.valueChanged.connect(self._on_watch_interval_changed)
+    self.watch_afk.stateChanged.connect(self._on_watch_afk_changed)
+    self.afk_timeout.valueChanged.connect(self._on_afk_timeout_changed)
     self.button_box.button(
-      QDialogButtonBox.Apply).clicked.connect(self.apply_settings)
+      QDialogButtonBox.Apply).clicked.connect(self._apply_settings)
 
-  def on_property_changed(self, property_name: str) -> None:
-    """ Handle property changes emitted by the ViewModel.
+  def _on_settings_applied(self) -> None:
+    """ Handle when settings have been applied. """
+    QMessageBox.information(
+      self,
+      QCoreApplication.translate("SettingsView", "Settings Applied", None),
+      QCoreApplication.translate(
+        "SettingsView", "Your settings have been applied successfully.", None
+      ),
+      QMessageBox.Ok,
+    )
 
-    Args:
-      property_name: The name of the property that changed.
-    """
-    if property_name == "settings_applied":
-      QMessageBox.information(
-          self,
-          QCoreApplication.translate("SettingsView", "Settings Applied", None),
-          QCoreApplication.translate(
-              "SettingsView", "Your settings have been applied successfully.", None
-          ),
-          QMessageBox.Ok,
-      )
-    elif property_name == "filter_text":
-      self.apply_filter()
+  def _on_filter_text_changed(self, text: str) -> None:
+    """ Handle changes to the filter text input. """
+    self._viewmodel.filter_text = text
 
-  def on_filter_text_changed(self, text: str) -> None:
-    """ Handle changes to the filter text input.
-
-    Args:
-      text: The new filter text.
-    """
-    self.viewmodel.filter_text = text
-    self.apply_filter()
-
-  def apply_filter(self) -> None:
-    """ Apply the filter to the settings sections and options."""
-    filter_text = self.viewmodel.filter_text.lower().strip()
+  def _apply_filter(self) -> None:
+    """ Apply the filter to the settings sections and options. """
+    filter_text = self._viewmodel.filter_text.lower().strip()
 
     # If filter text is empty, show all sections and settings
     if not filter_text:
@@ -208,42 +201,13 @@ class SettingsView(QWidget):
         for child in section_widget.findChildren(QWidget, options=Qt.FindDirectChildrenOnly):
           if child == header_label:
             continue
-          matches = self.widget_matches_filter(child, filter_text)
+          matches = self._widget_matches_filter(child, filter_text)
           child.setVisible(matches)
           if matches:
             section_matches = True
         section_widget.setVisible(section_matches)
 
-  def section_matches_filter(self, section_widget: QWidget, filter_text: str) -> bool:
-    """ Check if a section or any of its child widgets match the filter.
-
-    Args:
-      section_widget: The section widget to check.
-      filter_text: The filter text to match against.
-
-    Returns:
-      True if the section or any child matches; False otherwise.
-    """
-    # Check the header label
-    header_label = section_widget.findChild(
-      QLabel, options=Qt.FindDirectChildrenOnly)
-    if header_label and filter_text in header_label.text().lower():
-      return True
-
-    # Check child widgets
-    for child in section_widget.findChildren(QWidget, options=Qt.FindDirectChildrenOnly):
-      # Skip the header label
-      if child == header_label:
-        continue
-      if self.widget_matches_filter(child, filter_text):
-        child.setVisible(True)
-        return True
-      else:
-        child.setVisible(False)
-
-    return False
-
-  def widget_matches_filter(self, widget: QWidget, filter_text: str) -> bool:
+  def _widget_matches_filter(self, widget: QWidget, filter_text: str) -> bool:
     """ Check if a setting widget matches the filter text.
 
     Args:
@@ -261,7 +225,7 @@ class SettingsView(QWidget):
           return True
     return False
 
-  def create_setting_widget(
+  def _create_setting_widget(
       self, widget: QWidget, label_text: Optional[str] = None
   ) -> QWidget:
     """ Create a container widget for a setting.
@@ -286,7 +250,7 @@ class SettingsView(QWidget):
 
     return setting_widget
 
-  def create_sidebar_button(self, text: str, icon_path: str) -> QToolButton:
+  def _create_sidebar_button(self, text: str, icon_path: str) -> QToolButton:
     """ Helper method to create sidebar buttons using QToolButton. """
     button = QToolButton(self.navigation_panel)
     button.setObjectName(f"sidebar_button_{text.lower()}")
@@ -300,7 +264,7 @@ class SettingsView(QWidget):
     button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
     return button
 
-  def create_general_section(self) -> QWidget:
+  def _create_general_section(self) -> QWidget:
     """ Create the General settings section.
 
     Returns:
@@ -332,14 +296,14 @@ class SettingsView(QWidget):
         QCoreApplication.translate(
             "SettingsView", "Start FocusWatch on system startup", None)
     )
-    self.autostart_checkbox.setChecked(self.viewmodel.autostart_enabled)
-    self.autostart_checkbox.setEnabled(self.viewmodel.is_autostart_available())
+    self.autostart_checkbox.setChecked(self._viewmodel.autostart_enabled)
+    self.autostart_checkbox.setEnabled(self._viewmodel.is_autostart_available())
 
     # Set custom property if disabled for styling
-    if not self.viewmodel.is_autostart_available():
+    if not self._viewmodel.is_autostart_available():
       self.autostart_checkbox.setProperty("disabled_control", True)
 
-    autostart_setting = self.create_setting_widget(self.autostart_checkbox)
+    autostart_setting = self._create_setting_widget(self.autostart_checkbox)
     group_layout.addWidget(autostart_setting)
 
     # Note Label when Autostart is disabled
@@ -352,14 +316,14 @@ class SettingsView(QWidget):
             None
         )
     )
-    self.autostart_note.setVisible(not self.viewmodel.is_autostart_available())
+    self.autostart_note.setVisible(not self._viewmodel.is_autostart_available())
     # Set custom property for styling
     self.autostart_note.setProperty("disabled_note", True)
     group_layout.addWidget(self.autostart_note)
 
     return group_box
 
-  def create_watcher_section(self) -> QWidget:
+  def _create_watcher_section(self) -> QWidget:
     """ Create the Watcher settings section.
 
     Returns:
@@ -387,7 +351,7 @@ class SettingsView(QWidget):
     # Watch Interval Setting
     self.watch_interval = QDoubleSpinBox(group_box)
     self.watch_interval.setObjectName("watch_interval")
-    self.watch_interval.setValue(self.viewmodel.watch_interval)
+    self.watch_interval.setValue(self._viewmodel.watch_interval)
     self.watch_interval.setDecimals(1)
     self.watch_interval.setMinimum(1.0)
     self.watch_interval.setMaximum(60.0)
@@ -396,7 +360,7 @@ class SettingsView(QWidget):
         QCoreApplication.translate("SettingsView", " s", None)
     )
 
-    watch_interval_setting = self.create_setting_widget(
+    watch_interval_setting = self._create_setting_widget(
         self.watch_interval,
         QCoreApplication.translate("SettingsView", "Watch interval", None)
     )
@@ -405,12 +369,12 @@ class SettingsView(QWidget):
     # Watch AFK Checkbox
     self.watch_afk = QCheckBox(group_box)
     self.watch_afk.setObjectName("watch_afk")
-    self.watch_afk.setChecked(self.viewmodel.watch_afk)
+    self.watch_afk.setChecked(self._viewmodel.watch_afk)
     self.watch_afk.setText(
         QCoreApplication.translate("SettingsView", "Watch AFK", None)
     )
 
-    watch_afk_setting = self.create_setting_widget(self.watch_afk)
+    watch_afk_setting = self._create_setting_widget(self.watch_afk)
     group_layout.addWidget(watch_afk_setting)
 
     # AFK Timeout Setting
@@ -418,12 +382,12 @@ class SettingsView(QWidget):
     self.afk_timeout.setObjectName("afk_timeout")
     self.afk_timeout.setMinimum(1)
     self.afk_timeout.setMaximum(60)
-    self.afk_timeout.setValue(self.viewmodel.afk_timeout)
+    self.afk_timeout.setValue(self._viewmodel.afk_timeout)
     self.afk_timeout.setSuffix(
         QCoreApplication.translate("SettingsView", " m", None)
     )
 
-    is_afk_enabled = self.viewmodel.watch_afk
+    is_afk_enabled = self._viewmodel.watch_afk
     self.afk_timeout.setEnabled(is_afk_enabled)
 
     if not is_afk_enabled:
@@ -431,7 +395,7 @@ class SettingsView(QWidget):
     else:
       self.afk_timeout.setProperty("disabled_control", False)
 
-    afk_timeout_setting = self.create_setting_widget(
+    afk_timeout_setting = self._create_setting_widget(
         self.afk_timeout,
         QCoreApplication.translate("SettingsView", "AFK timeout", None)
     )
@@ -441,8 +405,7 @@ class SettingsView(QWidget):
     return group_box
 
   def scroll_to_section(self, section_name: str) -> None:
-    """
-    Scroll the scroll area to the specified section.
+    """ Scroll the scroll area to the specified section.
 
     Args:
         section_name: The name of the section to scroll to ('general' or 'watcher').
@@ -476,8 +439,7 @@ class SettingsView(QWidget):
     self.current_animation = scroll_animation
 
   def highlight_header(self, header_widget: QLabel) -> None:
-    """
-    Highlight the header widget by changing its background color briefly.
+    """ Highlight the header widget by changing its background color briefly.
 
     Args:
         header_widget: The QLabel widget to highlight.
@@ -489,32 +451,30 @@ class SettingsView(QWidget):
 
     QTimer.singleShot(500, lambda: header_widget.setStyleSheet(original_style))
 
-  def on_autostart_changed(self, state: int) -> None:
-    """
-    Handle changes to the autostart checkbox.
+  def _on_autostart_changed(self, state: int) -> None:
+    """ Handle changes to the autostart checkbox.
 
     Args:
         state: The state of the checkbox (Qt.Checked or Qt.Unchecked).
     """
-    self.viewmodel.autostart_enabled = state == 2
+    self._viewmodel.autostart_enabled = state == 2
 
-  def on_watch_interval_changed(self, value: float) -> None:
-    """
-    Handle changes to the watch interval spin box.
+  def _on_watch_interval_changed(self, value: float) -> None:
+    """ Handle changes to the watch interval spin box.
 
     Args:
         value: The new watch interval value.
     """
-    self.viewmodel.watch_interval = value
+    self._viewmodel.watch_interval = value
 
-  def on_watch_afk_changed(self, state: int) -> None:
+  def _on_watch_afk_changed(self, state: int) -> None:
     """ Handle changes to the watch AFK checkbox.
 
     Args:
       state: The state of the checkbox (Qt.Checked or Qt.Unchecked).
     """
     is_checked = state == 2  # Qt.Checked doesn't work for some reason
-    self.viewmodel.watch_afk = is_checked
+    self._viewmodel.watch_afk = is_checked
     self.afk_timeout.setEnabled(is_checked)
 
     # Update the custom property for styling
@@ -526,15 +486,14 @@ class SettingsView(QWidget):
     self.afk_timeout.style().unpolish(self.afk_timeout)
     self.afk_timeout.style().polish(self.afk_timeout)
 
-  def on_afk_timeout_changed(self, value: int) -> None:
-    """
-    Handle changes to the AFK timeout spin box.
+  def _on_afk_timeout_changed(self, value: int) -> None:
+    """ Handle changes to the AFK timeout spin box.
 
     Args:
         value: The new AFK timeout value.
     """
-    self.viewmodel.afk_timeout = value
+    self._viewmodel.afk_timeout = value
 
-  def apply_settings(self) -> None:
-    """Apply the current settings via the ViewModel."""
-    self.viewmodel.apply_settings()
+  def _apply_settings(self) -> None:
+    """ Apply the current settings via the ViewModel. """
+    self._viewmodel.apply_settings()
