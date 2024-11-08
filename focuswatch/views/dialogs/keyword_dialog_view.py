@@ -116,7 +116,7 @@ class KeywordDialogView(QDialog):
   @Slot(int)
   def _on_match_case_checkbox_changed(self, state: int) -> None:
     """ Handle changes in the match case checkbox. """
-    self._viewmodel.match_case = state == Qt.Checked
+    self._viewmodel.match_case = state == 2
 
   def accept(self) -> None:
     """ Handle the accept event. """

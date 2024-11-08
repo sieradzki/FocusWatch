@@ -206,7 +206,7 @@ class CategoryDialogView(QDialog):
   @Slot(int)
   def _on_focused_checkbox_changed(self, state: int) -> None:
     """ Handle changes in the focused checkbox. """
-    self._viewmodel.focused = state == Qt.Checked
+    self._viewmodel.focused = state == 2
 
   def _populate_parent_combo(self) -> None:
     """ Populate the parent category combo box. """

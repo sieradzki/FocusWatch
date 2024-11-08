@@ -2,13 +2,14 @@ import logging
 from functools import partial
 from typing import TYPE_CHECKING, List, Tuple
 
-from PySide6.QtCore import Qt, Slot, QCoreApplication
+from PySide6.QtCore import QCoreApplication, Qt, Slot
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
-                               QDialogButtonBox, QFrame, QGroupBox,
-                               QHBoxLayout, QLabel, QLayout, QLineEdit,
-                               QMessageBox, QPushButton, QScrollArea,
-                               QSizePolicy, QSpacerItem, QTabWidget,
-                               QVBoxLayout, QWidget, QWidgetItem, QGridLayout, QProgressDialog)
+                               QDialogButtonBox, QFrame, QGridLayout,
+                               QGroupBox, QHBoxLayout, QLabel, QLayout,
+                               QLineEdit, QMessageBox, QProgressDialog,
+                               QPushButton, QScrollArea, QSizePolicy,
+                               QSpacerItem, QTabWidget, QVBoxLayout, QWidget,
+                               QWidgetItem)
 
 from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.viewmodels.dialogs.categorization_helper_dialog_viewmodel import \
@@ -27,13 +28,14 @@ logger = logging.getLogger(__name__)
 class CategorizationHelperDialogView(QDialog):
   """ Dialog for helping with categorization of uncategorized entries. """
 
-  def __init__(self,
-               parent,
-               activity_service: "ActivityService",
-               category_service: "CategoryService",
-               keyword_service: "KeywordService",
-               classifier: "ClassifierService"
-               ):
+  def __init__(
+      self,
+      parent: QWidget,
+      activity_service: "ActivityService",
+      category_service: "CategoryService",
+      keyword_service: "KeywordService",
+      classifier: "ClassifierService"
+  ):
     super().__init__(parent)
     self._activity_service = activity_service
     self._category_service = category_service
@@ -43,147 +45,169 @@ class CategorizationHelperDialogView(QDialog):
     self._viewmodel = CategorizationHelperDialogViewModel(
         self._activity_service, self._category_service, self._keyword_service, self._classifier)
 
-    self.category_combos = []
+    self._category_combos = []
 
-    self.setup_ui()
-    self.connect_signals()
+    self._setup_ui()
+    self._connect_signals()
     self._viewmodel.load_categories()
     self._viewmodel.load_window_classes()
     self._viewmodel.load_window_names()
 
     apply_stylesheet(self, "dialogs/categorization_helper_dialog.qss")
 
-  def setup_ui(self):
+  def _setup_ui(self):
+    """ Set up the user interface. """
     self.resize(800, 600)
     self.setWindowTitle("Categorization Helper")
-    self.main_layout = QVBoxLayout(self)
-    self.main_layout.setContentsMargins(10, 10, 10, 10)
-    self.main_layout.setSpacing(5)
-
-    # Note to user #TODO this looks bad
-    # note_label = QLabel(
-    #     "Categorize entries or save them as keywords.")
-    # note_label.setWordWrap(True)
-    # self.main_layout.addWidget(note_label)
+    self._main_layout = QVBoxLayout(self)
+    self._main_layout.setContentsMargins(10, 10, 10, 10)
+    self._main_layout.setSpacing(5)
 
     # Tabs for window classes and window names
-    self.tab_widget = QTabWidget(self)
-    self.main_layout.addWidget(self.tab_widget)
+    self._tab_widget = QTabWidget(self)
+    self._main_layout.addWidget(self._tab_widget)
 
     # Window Classes Tab
-    self.classes_tab = QWidget()
-    self.classes_tab_layout = QVBoxLayout(self.classes_tab)
-    self.classes_tab_layout.setContentsMargins(0, 0, 0, 0)
-    self.classes_tab_layout.setSpacing(0)
-    self.tab_widget.addTab(self.classes_tab, "Window Classes")
+    self._classes_tab = QWidget()
+    self._classes_tab_layout = QVBoxLayout(self._classes_tab)
+    self._classes_tab_layout.setContentsMargins(0, 0, 0, 0)
+    self._classes_tab_layout.setSpacing(0)
+    self._tab_widget.addTab(self._classes_tab, "Window Classes")
 
     # Add header to classes tab
-    self.add_header(self.classes_tab_layout)
+    self._add_header(self._classes_tab_layout)
 
-    self.classes_scroll_area = QScrollArea()
-    self.classes_scroll_area.setWidgetResizable(True)
-    self.classes_scroll_area.setObjectName("classesScrollArea")
-    self.classes_scroll_area.setFrameShape(QFrame.NoFrame)  # Remove frame
-    self.classes_tab_layout.addWidget(self.classes_scroll_area)
+    self._classes_scroll_area = QScrollArea()
+    self._classes_scroll_area.setWidgetResizable(True)
+    self._classes_scroll_area.setObjectName("classesScrollArea")
+    self._classes_scroll_area.setFrameShape(QFrame.NoFrame)  # Remove frame
+    self._classes_tab_layout.addWidget(self._classes_scroll_area)
 
-    self.classes_scroll_content = QWidget()
-    self.classes_scroll_content.setObjectName("scrollContent")
-    self.classes_scroll_layout = QVBoxLayout(self.classes_scroll_content)
-    self.classes_scroll_layout.setContentsMargins(0, 0, 0, 0)
-    self.classes_scroll_layout.setSpacing(0)
-    self.classes_scroll_area.setWidget(self.classes_scroll_content)
+    self._classes_scroll_content = QWidget()
+    self._classes_scroll_content.setObjectName("scrollContent")
+    self._classes_scroll_layout = QVBoxLayout(self._classes_scroll_content)
+    self._classes_scroll_layout.setContentsMargins(0, 0, 0, 0)
+    self._classes_scroll_layout.setSpacing(0)
+    self._classes_scroll_area.setWidget(self._classes_scroll_content)
 
     # Load More button for window classes
-    if self._viewmodel.has_more_classes:
-      self.load_more_classes_button = QPushButton(
-        "Load More Window Classes", self)
-      self.load_more_classes_button.clicked.connect(
-        self.load_more_window_classes)
-      self.classes_tab_layout.addWidget(self.load_more_classes_button)
+    self._load_more_classes_button = QPushButton(
+      "Load More Window Classes", self)
+    self._load_more_classes_button.clicked.connect(
+      self._load_more_window_classes)
+    self._classes_tab_layout.addWidget(self._load_more_classes_button)
 
     # Window Names Tab
-    self.names_tab = QWidget()
-    self.names_tab_layout = QVBoxLayout(self.names_tab)
-    self.names_tab_layout.setContentsMargins(0, 0, 0, 0)
-    self.names_tab_layout.setSpacing(0)
-    self.tab_widget.addTab(self.names_tab, "Window Names")
+    self._names_tab = QWidget()
+    self._names_tab_layout = QVBoxLayout(self._names_tab)
+    self._names_tab_layout.setContentsMargins(0, 0, 0, 0)
+    self._names_tab_layout.setSpacing(0)
+    self._tab_widget.addTab(self._names_tab, "Window Names")
 
     # Add header to names tab
-    self.add_header(self.names_tab_layout)
+    self._add_header(self._names_tab_layout)
 
-    self.names_scroll_area = QScrollArea()
-    self.names_scroll_area.setWidgetResizable(True)
-    self.names_scroll_area.setObjectName("namesScrollArea")
-    self.names_scroll_area.setFrameShape(QFrame.NoFrame)
-    self.names_tab_layout.addWidget(self.names_scroll_area)
+    self._names_scroll_area = QScrollArea()
+    self._names_scroll_area.setWidgetResizable(True)
+    self._names_scroll_area.setObjectName("namesScrollArea")
+    self._names_scroll_area.setFrameShape(QFrame.NoFrame)
+    self._names_tab_layout.addWidget(self._names_scroll_area)
 
-    self.names_scroll_content = QWidget()
-    self.names_scroll_content.setObjectName("scrollContent")
-    self.names_scroll_layout = QVBoxLayout(self.names_scroll_content)
-    self.names_scroll_layout.setContentsMargins(0, 0, 0, 0)
-    self.names_scroll_layout.setSpacing(0)
-    self.names_scroll_area.setWidget(self.names_scroll_content)
+    self._names_scroll_content = QWidget()
+    self._names_scroll_content.setObjectName("scrollContent")
+    self._names_scroll_layout = QVBoxLayout(self._names_scroll_content)
+    self._names_scroll_layout.setContentsMargins(0, 0, 0, 0)
+    self._names_scroll_layout.setSpacing(0)
+    self._names_scroll_area.setWidget(self._names_scroll_content)
 
     # Load More button for window names
-    if self._viewmodel.has_more_names:
-      self.load_more_names_button = QPushButton(
-        "Load More Window Names", self)
-      self.load_more_names_button.clicked.connect(
-        self.load_more_window_names)
-    self.names_tab_layout.addWidget(self.load_more_names_button)
+    self._load_more_names_button = QPushButton(
+      "Load More Window Names", self)
+    self._load_more_names_button.clicked.connect(
+      self._load_more_window_names)
+    self._names_tab_layout.addWidget(self._load_more_names_button)
 
     # Button box
-    self.button_box = QDialogButtonBox(
-        QDialogButtonBox.Apply | QDialogButtonBox.Cancel)
-    self.main_layout.addWidget(self.button_box)
+    self._button_box = QDialogButtonBox(
+      QDialogButtonBox.Apply | QDialogButtonBox.Cancel)
+    self._main_layout.addWidget(self._button_box)
 
-    self.setLayout(self.main_layout)
+    self.setLayout(self._main_layout)
 
-  def connect_signals(self):
-    self._viewmodel.property_changed.connect(
-      self.on_viewmodel_property_changed)
+  def _connect_signals(self):
+    """ Connect signals from the ViewModel to the View's slots. """
+    self._viewmodel.categories_changed.connect(self._on_categories_changed)
+    self._viewmodel.uncategorized_window_classes_changed.connect(
+      self._on_uncategorized_window_classes_changed)
+    self._viewmodel.uncategorized_window_names_changed.connect(
+      self._on_uncategorized_window_names_changed)
+    self._viewmodel.has_more_classes_changed.connect(
+      self._on_has_more_classes_changed)
+    self._viewmodel.has_more_names_changed.connect(
+      self._on_has_more_names_changed)
     self._viewmodel.retroactive_categorization_progress.connect(
       self._update_progress_dialog)
-    self.button_box.clicked.connect(self.apply_changes)
-    self.button_box.rejected.connect(self.reject)
+    apply_button = self._button_box.button(QDialogButtonBox.Apply)
+    apply_button.clicked.connect(self._apply_changes)
+    self._button_box.rejected.connect(self.reject)
 
-  @Slot(str)
-  def on_viewmodel_property_changed(self, property_name: str):
-    if property_name == "uncategorized_window_classes":
-      # Clear existing items before adding new ones
-      self.clear_layout(self.classes_scroll_layout)
-      self.populate_entries(self.classes_scroll_layout,
-                            self._viewmodel.uncategorized_window_classes, is_window_class=True)
-      # If no entries are loaded, hide the 'Load More' button
-      if not self._viewmodel.has_more_classes or not self._viewmodel.uncategorized_window_classes:
-        self.load_more_classes_button.hide()
-      else:
-        self.load_more_classes_button.show()
-    elif property_name == "uncategorized_window_names":  # TODO method?
-      # Clear existing items before adding new ones
-      self.clear_layout(self.names_scroll_layout)
-      self.populate_entries(self.names_scroll_layout,
-                            self._viewmodel.uncategorized_window_names, is_window_class=False)
-      # If no entries are loaded, hide the 'Load More' button
-      if not self._viewmodel.has_more_names or not self._viewmodel.uncategorized_window_names:
-        self.load_more_names_button.hide()
-      else:
-        self.load_more_names_button.show()
-    elif property_name == "categories":
-      self.update_categories()
-    elif property_name == "no_more_window_classes":
-      self.load_more_classes_button.hide()
-    elif property_name == "no_more_window_names":
-      self.load_more_names_button.hide()
+  @Slot()
+  def _on_categories_changed(self):
+    """ Handle updates when categories change. """
+    self._update_categories()
 
-  def add_header(self, layout: QVBoxLayout):
+  @Slot()
+  def _on_uncategorized_window_classes_changed(self):
+    """ Handle updates when uncategorized window classes change. """
+    self._clear_layout(self._classes_scroll_layout)
+    self._populate_entries(
+        self._classes_scroll_layout,
+        self._viewmodel.uncategorized_window_classes,
+        is_window_class=True
+    )
+    if not self._viewmodel.has_more_classes:
+      self._load_more_classes_button.hide()
+    else:
+      self._load_more_classes_button.show()
+
+  @Slot()
+  def _on_uncategorized_window_names_changed(self):
+    """ Handle updates when uncategorized window names change. """
+    self._clear_layout(self._names_scroll_layout)
+    self._populate_entries(
+        self._names_scroll_layout,
+        self._viewmodel.uncategorized_window_names,
+        is_window_class=False
+    )
+    if not self._viewmodel.has_more_names:
+      self._load_more_names_button.hide()
+    else:
+      self._load_more_names_button.show()
+
+  @Slot()
+  def _on_has_more_classes_changed(self):
+    """ Handle updates when has_more_classes property changes. """
+    if not self._viewmodel.has_more_classes:
+      self._load_more_classes_button.hide()
+    else:
+      self._load_more_classes_button.show()
+
+  @Slot()
+  def _on_has_more_names_changed(self):
+    """ Handle updates when has_more_names property changes. """
+    if not self._viewmodel.has_more_names:
+      self._load_more_names_button.hide()
+    else:
+      self._load_more_names_button.show()
+
+  def _add_header(self, layout: QVBoxLayout):
     """ Add a header row to the provided layout. """
     header_widget = QWidget()
     header_layout = QHBoxLayout(header_widget)
     header_layout.setContentsMargins(5, 0, 5, 0)
     header_layout.setSpacing(10)
 
-    # Keyword column
+    # Name column
     name_label = QLabel("Name")
     name_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
     name_label.setObjectName("headerLabel")
@@ -211,7 +235,7 @@ class CategorizationHelperDialogView(QDialog):
     category_label.setObjectName("headerLabel")
     header_layout.addWidget(category_label)
 
-    # Empty space for '+' button
+    # Empty space for "+" button
     plus_label = QLabel("")
     plus_label.setFixedWidth(30)
     header_layout.addWidget(plus_label)
@@ -234,22 +258,19 @@ class CategorizationHelperDialogView(QDialog):
     separator.setContentsMargins(0, 0, 0, 0)
     layout.addWidget(separator)
 
-  def clear_layout(self, layout):
+  def _clear_layout(self, layout: QVBoxLayout):
     """ Clear all widgets from a layout. """
-    if layout is not None:
-      while layout.count():
-        item = layout.takeAt(0)
-        widget = item.widget()
-        if widget is not None:
-          widget.deleteLater()
-        else:
-          child_layout = item.layout()
-          if child_layout is not None:
-            self.clear_layout(child_layout)
-          else:
-            pass
+    while layout.count():
+      item = layout.takeAt(0)
+      widget = item.widget()
+      if widget is not None:
+        widget.deleteLater()
+      else:
+        child_layout = item.layout()
+        if child_layout is not None:
+          self._clear_layout(child_layout)
 
-  def populate_entries(self, layout: QVBoxLayout, entries: List[Tuple[str, int]], is_window_class: bool):
+  def _populate_entries(self, layout: QVBoxLayout, entries: List[Tuple[str, int]], is_window_class: bool):
     """ Populate the entries into the provided layout. """
     for index, (keyword, total_time_seconds) in enumerate(entries):
       if keyword == "None":
@@ -262,10 +283,10 @@ class CategorizationHelperDialogView(QDialog):
 
       # Assign an object name to the row_widget for styling
       row_widget.setObjectName("rowWidget")
-      # Set a property for alternating row colors # TODO
+      # Set a property for alternating row colors
       row_widget.setProperty("alt", index % 2 == 0)
 
-      # Keyword input field
+      # Name input field
       name_edit = QLineEdit(keyword)
       name_edit.setAlignment(Qt.AlignLeft)
       name_edit.setCursorPosition(0)  # Move cursor to the start
@@ -283,24 +304,24 @@ class CategorizationHelperDialogView(QDialog):
 
       # Time Spent label
       time_label = QLabel(
-        f"{total_time_seconds // 3600}h {(total_time_seconds % 3600) // 60}m")
+          f"{total_time_seconds // 3600}h {(total_time_seconds % 3600) // 60}m")
       time_label.setFixedWidth(100)
       time_label.setAlignment(Qt.AlignCenter)
       row_layout.addWidget(time_label)
 
       # Category combo box
       category_combo = QComboBox()
-      self.populate_category_combo(category_combo)
+      self._populate_category_combo(category_combo)
       category_combo.setFixedWidth(150)
       category_combo.setFixedHeight(30)
       row_layout.addWidget(category_combo)
-      self.category_combos.append(category_combo)  # Store reference
+      self._category_combos.append(category_combo)  # Store reference
 
-      # '+' button
+      # "+" button
       new_category_btn = QPushButton("+")
       new_category_btn.setToolTip("Create new category")
       new_category_btn.clicked.connect(
-          partial(self.create_new_category, category_combo))
+          partial(self._create_new_category, category_combo))
       new_category_btn.setFixedSize(30, 30)
       row_layout.addWidget(new_category_btn)
 
@@ -318,7 +339,7 @@ class CategorizationHelperDialogView(QDialog):
       # Add the row widget to the main layout
       layout.addWidget(row_widget)
 
-      # add a separator between rows
+      # Add a separator between rows
       separator = QFrame()
       separator.setObjectName("separator")
       separator.setFrameShape(QFrame.HLine)
@@ -328,10 +349,11 @@ class CategorizationHelperDialogView(QDialog):
       layout.addWidget(separator)
 
     # Add a spacer at the bottom to push entries to the top without stretching them
-    spacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+    spacer = QSpacerItem(20, 40, QSizePolicy.Minimum,
+                         QSizePolicy.Expanding)
     layout.addItem(spacer)
 
-  def populate_category_combo(self, combo_box: QComboBox):
+  def _populate_category_combo(self, combo_box: QComboBox):
     """ Populate the category combo box with categories. """
     combo_box.clear()
     for category in self._viewmodel.categories:
@@ -339,76 +361,57 @@ class CategorizationHelperDialogView(QDialog):
       if category.name == "Uncategorized":
         combo_box.setCurrentIndex(combo_box.count() - 1)
 
-  def update_categories(self):
+  def _update_categories(self):
     """ Update categories in all combo boxes. """
-    for category_combo in self.category_combos:
+    for category_combo in self._category_combos:
       # Save the current selection
       current_category_id = category_combo.currentData()
-      self.populate_category_combo(category_combo)
+      self._populate_category_combo(category_combo)
       # Restore the selection if it still exists
       index = category_combo.findData(current_category_id)
       if index != -1:
         category_combo.setCurrentIndex(index)
       else:
-        # If the previously selected category was deleted, default to 'Uncategorized'
+        # If the previously selected category was deleted, default to "Uncategorized"
         index = category_combo.findText("Uncategorized")
         if index != -1:
           category_combo.setCurrentIndex(index)
 
   @Slot()
-  def apply_changes(self):
-    print("Applying changes")
+  def _apply_changes(self):
     """ Apply the changes and save categorizations. """
-    for layout in [self.classes_scroll_layout, self.names_scroll_layout]:
+    print("Applying changes")
+    for layout in [self._classes_scroll_layout, self._names_scroll_layout]:
       for i in range(layout.count()):
         item = layout.itemAt(i)
-        if isinstance(item, QWidgetItem) and item.widget().objectName() == "rowWidget":
-          row_widget = item.widget()
-          if row_widget and isinstance(row_widget, QWidget):
-            self.save_categorization(row_widget)
-        elif isinstance(item.widget(), QFrame):
-          # It's a separator, skip
-          continue
+        widget = item.widget()
+        if widget and widget.objectName() == "rowWidget":
+          self._save_categorization(widget)
 
-    reply = QMessageBox.question(self, "Retroactive Categorization",
-                                 "Do you want to retroactively categorize the activities with the new rules?",
-                                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-    if reply == QMessageBox.Yes:  # TODO this is repeated with categories view
-      self.progress_dialog = self._show_progress_dialog(
+    reply = QMessageBox.question(
+        self, "Retroactive Categorization",
+        "Do you want to retroactively categorize the activities with the new rules?",
+        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+
+    if reply == QMessageBox.Yes:
+      self._progress_dialog = self._show_progress_dialog(
           "Progress", "Categorizing entries..."
       )
 
-      # Connect the progress signal before starting the categorization
-      self._viewmodel.retroactive_categorization_progress.connect(
-          self._update_progress_dialog
-      )
-
       # Start the categorization process
-      success = self._viewmodel.perform_retroactive_categorization()
+      self._viewmodel.perform_retroactive_categorization()
 
-      # Disconnect the signal after the process is complete
-      self._viewmodel.retroactive_categorization_progress.disconnect(
-          self._update_progress_dialog
+      self._progress_dialog.close()
+      QMessageBox.information(
+          self, "Retroactive Categorization", "Categorization completed successfully."
       )
-
-      self.progress_dialog.close()
-
-      if success:
-        QMessageBox.information(
-            self, "Retroactive Categorization", "Categorization completed successfully."
-        )
-      else:
-        QMessageBox.critical(
-            self, "Retroactive Categorization", "An error occurred during categorization."
-        )
 
     self.accept()
 
-  def save_categorization(self, row_widget: QWidget):
+  def _save_categorization(self, row_widget: QWidget):
     """ Save categorization for an entry. """
     row_layout = row_widget.layout()
 
-    # TODO better way of getting widgets
     name_edit = row_layout.itemAt(0).widget()
     match_case_checkbox = row_layout.itemAt(1).widget()
     category_combo = row_layout.itemAt(3).widget()
@@ -420,22 +423,22 @@ class CategorizationHelperDialogView(QDialog):
       match_case = match_case_checkbox.isChecked()
       save_keyword = save_keyword_checkbox.isChecked()
       self._viewmodel.save_categorization(
-        keyword, category_id, match_case, save_keyword)
+          keyword, category_id, match_case, save_keyword)
 
   @Slot()
-  def load_more_window_classes(self):
+  def _load_more_window_classes(self):
     """ Load more window classes. """
     self._viewmodel.load_window_classes()
 
   @Slot()
-  def load_more_window_names(self):
+  def _load_more_window_names(self):
     """ Load more window names. """
     self._viewmodel.load_window_names()
 
-  def create_new_category(self, category_combo: QComboBox):
+  def _create_new_category(self, category_combo: QComboBox):
     """ Create a new category and set it in the provided combo box. """
     dialog = CategoryDialogView(
-      self, self._category_service, self._keyword_service)
+        self, self._category_service, self._keyword_service)
     if dialog.exec_():
       category_name = dialog._viewmodel.name
       category_id = self._category_service.get_category_id_from_name(
@@ -445,10 +448,10 @@ class CategorizationHelperDialogView(QDialog):
 
       # Add the new category to the categories list and emit the signal
       self._viewmodel.categories.append(category)
-      self._viewmodel.property_changed.emit('categories')
+      self._viewmodel.categories_changed.emit()
 
       # Update the UI
-      self.update_categories()
+      self._update_categories()
 
       # Set the newly created category in the combo box
       index = category_combo.findData(category.id)
@@ -461,9 +464,9 @@ class CategorizationHelperDialogView(QDialog):
 
   def _update_progress_dialog(self, current: int, total: int):
     """ Update the progress dialog during retroactive categorization. """
-    if hasattr(self, 'progress_dialog'):
+    if hasattr(self, "_progress_dialog"):
       progress = int((current / total) * 100)
-      self.progress_dialog.setValue(progress)
+      self._progress_dialog.setValue(progress)
       QCoreApplication.processEvents()
 
   def _show_progress_dialog(self, title: str, message: str) -> QProgressDialog:
