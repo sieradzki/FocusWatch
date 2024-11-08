@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (QCalendarWidget, QDialog, QFrame, QGridLayout,
 
 from focuswatch.utils.resource_utils import apply_styles, apply_stylesheet
 from focuswatch.views.components.card_widget import CardWidget
-from focuswatch.views.components.focus_trend_view import FocusTrendView
+from focuswatch.views.components.focus_breakdown_view import FocusBreakdownView
 from focuswatch.views.components.timeline_view import TimelineView
 from focuswatch.views.components.top_applications_card_view import \
     TopApplicationsCardView
@@ -156,10 +156,10 @@ class HomeView(QWidget):
         self._viewmodel.top_titles_card_viewmodel, self)
     self.grid_layout.addWidget(self.top_titles_card, 0, 2)
 
-    # Focus trend
-    self.focus_trend_card = FocusTrendView(
-        self._viewmodel.focus_trend_viewmodel, self)
-    self.grid_layout.addWidget(self.focus_trend_card, 1, 0, 2, 2)
+    # Focus breakdown
+    self.focus_breakdown_card = FocusBreakdownView(
+        self._viewmodel.focus_breakdown_viewmodel, self)
+    self.grid_layout.addWidget(self.focus_breakdown_card, 1, 0, 2, 2)
 
     # Placeholder for Daily Summary
     self.daily_summary_card = CardWidget("Daily Summary", self)
