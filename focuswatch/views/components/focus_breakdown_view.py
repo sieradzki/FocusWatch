@@ -113,7 +113,7 @@ class FocusBreakdownView(CardWidget):
     # Set specific colors
     focused_set.setColor(QColor("#25A266"))
     distracted_set.setColor(QColor("#FF0000"))
-    idle_set.setColor(QColor("#3D3D3D"))
+    idle_set.setColor(QColor("#9E9E9E"))
 
     # Create the stacked bar series and append sets
     series = QStackedBarSeries()
