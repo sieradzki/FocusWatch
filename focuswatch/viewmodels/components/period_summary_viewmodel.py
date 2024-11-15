@@ -29,7 +29,6 @@ class PeriodSummaryViewModel(QObject):
     self._activity_service = activity_service
     self._category_service = category_service
 
-    # Initialize period_start and period_end
     self._period_start = period_start or datetime.now().replace(
         hour=0, minute=0, second=0, microsecond=0
     )
@@ -38,14 +37,12 @@ class PeriodSummaryViewModel(QObject):
     # TODO streamline data for all components in home viewmodel as a lot of it is shared between components
     self._period_data: List[Dict[str, float]] = []
 
-    # Retrieve AFK category ID
     self._afk_category_id = self._category_service.get_category_id_from_name(
-        "AFK")
+      "AFK")
 
     # temp
-    self._focused_target: float = 8.
+    self._focused_target_hours: float = 8.
 
-    # Compute initial period summary
     self.compute_period_summary()
 
   @Slot(datetime, datetime)
@@ -81,21 +78,16 @@ class PeriodSummaryViewModel(QObject):
 
   def compute_period_summary(self) -> None:
     """ Compute the period summary data. """
-    try:
-      activities = self._activity_service.get_period_entries(
-          self._period_start, self._period_end
-      )
-    except Exception as e:
-      logger.error(f"Error fetching activities: {e}")
-      self._period_data = {}
-      self.period_data_changed.emit()
-      return
+    activities = self._activity_service.get_period_entries(
+        self._period_start, self._period_end
+    )
 
-    # Initialize totals
+    # Initialize totals in seconds
     totals = {"focused": 0.0, "distracted": 0.0, "idle": 0.0}
 
     for activity in activities:
-      duration = (activity.time_stop - activity.time_start).total_seconds()
+      duration = (activity.time_stop -
+                  activity.time_start).total_seconds()
 
       if self._afk_category_id and activity.category_id == self._afk_category_id:
         totals["idle"] += duration
@@ -104,12 +96,53 @@ class PeriodSummaryViewModel(QObject):
       else:
         totals["distracted"] += duration
 
+    # Calculate total active time (excluding idle time)
+    total_active_time = totals["focused"] + totals["distracted"]
+
+    # Total time including idle
+    total_time = total_active_time + totals["idle"]
+
+    # Calculate percentages
+    focused_target_seconds = self._focused_target_hours * 3600.0
+    focused_percent_of_target = (
+        (totals["focused"] / focused_target_seconds) * 100
+        if focused_target_seconds > 0
+        else 0
+    )
+
+    distracted_percent_of_active = (
+        (totals["distracted"] / total_active_time) * 100
+        if total_active_time > 0
+        else 0
+    )
+
     # Prepare period_data
     self._period_data = {
         "focused": totals["focused"],
         "distracted": totals["distracted"],
         "idle": totals["idle"],
-        "focused_target": self._focused_target * 3600.0,  # Convert hours to seconds
+        "focused_target_seconds": focused_target_seconds,
+        "focused_percent_of_target": focused_percent_of_target,
+        "distracted_percent_of_active": distracted_percent_of_active,
+        "focused_target_str": self._format_time(focused_target_seconds),
+        "total_active_time": total_active_time,
+        "total_time": total_time,
+        "focused_time_str": self._format_time(totals["focused"]),
+        "distracted_time_str": self._format_time(totals["distracted"]),
     }
 
     self.period_data_changed.emit()
+
+  @staticmethod
+  def _format_time(seconds: float) -> str:
+    """ Format the given time in seconds to a human-readable string. """
+    total_seconds = int(seconds)
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+
+    if hours > 0:
+      return f"{hours}h {minutes}m"
+    elif minutes > 0:
+      return f"{minutes}m"
+    else:
+      return f"{total_seconds % 60}s"
