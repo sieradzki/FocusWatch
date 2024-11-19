@@ -1,0 +1,21 @@
+
+
+QChartView#chart_view {
+    background: transparent;
+}
+
+QLabel#focused_time_label,
+QLabel#distracted_time_label {
+    font-size: 14px;
+}
+
+QLabel#focused_time_value,
+QLabel#distracted_time_value {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+QLabel#focused_percent_value,
+QLabel#distracted_percent_value {
+    font-weight: bold;
+}
