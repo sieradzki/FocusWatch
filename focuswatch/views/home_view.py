@@ -17,6 +17,7 @@ from focuswatch.views.components.top_applications_card_view import \
 from focuswatch.views.components.top_categories_card_view import \
     TopCategoriesCardView
 from focuswatch.views.components.top_titles_card_view import TopTitlesCardView
+from focuswatch.views.components.period_summary_view import PeriodSummaryCardView
 
 if TYPE_CHECKING:
   from focuswatch.viewmodels.home_viewmodel import HomeViewModel
@@ -161,8 +162,8 @@ class HomeView(QWidget):
         self._viewmodel.focus_breakdown_viewmodel, self)
     self.grid_layout.addWidget(self.focus_breakdown_card, 1, 0, 2, 2)
 
-    # Placeholder for Daily Summary
-    self.daily_summary_card = CardWidget("Daily Summary", self)
+    self.daily_summary_card = PeriodSummaryCardView(
+        self._viewmodel.period_summary_viewmodel, self)
     self.grid_layout.addWidget(self.daily_summary_card, 1, 2, 2, 1)
 
     # Add the grid layout to the content frame

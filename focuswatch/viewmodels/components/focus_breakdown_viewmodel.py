@@ -133,6 +133,15 @@ class FocusBreakdownViewModel(QObject):
       distracted = hour_totals[hour]["distracted"]
       idle = hour_totals[hour]["idle"]
 
+      total_time = focused + distracted + idle
+
+      # Normalize total time to 1 hour
+      if total_time > 3600:
+        scale_factor = 3600 / total_time
+        focused *= scale_factor
+        distracted *= scale_factor
+        idle *= scale_factor
+
       breakdown_data.append(
         {
           "hour": hour,

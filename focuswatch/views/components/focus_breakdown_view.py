@@ -113,7 +113,7 @@ class FocusBreakdownView(CardWidget):
     # Set specific colors
     focused_set.setColor(QColor("#25A266"))
     distracted_set.setColor(QColor("#FF0000"))
-    idle_set.setColor(QColor("#3D3D3D"))
+    idle_set.setColor(QColor("#9E9E9E"))
 
     # Create the stacked bar series and append sets
     series = QStackedBarSeries()
@@ -134,10 +134,9 @@ class FocusBreakdownView(CardWidget):
     series.attachAxis(self._axis_x)
     series.attachAxis(self._axis_y)
 
-    # Dynamically adjust Y-axis range based on data
-    # Add some padding to the maximum value for better visualization
     y_max = (max_time // 10 + 1) * 10 if max_time > 0 else 60
     self._axis_y.setRange(0, max(y_max, 60))
+    # Add some padding to the maximum value for better visualization
     self._axis_y.setLabelFormat("%.0fm")
 
     # Add legend below

@@ -6,6 +6,8 @@ from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from focuswatch.viewmodels.components.focus_breakdown_viewmodel import \
     FocusBreakdownViewModel
+from focuswatch.viewmodels.components.period_summary_viewmodel import \
+    PeriodSummaryViewModel
 from focuswatch.viewmodels.components.timeline_viewmodel import \
     TimelineViewModel
 from focuswatch.viewmodels.components.top_applications_card_viewmodel import \
@@ -72,6 +74,13 @@ class HomeViewModel(QObject):
       self._category_service
     )
 
+    self._period_summary_viewmodel = PeriodSummaryViewModel(
+      self._activity_service,
+      self._category_service,
+      self._period_start,
+      self._period_end
+    )
+
     self._connect_period_changed()
     self._connect_refresh_triggered()
 
@@ -135,6 +144,11 @@ class HomeViewModel(QObject):
     """ ViewModel for the focus breakdown component. """
     return self._focus_breakdown_viewmodel
 
+  @Property(QObject, constant=True)
+  def period_summary_viewmodel(self) -> PeriodSummaryViewModel:
+    """ ViewModel for the period summary component. """
+    return self._period_summary_viewmodel
+
   def _connect_period_changed(self):
     """ Connect the period_changed signal to child ViewModels. """
     for viewmodel in [
@@ -142,7 +156,8 @@ class HomeViewModel(QObject):
         self._top_categories_card_viewmodel,
         self._top_applications_card_viewmodel,
         self._top_titles_card_viewmodel,
-        self._focus_breakdown_viewmodel
+        self._focus_breakdown_viewmodel,
+        self._period_summary_viewmodel
     ]:
       self.period_changed.connect(viewmodel.update_period)
 
@@ -158,6 +173,8 @@ class HomeViewModel(QObject):
       self.refresh_triggered.connect(viewmodel.update_top_items)
     self.refresh_triggered.connect(
         self._focus_breakdown_viewmodel.compute_focus_breakdown)
+    self.refresh_triggered.connect(
+        self._period_summary_viewmodel.compute_period_summary)
 
   def _update_period(self, start: datetime, end: Optional[datetime], period_type: str) -> None:
     """ Update the period and emit period_changed signal. """

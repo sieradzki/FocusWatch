@@ -39,3 +39,8 @@ QScrollBar:vertical {
 QScrollBar::handle:vertical {
   background: #F9F9F9;
 }
+
+QLabel#no_data_label {
+    color: #9E9E9E;
+    font-size: 16px;
+}
