@@ -1,11 +1,12 @@
 import logging
 from typing import Optional
 
+from PySide6.QtCore import Property, QObject, Signal, Slot
+
 from focuswatch.autostart_manager import (add_to_autostart, is_frozen,
                                           is_in_autostart,
                                           remove_from_autostart)
 from focuswatch.config import Config
-from PySide6.QtCore import QObject, Signal, Property, Slot
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +23,9 @@ class SettingsViewModel(QObject):
     super().__init__()
     self.config: Config = Config()
     self._watch_interval: float = float(
-      self.config.get_value("General", "watch_interval"))
-    self._watch_afk: bool = self.config.get_value(
-      "General", "watch_afk") == "True"
-    self._afk_timeout: float = float(
-      self.config.get_value("General", "afk_timeout"))
+      self.config["General"]["watch_interval"])
+    self._watch_afk: bool = self.config["General"]["watch_afk"] == True
+    self._afk_timeout: float = float(self.config["General"]["afk_timeout"])
     self._autostart_enabled: bool = is_in_autostart()
 
     self._filter_text: str = ""
@@ -98,11 +97,10 @@ class SettingsViewModel(QObject):
     return is_frozen()
 
   @Slot()
-  def apply_settings(self):
-    self.config.set_value("General", "watch_interval",
-                          str(self._watch_interval))
-    self.config.set_value("General", "watch_afk", str(self._watch_afk))
-    self.config.set_value("General", "afk_timeout", str(self._afk_timeout))
+  def apply_settings(self):  # TODO more intelligent way to apply settings
+    self.config["General"]["watch_interval"] = self._watch_interval
+    self.config["General"]["watch_afk"] = self._watch_afk
+    self.config["General"]["afk_timeout"] = self._afk_timeout
 
     if self._autostart_enabled:
       add_to_autostart()
