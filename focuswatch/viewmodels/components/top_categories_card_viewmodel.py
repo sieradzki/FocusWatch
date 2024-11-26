@@ -25,10 +25,12 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
                activity_service: "ActivityService",
                category_service: "CategoryService",
                period_start: datetime,
-               period_end: Optional[datetime] = None):
+               period_end: Optional[datetime] = None,
+               config=None):
     super().__init__(period_start, period_end)
     self._activity_service = activity_service
     self._category_service = category_service
+    self._config = config
     self._organized_categories: Dict[int, Dict] = {}
 
     self.update_top_items()
@@ -68,6 +70,10 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
       category_id = int(category_id)
       category = self._category_service.get_category_by_id(category_id)
       if category:
+        if not self._config["dashboard"]["display_cards_idle"]:
+          if category.name == "AFK":
+            continue
+
         category_data = category_hierarchy[category_id]
         category_data['category'] = category
         category_data['time'] = time_spent

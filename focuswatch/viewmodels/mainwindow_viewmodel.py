@@ -1,10 +1,10 @@
 import logging
 from typing import TYPE_CHECKING, List, Tuple
 
-from PySide6.QtCore import QObject, Property, Signal
+from PySide6.QtCore import Property, QObject, Signal
 
-from focuswatch.viewmodels.categories_viewmodel import \
-    CategoriesViewModel
+from focuswatch.config import Config
+from focuswatch.viewmodels.categories_viewmodel import CategoriesViewModel
 from focuswatch.viewmodels.home_viewmodel import HomeViewModel
 from focuswatch.viewmodels.settings_viewmodel import SettingsViewModel
 
@@ -33,6 +33,7 @@ class MainWindowViewModel(QObject):
                classifier_service: "ClassifierService"):
     super().__init__()
     self._main_viewmodel = main_viewmodel
+    self._config = Config()
 
     # Initialize services
     self._activity_service = activity_service
@@ -50,7 +51,8 @@ class MainWindowViewModel(QObject):
     )
     self._home_viewmodel = HomeViewModel(
       self._activity_service,
-      self._category_service
+      self._category_service,
+      self._config
     )
 
     # Initialize properties

@@ -37,10 +37,12 @@ class HomeViewModel(QObject):
 
   def __init__(self,
                activity_service: "ActivityService",
-               category_service: "CategoryService"):
+               category_service: "CategoryService",
+               config=None):
     super().__init__()
     self._activity_service = activity_service
     self._category_service = category_service
+    self._config = config
 
     self._period_start: datetime = datetime.now().replace(
       hour=0, minute=0, second=0, microsecond=0)
@@ -55,7 +57,8 @@ class HomeViewModel(QObject):
       self._activity_service,
       self._category_service,
       self._period_start,
-      self._period_end
+      self._period_end,
+      self._config
     )
     self._top_applications_card_viewmodel = TopApplicationsCardViewModel(
       self._activity_service,
