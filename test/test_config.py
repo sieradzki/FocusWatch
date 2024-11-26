@@ -56,8 +56,8 @@ class TestConfig(unittest.TestCase):
     config.initialize_config()
     config_contents = config
 
-    self.assertIn("General", config_contents)
-    self.assertIn("Database", config_contents)
+    self.assertIn("general", config_contents)
+    self.assertIn("database", config_contents)
 
     self.assertIn("watch_interval", config_contents["general"])
     self.assertIn("verbose", config_contents["general"])

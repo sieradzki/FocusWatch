@@ -1,7 +1,8 @@
+""" ViewModel for settings view. """
 import logging
-from typing import Optional
+from typing import Any, Dict, List, Tuple
 
-from PySide6.QtCore import Property, QObject, Signal, Slot
+from PySide6.QtCore import Property, QObject, Signal
 
 from focuswatch.autostart_manager import (add_to_autostart, is_frozen,
                                           is_in_autostart,
@@ -11,60 +12,89 @@ from focuswatch.config import Config
 logger = logging.getLogger(__name__)
 
 
+def create_getter(config_path: List[str]):
+  """ Create a getter function for a config option. """
+
+  def getter(self):
+    config_value = self._config
+    for key in config_path:
+      config_value = config_value[key]
+    return config_value
+  return getter
+
+
+def create_setter(config_path: List[str], signal_name: str):
+  """ Create a setter function for a config option. """
+
+  def setter(self, value):
+    config_section = self._config
+    for key in config_path[:-1]:
+      config_section = config_section[key]
+    option = config_path[-1]
+    if config_section[option] != value:
+      config_section[option] = value
+      getattr(self, signal_name).emit()
+      self._config.write_config_to_file()
+  return setter
+
+
+def extract_config_options(config: Dict[str, Any], parent_keys: List[str] = None) -> List[Tuple[List[str], Any]]:
+  """ Recursively extract config options and their paths. """
+  parent_keys = parent_keys or []
+  options = []
+  for key, value in config.items():
+    current_path = parent_keys + [key]
+    if isinstance(value, dict):
+      options.extend(extract_config_options(value, current_path))
+    else:
+      options.append((current_path, value))
+  return options
+
+
+def dynamic_properties(cls):
+  """ Class decorator to dynamically add properties and signals to the class. """  # metaclass was crashing idk
+  config = Config()
+  options = extract_config_options(config)
+  for config_path, value in options:
+    prop_name = '_'.join(config_path)
+    signal_name = f"{prop_name}_changed"
+    value_type = type(value)
+
+    # Avoid name collisions with existing attributes
+    if hasattr(cls, prop_name):
+      continue
+
+    # Create Signal
+    setattr(cls, signal_name, Signal())
+
+    # Create getter and setter
+    getter = create_getter(config_path)
+    setter = create_setter(config_path, signal_name)
+
+    # Create Property
+    prop = Property(
+        value_type, getter, setter, notify=getattr(cls, signal_name)
+    )
+    setattr(cls, prop_name, prop)
+
+  return cls
+
+
+@dynamic_properties
 class SettingsViewModel(QObject):
-  watch_interval_changed = Signal()
-  watch_afk_changed = Signal()
-  afk_timeout_changed = Signal()
-  autostart_enabled_changed = Signal()
+  """ Settings ViewModel with dynamic properties based on the configuration. """
+
+  # Signal for filter_text
   filter_text_changed = Signal()
-  settings_applied = Signal()
+  autostart_enabled_changed = Signal()
+  autostart_available_changed = Signal()
 
   def __init__(self):
     super().__init__()
-    self.config: Config = Config()
-    self._watch_interval: float = float(
-      self.config["General"]["watch_interval"])
-    self._watch_afk: bool = self.config["General"]["watch_afk"] == True
-    self._afk_timeout: float = float(self.config["General"]["afk_timeout"])
+    self._config = Config()
+    self._filter_text = ""
+    self._autostart_available = self.is_autostart_available()
     self._autostart_enabled: bool = is_in_autostart()
-
-    self._filter_text: str = ""
-
-  @Property(float, notify=watch_interval_changed)
-  def watch_interval(self) -> float:
-    return self._watch_interval
-
-  @watch_interval.setter
-  def watch_interval(self, value: float):
-    if value <= 0:
-      logger.warning("Attempted to set a non-positive watch interval.")
-      return
-    if self._watch_interval != value:
-      self._watch_interval = value
-      self.watch_interval_changed.emit()
-
-  @Property(bool, notify=watch_afk_changed)
-  def watch_afk(self) -> bool:
-    return self._watch_afk
-
-  @watch_afk.setter
-  def watch_afk(self, value: bool):
-    if self._watch_afk != value:
-      self._watch_afk = value
-      self.watch_afk_changed.emit()
-
-  @Property(float, notify=afk_timeout_changed)
-  def afk_timeout(self) -> float:
-    return self._afk_timeout
-
-  @afk_timeout.setter
-  def afk_timeout(self, value: float):
-    if value < 0:
-      logger.warning("Attempted to set a negative AFK timeout.")
-      return
-    if self._afk_timeout != value:
-      self._afk_timeout = value
-      self.afk_timeout_changed.emit()
 
   @Property(bool, notify=autostart_enabled_changed)
   def autostart_enabled(self) -> bool:
@@ -78,7 +108,7 @@ class SettingsViewModel(QObject):
 
   @Property(str, notify=filter_text_changed)
   def filter_text(self) -> str:
-    """Get the current filter text."""
+    """ Get the current filter text. """
     return self._filter_text
 
   @filter_text.setter
@@ -88,23 +118,25 @@ class SettingsViewModel(QObject):
       self._filter_text = value
       self.filter_text_changed.emit()
 
-  def is_autostart_available(self) -> bool:
-    """ Check if autostart is available based on the application's state.
+  @Property(bool, notify=autostart_available_changed)
+  def autostart_available(self) -> bool:
+    """ Check if autostart is available based on the application's state. """
+    return self._autostart_available
 
-    Returns:
-        True if autostart is available; False otherwise.
-    """
+  @autostart_available.setter
+  def autostart_available(self, value: bool):
+    if self._autostart_available != value:
+      self._autostart_available = value
+      self.autostart_available_changed.emit()
+
+  def is_autostart_available(self) -> bool:
+    """ Determine if autostart is available - for now just check if the app is frozen. """
     return is_frozen()
 
-  @Slot()
-  def apply_settings(self):  # TODO more intelligent way to apply settings
-    self.config["General"]["watch_interval"] = self._watch_interval
-    self.config["General"]["watch_afk"] = self._watch_afk
-    self.config["General"]["afk_timeout"] = self._afk_timeout
-
+  def toggle_autostart(self) -> None:
+    """ Toggle autostart state. """
     if self._autostart_enabled:
-      add_to_autostart()
-    else:
       remove_from_autostart()
-
-    self.settings_applied.emit()
+    else:
+      add_to_autostart()
+    self.autostart_enabled = not self._autostart_enabled
