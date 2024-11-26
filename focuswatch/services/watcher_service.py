@@ -69,12 +69,12 @@ class WatcherService():
     # Load configuration
     self._config = Config()
     self._watch_interval = float(
-      self._config.get_value("General", "watch_interval")) if not watch_interval else watch_interval
-    self._verbose = int(self._config.get_value(
-      "General", "verbose")) if not verbose else verbose
-    self._watch_afk = bool(self._config.get_value("General", "watch_afk"))
+      self._config["General"]["watch_interval"]) if not watch_interval else watch_interval
+    self._verbose = int(self._config["General"]
+                        ["verbose"]) if not verbose else verbose
+    self._watch_afk = bool(self._config["General"]["watch_afk"])
     self._afk_timeout = float(
-      self._config.get_value("General", "afk_timeout"))
+      self._config["General"]["afk_timeout"])
 
     # Initialize services
     self._activity_service = activity_service

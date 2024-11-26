@@ -17,7 +17,7 @@ class DatabaseConnection:
     """ Initialize the database connection. """
     self.conn = None
     self._config = Config()
-    self.db_name = self._config.get_value('Database', 'location')
+    self.db_name = self._config["Database"]["location"]
 
   def __del__(self):
     """ Close the database connection when the object is deleted. """

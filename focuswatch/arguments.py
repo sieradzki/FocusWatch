@@ -11,7 +11,7 @@ from focuswatch.services.keyword_service import KeywordService
 def display_config():
   """ Display the current configuration """
   config = Config()
-  config_contents = config.get_config()
+  config_contents = config
   for section in config_contents:
     print(f"[{section}]")
     for option, value in config_contents[section].items():
@@ -137,22 +137,22 @@ def parse_arguments():
   # Config
   if args.config_wi:
     config = Config()
-    config.set_value("General", "watch_interval", args.config_wi)
+    config["General"]["watch_interval"] = args.config_wi
     sys.exit()
 
   if args.config_verbose:
     config = Config()
-    config.set_value("General", "verbose", True)
+    config["General"]["verbose"] = True
     sys.exit()
 
   if args.config_no_verbose:
     config = Config()
-    config.set_value("General", "verbose", False)
+    config["General"]["verbose"] = False
     sys.exit()
 
   if args.config_db:
     config = Config()
-    config.set_value("Database", "location", args.config_db)
+    config["Database"]["location"] = args.config_db
     sys.exit()
 
   return args

@@ -2,9 +2,10 @@
 import logging
 import os
 import sys
-import yaml
 from collections.abc import MutableMapping
 from typing import Any, Optional
+
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -107,14 +108,6 @@ class Config(MutableMapping):
       logger.error(f"Error loading configuration file: {e}")
       raise
 
-  def set_value(self, section, option, value):
-    """ Update the configuration with a new value """
-    if section in self.config and option in self.config[section]:
-      self.config[section][option] = str(value)
-      self.write_config_to_file()
-    else:
-      return ValueError(f"Section '{section}' or option '{option}' does not exist.")
-
   def __getitem__(self, key: str) -> Any:
     return self._config[key]
 
@@ -135,35 +128,7 @@ class Config(MutableMapping):
   def __repr__(self):
     return f"{self.__class__.__name__}({self._config})"
 
-  """ Legacy methods """
-
-  def set_value(self, section: str, option: str, value: Any):
-    """ Update the configuration with a new value. """
-    if section in self._config:
-      self._config[section][option] = value
-      self.write_config_to_file()
-    else:
-      raise ValueError(f"Section '{section}' does not exist.")
-
-  def get_value(self, section: str, option: str) -> Any:
-    """ Get a configuration value. """
-    try:
-      return self._config[section][option]
-    except KeyError:
-      raise ValueError(f"Section '{section}' or option '{
-                       option}' does not exist.")
-
-  def get_config(self) -> dict:
-    """ Get all configuration values. """
-    return self._config
-
-  def save(self):
-    """ Save the current configuration to the file. """
-    self.write_config_to_file()
-
 
 if __name__ == "__main__":
   config = Config()
-  print(config.get_config())
-  config.set_value("General", "verbose", "1")
-  print(config.get_config())
+  print(config)
