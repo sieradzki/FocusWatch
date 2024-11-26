@@ -59,10 +59,10 @@ class TestConfig(unittest.TestCase):
     self.assertIn("General", config_contents)
     self.assertIn("Database", config_contents)
 
-    self.assertIn("watch_interval", config_contents["General"])
-    self.assertIn("verbose", config_contents["General"])
+    self.assertIn("watch_interval", config_contents["general"])
+    self.assertIn("verbose", config_contents["general"])
 
-    self.assertIn("location", config_contents["Database"])
+    self.assertIn("location", config_contents["database"])
 
 
 if __name__ == "__main__":

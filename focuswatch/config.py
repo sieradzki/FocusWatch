@@ -54,19 +54,27 @@ class Config(MutableMapping):
   def initialize_config(self):
     """ Initialize the configuration file with default values """
     self._config = {
-      "General": {
+      "general": {
         "watch_interval": 1.0,
         "verbose": 0,
         "watch_afk": True,
         "afk_timeout": 10,
       },
-      "Database": {
+      "database": {
         "location": self.default_database_path,
       },
-      "Logging": {
+      "logging": {
         "location": self.default_log_path,
         "logger_config": self.default_logger_config_path,
         "log_level": "DEBUG",
+      },
+      "dashboard": {
+        "daily_focused_goal": 8,
+        "weekly_focused_goal": 40,
+        "monthly_focused_goal": 160,
+        "distracted_goal": 20,
+        "display_cards_idle": True,
+        "display_timeline_ide": True,
       },
     }
     self.write_config_to_file()
@@ -76,7 +84,7 @@ class Config(MutableMapping):
     try:
       os.makedirs(os.path.dirname(self.config_file_path), exist_ok=True)
       os.makedirs(os.path.dirname(
-        self._config["Logging"]["location"]), exist_ok=True)
+        self._config["logging"]["location"]), exist_ok=True)
       with open(self.config_file_path, "w", encoding="utf-8") as config_file:
         yaml.dump(self._config, config_file, default_flow_style=False)
       logger.info("Configuration file written successfully.")

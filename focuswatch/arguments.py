@@ -137,22 +137,22 @@ def parse_arguments():
   # Config
   if args.config_wi:
     config = Config()
-    config["General"]["watch_interval"] = args.config_wi
+    config["general"]["watch_interval"] = args.config_wi
     sys.exit()
 
   if args.config_verbose:
     config = Config()
-    config["General"]["verbose"] = True
+    config["general"]["verbose"] = True
     sys.exit()
 
   if args.config_no_verbose:
     config = Config()
-    config["General"]["verbose"] = False
+    config["general"]["verbose"] = False
     sys.exit()
 
   if args.config_db:
     config = Config()
-    config["Database"]["location"] = args.config_db
+    config["database"]["location"] = args.config_db
     sys.exit()
 
   return args
