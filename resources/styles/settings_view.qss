@@ -4,7 +4,8 @@ QWidget#navigation_panel {
 }
 
 QToolButton#sidebar_button_general,
-QToolButton#sidebar_button_watcher {
+QToolButton#sidebar_button_watcher,
+QToolButton#sidebar_button_dashboard {
     background-color: transparent;
     border: none;
     font-size: 14px;
@@ -14,12 +15,14 @@ QToolButton#sidebar_button_watcher {
 }
 
 QToolButton#sidebar_button_general:hover,
-QToolButton#sidebar_button_watcher:hover {
+QToolButton#sidebar_button_watcher:hover,
+QToolButton#sidebar_button_dashboard:hover {
     background-color: #27282C;
 }
 
 QToolButton#sidebar_button_general:checked,
-QToolButton#sidebar_button_watcher:checked {
+QToolButton#sidebar_button_watcher:checked,
+QToolButton#sidebar_button_dashboard:checked {
     background-color: #27282C;
 }
 
@@ -58,13 +61,15 @@ QGroupBox::title {
 }
 
 QGroupBox#general_group_box,
-QGroupBox#watcher_group_box {
+QGroupBox#watcher_group_box,
+QGroupBox#dashboard_group_box {
     margin-top: 20px; /* Adjust spacing above the group box */
 }
 
 /* Adjustments for Header Labels inside GroupBoxes */
 QGroupBox QLabel#general_header,
-QGroupBox QLabel#watcher_header {
+QGroupBox QLabel#watcher_header,
+QGroupBox QLabel#dashboard_header {
     font-size: 14pt;
     font-weight: bold;
     color: #F9F9F9;
@@ -127,7 +132,8 @@ QLabel#noteLabel {
 
 /* Section Headers */
 QLabel#general_header,
-QLabel#watcher_header {
+QLabel#watcher_header,
+QLabel#dashboard_header {
     font-size: 14pt;
     font-weight: bold;
     color: #F9F9F9;

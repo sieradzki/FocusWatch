@@ -74,8 +74,8 @@ class Config(MutableMapping):
         "monthly_focused_goal": 160,
         "distracted_goal": 20,
         "display_cards_idle": True,
-        "display_timeline_ide": True,
-      },
+        "display_timeline_idle": True,
+      }
     }
     self.write_config_to_file()
 
@@ -87,7 +87,7 @@ class Config(MutableMapping):
         self._config["logging"]["location"]), exist_ok=True)
       with open(self.config_file_path, "w", encoding="utf-8") as config_file:
         yaml.dump(self._config, config_file, default_flow_style=False)
-      logger.info("Configuration file written successfully.")
+      # logger.info("Configuration file written successfully.")
     except FileNotFoundError as e:
       logger.error(f"The configuration file was not found. {e}")
     except IOError as e:
@@ -107,7 +107,7 @@ class Config(MutableMapping):
         with open(self.config_file_path, "r", encoding="utf-8") as config_file:
           self._config = yaml.safe_load(config_file) or {}
         # Check for required sections
-        required_sections = ["General", "Database", "Logging"]
+        required_sections = ["general", "database", "logging", "dashboard"]
         if not all(section in self._config for section in required_sections):
           logger.info(
             "Missing sections in configuration file. Reinitializing configuration.")

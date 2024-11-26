@@ -1,13 +1,13 @@
+""" View for application settings, with hardcoded sections and updated to work with the new ViewModel. """
 import logging
 from typing import Optional
 
-from PySide6.QtCore import (QCoreApplication, QEasingCurve, QPropertyAnimation,
-                            QSize, Qt, QTimer, QObject)
+from PySide6.QtCore import (QCoreApplication, QEasingCurve, QObject,
+                            QPropertyAnimation, QSize, Qt, QTimer)
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QCheckBox, QDialogButtonBox, QDoubleSpinBox,
                                QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                               QMessageBox, QPushButton, QScrollArea,
-                               QSizePolicy, QSpacerItem, QSpinBox, QTabWidget,
+                               QMessageBox, QScrollArea, QSizePolicy, QSpinBox,
                                QToolButton, QVBoxLayout, QWidget)
 
 from focuswatch.utils.resource_utils import apply_stylesheet, load_icon
@@ -16,22 +16,23 @@ logger = logging.getLogger(__name__)
 
 
 class SettingsView(QWidget):
+  """ Settings view with hardcoded sections and updated ViewModel integration. """
 
-  def __init__(self, viewmodel,
+  def __init__(self,
+               viewmodel,
                parent: Optional[QObject] = None):
     super().__init__(parent)
     self._viewmodel = viewmodel
     self.current_animation = None
     self._setup_ui()
-    self.sections = [  # TODO put it somewhere else maybe?
+    self.sections = [
         {"label": self.general_header, "widget": self.general_section},
         {"label": self.watcher_header, "widget": self.watcher_section},
+        {"label": self.dashboard_header, "widget": self.dashboard_section},
     ]
     self._connect_signals()
 
     apply_stylesheet(self, "settings_view.qss")
-
-    # TODO can we dynamically create sections for config settings?
 
   def _setup_ui(self) -> None:
     # Main Horizontal Layout
@@ -46,7 +47,7 @@ class SettingsView(QWidget):
     self.navigation_layout.setContentsMargins(0, 0, 0, 0)
     self.navigation_layout.setSpacing(0)
 
-    # Navigation Buttons using QToolButton
+    # Navigation Buttons
     self.nav_general_button = self._create_sidebar_button(
         text="General",
         icon_path="general_icon.png"
@@ -61,9 +62,20 @@ class SettingsView(QWidget):
     self.nav_watcher_button.clicked.connect(
         lambda: self.scroll_to_section("watcher"))
 
+    self.nav_dashboard_button = self._create_sidebar_button(
+        text="Dashboard",
+        icon_path="dashboard_icon.png"
+    )
+    self.nav_dashboard_button.clicked.connect(
+        lambda: self.scroll_to_section("dashboard"))
+
     # Add buttons to navigation layout
-    self.navigation_layout.addWidget(self.nav_general_button)
-    self.navigation_layout.addWidget(self.nav_watcher_button)
+    self.navigation_layout.addWidget(
+      self.nav_general_button, alignment=Qt.AlignCenter)
+    self.navigation_layout.addWidget(
+      self.nav_watcher_button, alignment=Qt.AlignCenter)
+    self.navigation_layout.addWidget(
+      self.nav_dashboard_button, alignment=Qt.AlignCenter)
     self.navigation_layout.addStretch()
 
     # Scroll Area for Settings Content
@@ -86,19 +98,17 @@ class SettingsView(QWidget):
     self.watcher_section = self._create_watcher_section()
     self.scroll_layout.addWidget(self.watcher_section)
 
+    # Dashboard Settings Section
+    self.dashboard_section = self._create_dashboard_section()
+    self.scroll_layout.addWidget(self.dashboard_section)
+
     # Spacer at the bottom
     self.scroll_layout.addStretch()
 
     # Set scroll content
     self.scroll_area.setWidget(self.scroll_content)
 
-    # Right Side Layout (Scroll Area + Apply Button)
-    self.right_layout = QVBoxLayout()
-    self.right_layout.setContentsMargins(0, 0, 0, 0)
-    self.right_layout.setSpacing(10)
-    self.right_layout.addWidget(self.scroll_area)
-
-    # Create a vertical layout for the right side
+    # Right Side Layout
     self.right_layout = QVBoxLayout()
     self.right_layout.setContentsMargins(0, 0, 0, 0)
     self.right_layout.setSpacing(10)
@@ -130,10 +140,10 @@ class SettingsView(QWidget):
     self.label_note.setAlignment(Qt.AlignCenter)
     self.right_layout.addWidget(self.label_note)
 
-    self.button_box = QDialogButtonBox(self)
-    self.button_box.setObjectName("button_box")
-    self.button_box.setStandardButtons(QDialogButtonBox.Apply)
-    self.right_layout.addWidget(self.button_box)
+    # self.button_box = QDialogButtonBox(self)
+    # self.button_box.setObjectName("button_box")
+    # self.button_box.setStandardButtons(QDialogButtonBox.Apply)
+    # self.right_layout.addWidget(self.button_box)
 
     # Add Navigation and Right Layout to Main Layout
     self.main_layout.addWidget(self.navigation_panel, 0)
@@ -145,28 +155,30 @@ class SettingsView(QWidget):
   def _connect_signals(self) -> None:
     """ Connect signals between the ViewModel and the View. """
     # Connect ViewModel signals
-    self._viewmodel.settings_applied.connect(self._on_settings_applied)
     self._viewmodel.filter_text_changed.connect(self._apply_filter)
 
     # Connect UI signals
     self.filter_input.textChanged.connect(self._on_filter_text_changed)
-    self.autostart_checkbox.stateChanged.connect(self._on_autostart_changed)
-    self.watch_interval.valueChanged.connect(self._on_watch_interval_changed)
+    self.autostart_checkbox.stateChanged.connect(
+        self._on_autostart_changed)
+    self.watch_interval.valueChanged.connect(
+        self._on_watch_interval_changed)
     self.watch_afk.stateChanged.connect(self._on_watch_afk_changed)
     self.afk_timeout.valueChanged.connect(self._on_afk_timeout_changed)
-    self.button_box.button(
-      QDialogButtonBox.Apply).clicked.connect(self._apply_settings)
 
-  def _on_settings_applied(self) -> None:
-    """ Handle when settings have been applied. """
-    QMessageBox.information(
-      self,
-      QCoreApplication.translate("SettingsView", "Settings Applied", None),
-      QCoreApplication.translate(
-        "SettingsView", "Your settings have been applied successfully.", None
-      ),
-      QMessageBox.Ok,
-    )
+    # Connect signals for dashboard settings
+    self.daily_focused_goal.valueChanged.connect(
+        self._on_daily_focused_goal_changed)
+    self.weekly_focused_goal.valueChanged.connect(
+        self._on_weekly_focused_goal_changed)
+    self.monthly_focused_goal.valueChanged.connect(
+        self._on_monthly_focused_goal_changed)
+    self.distracted_goal.valueChanged.connect(
+        self._on_distracted_goal_changed)
+    self.display_cards_idle.stateChanged.connect(
+        self._on_display_cards_idle_changed)
+    self.display_timeline_idle.stateChanged.connect(
+        self._on_display_timeline_idle_changed)
 
   def _on_filter_text_changed(self, text: str) -> None:
     """ Handle changes to the filter text input. """
@@ -258,18 +270,13 @@ class SettingsView(QWidget):
     button.setIcon(load_icon(icon_path))
     button.setIconSize(QSize(16, 18))
     button.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
-    # button.setCheckable(True)
     button.setAutoExclusive(True)
     button.setMinimumSize(QSize(30, 40))
     button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
     return button
 
   def _create_general_section(self) -> QWidget:
-    """ Create the General settings section.
-
-    Returns:
-      A QWidget containing the general settings section.
-    """
+    """ Create the General settings section. """
     group_box = QGroupBox()
     group_box.setObjectName("general_group_box")
     group_box.setTitle("")
@@ -280,7 +287,8 @@ class SettingsView(QWidget):
 
     # Section Header
     self.general_header = QLabel(
-        QCoreApplication.translate("SettingsView", "General", None), group_box
+        QCoreApplication.translate(
+            "SettingsView", "General", None), group_box
     )
     header_font = QFont()
     header_font.setPointSize(14)
@@ -297,13 +305,14 @@ class SettingsView(QWidget):
             "SettingsView", "Start FocusWatch on system startup", None)
     )
     self.autostart_checkbox.setChecked(self._viewmodel.autostart_enabled)
-    self.autostart_checkbox.setEnabled(self._viewmodel.is_autostart_available())
+    self.autostart_checkbox.setEnabled(self._viewmodel.autostart_available)
 
     # Set custom property if disabled for styling
-    if not self._viewmodel.is_autostart_available():
+    if not self._viewmodel.autostart_available:
       self.autostart_checkbox.setProperty("disabled_control", True)
 
-    autostart_setting = self._create_setting_widget(self.autostart_checkbox)
+    autostart_setting = self._create_setting_widget(
+        self.autostart_checkbox)
     group_layout.addWidget(autostart_setting)
 
     # Note Label when Autostart is disabled
@@ -316,7 +325,7 @@ class SettingsView(QWidget):
             None
         )
     )
-    self.autostart_note.setVisible(not self._viewmodel.is_autostart_available())
+    self.autostart_note.setVisible(not self._viewmodel.autostart_available)
     # Set custom property for styling
     self.autostart_note.setProperty("disabled_note", True)
     group_layout.addWidget(self.autostart_note)
@@ -324,11 +333,7 @@ class SettingsView(QWidget):
     return group_box
 
   def _create_watcher_section(self) -> QWidget:
-    """ Create the Watcher settings section.
-
-    Returns:
-      A QWidget containing the watcher settings section.
-    """
+    """ Create the Watcher settings section. """
     group_box = QGroupBox()
     group_box.setObjectName("watcher_group_box")
     group_box.setTitle("")
@@ -339,7 +344,8 @@ class SettingsView(QWidget):
 
     # Section Header
     self.watcher_header = QLabel(
-        QCoreApplication.translate("SettingsView", "Watcher", None), group_box
+        QCoreApplication.translate(
+            "SettingsView", "Watcher", None), group_box
     )
     header_font = QFont()
     header_font.setPointSize(14)
@@ -351,7 +357,7 @@ class SettingsView(QWidget):
     # Watch Interval Setting
     self.watch_interval = QDoubleSpinBox(group_box)
     self.watch_interval.setObjectName("watch_interval")
-    self.watch_interval.setValue(self._viewmodel.watch_interval)
+    self.watch_interval.setValue(self._viewmodel.general_watch_interval)
     self.watch_interval.setDecimals(1)
     self.watch_interval.setMinimum(1.0)
     self.watch_interval.setMaximum(60.0)
@@ -369,7 +375,7 @@ class SettingsView(QWidget):
     # Watch AFK Checkbox
     self.watch_afk = QCheckBox(group_box)
     self.watch_afk.setObjectName("watch_afk")
-    self.watch_afk.setChecked(self._viewmodel.watch_afk)
+    self.watch_afk.setChecked(self._viewmodel.general_watch_afk)
     self.watch_afk.setText(
         QCoreApplication.translate("SettingsView", "Watch AFK", None)
     )
@@ -382,12 +388,12 @@ class SettingsView(QWidget):
     self.afk_timeout.setObjectName("afk_timeout")
     self.afk_timeout.setMinimum(1)
     self.afk_timeout.setMaximum(60)
-    self.afk_timeout.setValue(self._viewmodel.afk_timeout)
+    self.afk_timeout.setValue(self._viewmodel.general_afk_timeout)
     self.afk_timeout.setSuffix(
         QCoreApplication.translate("SettingsView", " m", None)
     )
 
-    is_afk_enabled = self._viewmodel.watch_afk
+    is_afk_enabled = self._viewmodel.general_watch_afk
     self.afk_timeout.setEnabled(is_afk_enabled)
 
     if not is_afk_enabled:
@@ -404,16 +410,146 @@ class SettingsView(QWidget):
 
     return group_box
 
-  def scroll_to_section(self, section_name: str) -> None:
-    """ Scroll the scroll area to the specified section.
+  def _create_dashboard_section(self) -> QWidget:
+    """ Create the Dashboard settings section. """
+    group_box = QGroupBox()
+    group_box.setObjectName("dashboard_group_box")
+    group_box.setTitle("")
 
-    Args:
-        section_name: The name of the section to scroll to ('general' or 'watcher').
-    """
+    group_layout = QVBoxLayout(group_box)
+    group_layout.setContentsMargins(10, 15, 10, 10)
+    group_layout.setSpacing(10)
+
+    # Section Header
+    self.dashboard_header = QLabel(
+        QCoreApplication.translate(
+            "SettingsView", "Dashboard", None), group_box
+    )
+    header_font = QFont()
+    header_font.setPointSize(14)
+    header_font.setBold(True)
+    self.dashboard_header.setFont(header_font)
+    self.dashboard_header.setObjectName("dashboard_header")
+    group_layout.addWidget(self.dashboard_header)
+
+    # Daily Focused Goal Setting
+    self.daily_focused_goal = QDoubleSpinBox(group_box)
+    self.daily_focused_goal.setObjectName("daily_focused_goal")
+    self.daily_focused_goal.setValue(
+        self._viewmodel.dashboard_daily_focused_goal)
+    self.daily_focused_goal.setDecimals(1)
+    self.daily_focused_goal.setMinimum(0.0)
+    self.daily_focused_goal.setMaximum(24.0)
+    self.daily_focused_goal.setSingleStep(0.5)
+    self.daily_focused_goal.setSuffix(
+        QCoreApplication.translate("SettingsView", " h", None)
+    )
+
+    daily_focused_goal_setting = self._create_setting_widget(
+        self.daily_focused_goal,
+        QCoreApplication.translate(
+            "SettingsView", "Daily focused goal", None)
+    )
+    group_layout.addWidget(daily_focused_goal_setting)
+
+    # Weekly Focused Goal Setting
+    self.weekly_focused_goal = QDoubleSpinBox(group_box)
+    self.weekly_focused_goal.setObjectName("weekly_focused_goal")
+    self.weekly_focused_goal.setValue(
+        self._viewmodel.dashboard_weekly_focused_goal)
+    self.weekly_focused_goal.setDecimals(1)
+    self.weekly_focused_goal.setMinimum(0.0)
+    self.weekly_focused_goal.setMaximum(168.0)  # 24 * 7
+    self.weekly_focused_goal.setSingleStep(1.0)
+    self.weekly_focused_goal.setSuffix(
+        QCoreApplication.translate("SettingsView", " h", None)
+    )
+
+    weekly_focused_goal_setting = self._create_setting_widget(
+        self.weekly_focused_goal,
+        QCoreApplication.translate(
+            "SettingsView", "Weekly focused goal", None)
+    )
+    group_layout.addWidget(weekly_focused_goal_setting)
+
+    # Monthly Focused Goal Setting
+    self.monthly_focused_goal = QDoubleSpinBox(group_box)
+    self.monthly_focused_goal.setObjectName("monthly_focused_goal")
+    self.monthly_focused_goal.setValue(
+        self._viewmodel.dashboard_monthly_focused_goal)
+    self.monthly_focused_goal.setDecimals(1)
+    self.monthly_focused_goal.setMinimum(0.0)
+    # Approximate max hours in a month
+    self.monthly_focused_goal.setMaximum(744.0)
+    self.monthly_focused_goal.setSingleStep(5.0)
+    self.monthly_focused_goal.setSuffix(
+        QCoreApplication.translate("SettingsView", " h", None)
+    )
+
+    monthly_focused_goal_setting = self._create_setting_widget(
+        self.monthly_focused_goal,
+        QCoreApplication.translate(
+            "SettingsView", "Monthly focused goal", None)
+    )
+    group_layout.addWidget(monthly_focused_goal_setting)
+
+    # Distracted Goal Setting
+    self.distracted_goal = QDoubleSpinBox(group_box)
+    self.distracted_goal.setObjectName("distracted_goal")
+    self.distracted_goal.setValue(
+        self._viewmodel.dashboard_distracted_goal)
+    self.distracted_goal.setDecimals(1)
+    self.distracted_goal.setMinimum(0.0)
+    self.distracted_goal.setMaximum(24.0)
+    self.distracted_goal.setSingleStep(0.5)
+    self.distracted_goal.setSuffix(
+        QCoreApplication.translate("SettingsView", "%", None)
+    )
+
+    distracted_goal_setting = self._create_setting_widget(
+        self.distracted_goal,
+        QCoreApplication.translate("SettingsView", "Distracted goal", None)
+    )
+    group_layout.addWidget(distracted_goal_setting)
+
+    # Display Cards Idle Checkbox
+    self.display_cards_idle = QCheckBox(group_box)
+    self.display_cards_idle.setObjectName("display_cards_idle")
+    self.display_cards_idle.setChecked(
+        self._viewmodel.dashboard_display_cards_idle)
+    self.display_cards_idle.setText(
+        QCoreApplication.translate(
+            "SettingsView", "Display idle cards", None)
+    )
+
+    display_cards_idle_setting = self._create_setting_widget(
+        self.display_cards_idle)
+    group_layout.addWidget(display_cards_idle_setting)
+
+    # Display Timeline idle Checkbox
+    self.display_timeline_idle = QCheckBox(group_box)
+    self.display_timeline_idle.setObjectName("display_timeline_idle")
+    self.display_timeline_idle.setChecked(
+        self._viewmodel.dashboard_display_timeline_idle)
+    self.display_timeline_idle.setText(
+        QCoreApplication.translate(
+            "SettingsView", "Display idle in timeline", None)
+    )
+
+    display_timeline_idle_setting = self._create_setting_widget(
+        self.display_timeline_idle)
+    group_layout.addWidget(display_timeline_idle_setting)
+
+    return group_box
+
+  def scroll_to_section(self, section_name: str) -> None:
+    """ Scroll the scroll area to the specified section. """
     if section_name == "general":
       target_widget = self.general_header
     elif section_name == "watcher":
       target_widget = self.watcher_header
+    elif section_name == "dashboard":
+      target_widget = self.dashboard_header
     else:
       logger.warning(f"Unknown section name: {section_name}")
       return
@@ -439,61 +575,60 @@ class SettingsView(QWidget):
     self.current_animation = scroll_animation
 
   def highlight_header(self, header_widget: QLabel) -> None:
-    """ Highlight the header widget by changing its background color briefly.
-
-    Args:
-        header_widget: The QLabel widget to highlight.
-    """
+    """ Highlight the header widget by changing its background color briefly. """
     original_style = header_widget.styleSheet()
     highlight_style = "background-color: #44475a; border-radius: 3px; padding-left: 1px;"
 
     header_widget.setStyleSheet(highlight_style)
 
-    QTimer.singleShot(500, lambda: header_widget.setStyleSheet(original_style))
+    QTimer.singleShot(
+        500, lambda: header_widget.setStyleSheet(original_style))
 
   def _on_autostart_changed(self, state: int) -> None:
-    """ Handle changes to the autostart checkbox.
-
-    Args:
-        state: The state of the checkbox (Qt.Checked or Qt.Unchecked).
-    """
+    """ Handle changes to the autostart checkbox. """
     self._viewmodel.autostart_enabled = state == 2
 
   def _on_watch_interval_changed(self, value: float) -> None:
-    """ Handle changes to the watch interval spin box.
-
-    Args:
-        value: The new watch interval value.
-    """
-    self._viewmodel.watch_interval = value
+    """ Handle changes to the watch interval spin box. """
+    self._viewmodel.general_watch_interval = value
 
   def _on_watch_afk_changed(self, state: int) -> None:
-    """ Handle changes to the watch AFK checkbox.
-
-    Args:
-      state: The state of the checkbox (Qt.Checked or Qt.Unchecked).
-    """
-    is_checked = state == 2  # Qt.Checked doesn't work for some reason
-    self._viewmodel.watch_afk = is_checked
+    """ Handle changes to the watch AFK checkbox. """
+    is_checked = state == 2
+    self._viewmodel.general_watch_afk = is_checked
     self.afk_timeout.setEnabled(is_checked)
 
     # Update the custom property for styling
-    if not is_checked:
-      self.afk_timeout.setProperty("disabled_control", True)
-    else:
-      self.afk_timeout.setProperty("disabled_control", False)
-
+    self.afk_timeout.setProperty("disabled_control", not is_checked)
     self.afk_timeout.style().unpolish(self.afk_timeout)
     self.afk_timeout.style().polish(self.afk_timeout)
 
   def _on_afk_timeout_changed(self, value: int) -> None:
-    """ Handle changes to the AFK timeout spin box.
+    """ Handle changes to the AFK timeout spin box. """
+    self._viewmodel.general_afk_timeout = value
 
-    Args:
-        value: The new AFK timeout value.
-    """
-    self._viewmodel.afk_timeout = value
+  def _on_daily_focused_goal_changed(self, value: float) -> None:
+    """ Handle changes to the daily focused goal setting. """
+    self._viewmodel.dashboard_daily_focused_goal = value
 
-  def _apply_settings(self) -> None:
-    """ Apply the current settings via the ViewModel. """
-    self._viewmodel.apply_settings()
+  def _on_weekly_focused_goal_changed(self, value: float) -> None:
+    """ Handle changes to the weekly focused goal setting. """
+    self._viewmodel.dashboard_weekly_focused_goal = value
+
+  def _on_monthly_focused_goal_changed(self, value: float) -> None:
+    """ Handle changes to the monthly focused goal setting. """
+    self._viewmodel.dashboard_monthly_focused_goal = value
+
+  def _on_distracted_goal_changed(self, value: float) -> None:
+    """ Handle changes to the distracted goal setting. """
+    self._viewmodel.dashboard_distracted_goal = value
+
+  def _on_display_cards_idle_changed(self, state: int) -> None:
+    """ Handle changes to the display cards idle checkbox. """
+    is_checked = state == 2
+    self._viewmodel.dashboard_display_cards_idle = is_checked
+
+  def _on_display_timeline_idle_changed(self, state: int) -> None:
+    """ Handle changes to the display timeline idle checkbox. """
+    is_checked = state == 2
+    self._viewmodel.dashboard_display_timeline_idle = is_checked
