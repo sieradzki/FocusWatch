@@ -1,14 +1,15 @@
 """ Configuration module for FocusWatch. """
-import configparser
 import logging
 import os
-from typing import Optional
 import sys
+import yaml
+from collections.abc import MutableMapping
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
 
-class Config:
+class Config(MutableMapping):
   """ Configuration class for FocusWatch """
 
   def __init__(self, config_file_path: Optional[str] = None):
@@ -24,7 +25,7 @@ class Config:
         raise EnvironmentError("Unsupported platform")
 
       self.default_config_path = os.path.join(
-        self.project_root, "config.ini")
+        self.project_root, "config.yml")
       self.default_database_path = os.path.join(
         self.project_root, "focuswatch.sqlite")
       self.default_logger_config_path = os.path.join(
@@ -35,7 +36,7 @@ class Config:
       self.project_root = os.path.dirname(
         os.path.dirname(os.path.abspath(__file__)))
       self.default_config_path = os.path.join(
-        self.project_root, "config.ini")
+        self.project_root, "config.yml")
       self.default_database_path = os.path.join(
         self.project_root, "focuswatch.sqlite")
       self.default_logger_config_path = os.path.join(
@@ -46,62 +47,63 @@ class Config:
     os.makedirs(os.path.dirname(self.default_log_path), exist_ok=True)
 
     self.config_file_path = config_file_path or self.default_config_path
-    self.config = configparser.ConfigParser()
+    self.config = []
     self.load_config()
 
   def initialize_config(self):
     """ Initialize the configuration file with default values """
-    if "General" not in self.config:
-      self.config["General"] = {
+    self._config = {
+      "General": {
         "watch_interval": 1.0,
         "verbose": 0,
         "watch_afk": True,
-        "afk_timeout": 10
-      }
-    if "Database" not in self.config:
-      self.config["Database"] = {
+        "afk_timeout": 10,
+      },
+      "Database": {
         "location": self.default_database_path,
-      }
-
-    if "Logging" not in self.config:
-      self.config["Logging"] = {
+      },
+      "Logging": {
         "location": self.default_log_path,
         "logger_config": self.default_logger_config_path,
         "log_level": "DEBUG",
-      }
-
+      },
+    }
     self.write_config_to_file()
 
   def write_config_to_file(self):
-    """ Write the configuration to the configuration file """
+    """ Write the configuration to the configuration file. """
     try:
       os.makedirs(os.path.dirname(self.config_file_path), exist_ok=True)
       os.makedirs(os.path.dirname(
-        self.config["Logging"]["location"]), exist_ok=True)
-
+        self._config["Logging"]["location"]), exist_ok=True)
       with open(self.config_file_path, "w", encoding="utf-8") as config_file:
-        self.config.write(config_file)
+        yaml.dump(self._config, config_file, default_flow_style=False)
       logger.info("Configuration file written successfully.")
     except FileNotFoundError as e:
-      logger.error(f"The configuration file was not found. {e}.")
+      logger.error(f"The configuration file was not found. {e}")
     except IOError as e:
       logger.error(
-        f"An error occurred while writing the configuration file. {e}.")
+        f"An error occurred while writing the configuration file. {e}")
 
   def load_config(self):
-    """ Load config from the configuration file """
+    """ Load config from the configuration file. """
     try:
       if not os.path.exists(self.config_file_path):
-        logger.info(f"Configuration file {
-            self.config_file_path} not found. Creating default configuration")
+        logger.info(
+          f"Configuration file {
+            self.config_file_path} not found. Creating default configuration."
+        )
         self.initialize_config()
       else:
-        self.config.read(self.config_file_path)
-        if "Logging" not in self.config or not os.path.exists(self.config["Logging"].get("location", "")):
+        with open(self.config_file_path, "r", encoding="utf-8") as config_file:
+          self._config = yaml.safe_load(config_file) or {}
+        # Check for required sections
+        required_sections = ["General", "Database", "Logging"]
+        if not all(section in self._config for section in required_sections):
           logger.info(
-            "Logging file not found. Creating default configuration")
+            "Missing sections in configuration file. Reinitializing configuration.")
           self.initialize_config()
-    except (IOError, configparser.Error) as e:
+    except (IOError, yaml.YAMLError) as e:
       logger.error(f"Error loading configuration file: {e}")
       raise
 
@@ -113,19 +115,51 @@ class Config:
     else:
       return ValueError(f"Section '{section}' or option '{option}' does not exist.")
 
-  def get_value(self, section, option):
-    """ Get a configuration value """
-    if section in self.config and option in self.config[section]:
-      return self.config[section][option]
-    else:
-      return ValueError(f"Section '{section}' or option '{option}' does not exist.")
+  def __getitem__(self, key: str) -> Any:
+    return self._config[key]
 
-  def get_config(self):
-    """ Get all configuration values """
-    all_config = {}
-    for section in self.config.sections():
-      all_config[section] = dict(self.config[section])
-    return all_config
+  def __setitem__(self, key: str, value: Any):
+    self._config[key] = value
+    self.write_config_to_file()
+
+  def __delitem__(self, key: str):
+    del self._config[key]
+    self.write_config_to_file()
+
+  def __iter__(self):
+    return iter(self._config)
+
+  def __len__(self):
+    return len(self._config)
+
+  def __repr__(self):
+    return f"{self.__class__.__name__}({self._config})"
+
+  """ Legacy methods """
+
+  def set_value(self, section: str, option: str, value: Any):
+    """ Update the configuration with a new value. """
+    if section in self._config:
+      self._config[section][option] = value
+      self.write_config_to_file()
+    else:
+      raise ValueError(f"Section '{section}' does not exist.")
+
+  def get_value(self, section: str, option: str) -> Any:
+    """ Get a configuration value. """
+    try:
+      return self._config[section][option]
+    except KeyError:
+      raise ValueError(f"Section '{section}' or option '{
+                       option}' does not exist.")
+
+  def get_config(self) -> dict:
+    """ Get all configuration values. """
+    return self._config
+
+  def save(self):
+    """ Save the current configuration to the file. """
+    self.write_config_to_file()
 
 
 if __name__ == "__main__":
