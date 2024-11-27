@@ -39,6 +39,7 @@ class PeriodSummaryViewModel(QObject):
     )
     self._period_end = period_end or self._period_start + timedelta(days=1)
     self._period_type = period_type
+    self._card_title = f"{self._period_type} Summary"
 
     self._period_data: Dict[str, float] = {}
 
@@ -64,6 +65,10 @@ class PeriodSummaryViewModel(QObject):
   @Property(float, constant=True)
   def distracted_goal(self) -> float:
     return self._distracted_goal
+
+  @Property(str, constant=True)
+  def card_title(self) -> str:
+    return self._card_title
 
   @Slot(datetime, datetime, str)
   def update_period(self, start: datetime, end: Optional[datetime], period_type: str) -> None:
@@ -101,6 +106,7 @@ class PeriodSummaryViewModel(QObject):
   def period_type(self, value: str) -> None:
     if self._period_type != value:
       self._period_type = value
+      self._card_title = f"{value} Summary"
       self.period_type_changed.emit()
       self._focused_target_hours = self._get_focused_target_hours(value)
 

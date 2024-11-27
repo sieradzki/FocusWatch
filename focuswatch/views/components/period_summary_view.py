@@ -21,6 +21,7 @@ class PeriodSummaryCardView(CardWidget):
     self._viewmodel = viewmodel
     self._slice_tooltips = {}
     self._setup_ui()
+    self._set_title()
     self._connect_signals()
     self._show_event_connected = False
 
@@ -119,6 +120,9 @@ class PeriodSummaryCardView(CardWidget):
     # Set the main container as the content of the card
     self.add_content_view(self.main_container)
 
+  def _set_title(self):
+    self.label_title.setText(self._viewmodel.card_title)
+
   def showEvent(self, event) -> None:
     """ Handle the show event to update the view initially. """
     super().showEvent(event)
@@ -129,6 +133,7 @@ class PeriodSummaryCardView(CardWidget):
   def _connect_signals(self) -> None:
     """ Connect signals from the ViewModel to the View. """
     self._viewmodel.period_data_changed.connect(self._update_view)
+    self._viewmodel.period_type_changed.connect(self._set_title)
 
   @Slot()
   def _update_view(self) -> None:
