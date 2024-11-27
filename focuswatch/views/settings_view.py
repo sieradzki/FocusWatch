@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class SettingsView(QWidget):
-  """ Settings view with hardcoded sections and updated ViewModel integration. """
+  """ Settings view. """
 
   def __init__(self,
                viewmodel,
@@ -49,25 +49,25 @@ class SettingsView(QWidget):
 
     # Navigation Buttons
     self.nav_general_button = self._create_sidebar_button(
-        text="General",
-        icon_path="general_icon.png"
+      text="General",
+      icon_path="general_icon.png"
     )
     self.nav_general_button.clicked.connect(
-        lambda: self.scroll_to_section("general"))
+      lambda: self.scroll_to_section("general"))
 
     self.nav_watcher_button = self._create_sidebar_button(
-        text="Watcher",
-        icon_path="watcher_icon.png"
+      text="Watcher",
+      icon_path="watcher_icon.png"
     )
     self.nav_watcher_button.clicked.connect(
-        lambda: self.scroll_to_section("watcher"))
+      lambda: self.scroll_to_section("watcher"))
 
     self.nav_dashboard_button = self._create_sidebar_button(
-        text="Dashboard",
-        icon_path="dashboard_icon.png"
+      text="Dashboard",
+      icon_path="dashboard_icon.png"
     )
     self.nav_dashboard_button.clicked.connect(
-        lambda: self.scroll_to_section("dashboard"))
+      lambda: self.scroll_to_section("dashboard"))
 
     # Add buttons to navigation layout
     self.navigation_layout.addWidget(
@@ -129,7 +129,7 @@ class SettingsView(QWidget):
     # Add the scroll area below the filter input
     self.right_layout.addWidget(self.scroll_area)
 
-    # Apply Button Box and Note Label
+    # Note Label
     self.label_note = QLabel(self)
     self.label_note.setObjectName("label_note")
     self.label_note.setText(
@@ -139,11 +139,6 @@ class SettingsView(QWidget):
     )
     self.label_note.setAlignment(Qt.AlignCenter)
     self.right_layout.addWidget(self.label_note)
-
-    # self.button_box = QDialogButtonBox(self)
-    # self.button_box.setObjectName("button_box")
-    # self.button_box.setStandardButtons(QDialogButtonBox.Apply)
-    # self.right_layout.addWidget(self.button_box)
 
     # Add Navigation and Right Layout to Main Layout
     self.main_layout.addWidget(self.navigation_panel, 0)
@@ -173,6 +168,8 @@ class SettingsView(QWidget):
         self._on_weekly_focused_goal_changed)
     self.monthly_focused_goal.valueChanged.connect(
         self._on_monthly_focused_goal_changed)
+    self.yearly_focused_goal.valueChanged.connect(
+        self._on_yearly_focused_goal_changed)
     self.distracted_goal.valueChanged.connect(
         self._on_distracted_goal_changed)
     self.display_cards_idle.stateChanged.connect(
@@ -220,15 +217,7 @@ class SettingsView(QWidget):
         section_widget.setVisible(section_matches)
 
   def _widget_matches_filter(self, widget: QWidget, filter_text: str) -> bool:
-    """ Check if a setting widget matches the filter text.
-
-    Args:
-      widget: The setting widget to check.
-      filter_text: The filter text to match against.
-
-    Returns:
-      True if the setting matches; False otherwise.
-    """
+    """ Check if a setting widget matches the filter text. """
     # Check all child widgets within the setting
     for child in widget.findChildren(QWidget, options=Qt.FindDirectChildrenOnly):
       if isinstance(child, QLabel) or isinstance(child, QCheckBox):
@@ -240,15 +229,7 @@ class SettingsView(QWidget):
   def _create_setting_widget(
       self, widget: QWidget, label_text: Optional[str] = None
   ) -> QWidget:
-    """ Create a container widget for a setting.
-
-    Args:
-      widget: The input control widget (e.g., QSpinBox, QCheckBox).
-      label_text: The text for the label (optional).
-
-    Returns:
-      A QWidget containing the label and control.
-    """
+    """ Create a container widget for a setting. """
     setting_widget = QWidget()
     layout = QVBoxLayout(setting_widget)
     layout.setContentsMargins(0, 0, 0, 0)
@@ -435,8 +416,6 @@ class SettingsView(QWidget):
     # Daily Focused Goal Setting
     self.daily_focused_goal = QDoubleSpinBox(group_box)
     self.daily_focused_goal.setObjectName("daily_focused_goal")
-    self.daily_focused_goal.setValue(
-        self._viewmodel.dashboard_focused_target_day)
     self.daily_focused_goal.setDecimals(1)
     self.daily_focused_goal.setMinimum(0.0)
     self.daily_focused_goal.setMaximum(24.0)
@@ -450,13 +429,13 @@ class SettingsView(QWidget):
         QCoreApplication.translate(
             "SettingsView", "Daily focused goal", None)
     )
+    self.daily_focused_goal.setValue(
+        self._viewmodel.dashboard_focused_target_day)
     group_layout.addWidget(daily_focused_goal_setting)
 
     # Weekly Focused Goal Setting
     self.weekly_focused_goal = QDoubleSpinBox(group_box)
     self.weekly_focused_goal.setObjectName("weekly_focused_goal")
-    self.weekly_focused_goal.setValue(
-        self._viewmodel.dashboard_focused_target_week)
     self.weekly_focused_goal.setDecimals(1)
     self.weekly_focused_goal.setMinimum(0.0)
     self.weekly_focused_goal.setMaximum(168.0)  # 24 * 7
@@ -470,13 +449,13 @@ class SettingsView(QWidget):
         QCoreApplication.translate(
             "SettingsView", "Weekly focused goal", None)
     )
+    self.weekly_focused_goal.setValue(
+        self._viewmodel.dashboard_focused_target_week)
     group_layout.addWidget(weekly_focused_goal_setting)
 
     # Monthly Focused Goal Setting
     self.monthly_focused_goal = QDoubleSpinBox(group_box)
     self.monthly_focused_goal.setObjectName("monthly_focused_goal")
-    self.monthly_focused_goal.setValue(
-        self._viewmodel.dashboard_focused_target_month)
     self.monthly_focused_goal.setDecimals(1)
     self.monthly_focused_goal.setMinimum(0.0)
     # Approximate max hours in a month
@@ -491,25 +470,47 @@ class SettingsView(QWidget):
         QCoreApplication.translate(
             "SettingsView", "Monthly focused goal", None)
     )
+    self.monthly_focused_goal.setValue(
+        self._viewmodel.dashboard_focused_target_month)
     group_layout.addWidget(monthly_focused_goal_setting)
+
+    # Yearly Focused Goal Setting
+    self.yearly_focused_goal = QDoubleSpinBox(group_box)
+    self.yearly_focused_goal.setObjectName("yearly_focused_goal")
+    self.yearly_focused_goal.setDecimals(1)
+    self.yearly_focused_goal.setMinimum(0.0)
+    self.yearly_focused_goal.setMaximum(8760.0)  # 24 * 365
+    self.yearly_focused_goal.setSingleStep(10.0)
+    self.yearly_focused_goal.setSuffix(
+        QCoreApplication.translate("SettingsView", " h", None)
+    )
+
+    yearly_focused_goal_setting = self._create_setting_widget(
+        self.yearly_focused_goal,
+        QCoreApplication.translate(
+            "SettingsView", "Yearly focused goal", None)
+    )
+    self.yearly_focused_goal.setValue(
+        self._viewmodel.dashboard_focused_target_year)
+    group_layout.addWidget(yearly_focused_goal_setting)
 
     # Distracted Goal Setting
     self.distracted_goal = QDoubleSpinBox(group_box)
     self.distracted_goal.setObjectName("distracted_goal")
-    self.distracted_goal.setValue(
-        self._viewmodel.dashboard_distracted_goal)
     self.distracted_goal.setDecimals(1)
     self.distracted_goal.setMinimum(0.0)
-    self.distracted_goal.setMaximum(24.0)
-    self.distracted_goal.setSingleStep(0.5)
+    self.distracted_goal.setMaximum(100.0)
+    self.distracted_goal.setSingleStep(1.0)
     self.distracted_goal.setSuffix(
-        QCoreApplication.translate("SettingsView", "%", None)
+        QCoreApplication.translate("SettingsView", " %", None)
     )
 
     distracted_goal_setting = self._create_setting_widget(
         self.distracted_goal,
         QCoreApplication.translate("SettingsView", "Distracted goal", None)
     )
+    self.distracted_goal.setValue(
+        self._viewmodel.dashboard_distracted_goal)
     group_layout.addWidget(distracted_goal_setting)
 
     # Display Cards Idle Checkbox
@@ -526,7 +527,7 @@ class SettingsView(QWidget):
         self.display_cards_idle)
     group_layout.addWidget(display_cards_idle_setting)
 
-    # Display Timeline idle Checkbox
+    # Display Timeline Idle Checkbox
     self.display_timeline_idle = QCheckBox(group_box)
     self.display_timeline_idle.setObjectName("display_timeline_idle")
     self.display_timeline_idle.setChecked(
@@ -609,15 +610,19 @@ class SettingsView(QWidget):
 
   def _on_daily_focused_goal_changed(self, value: float) -> None:
     """ Handle changes to the daily focused goal setting. """
-    self._viewmodel.dashboard_daily_focused_goal = value
+    self._viewmodel.dashboard_focused_target_day = value
 
   def _on_weekly_focused_goal_changed(self, value: float) -> None:
     """ Handle changes to the weekly focused goal setting. """
-    self._viewmodel.dashboard_weekly_focused_goal = value
+    self._viewmodel.dashboard_focused_target_week = value
 
   def _on_monthly_focused_goal_changed(self, value: float) -> None:
     """ Handle changes to the monthly focused goal setting. """
-    self._viewmodel.dashboard_monthly_focused_goal = value
+    self._viewmodel.dashboard_focused_target_month = value
+
+  def _on_yearly_focused_goal_changed(self, value: float) -> None:
+    """ Handle changes to the yearly focused goal setting. """
+    self._viewmodel.dashboard_focused_target_year = value
 
   def _on_distracted_goal_changed(self, value: float) -> None:
     """ Handle changes to the distracted goal setting. """

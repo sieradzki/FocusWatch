@@ -69,11 +69,11 @@ class Config(MutableMapping):
         "log_level": "DEBUG",
       },
       "dashboard": {
-        "focused_target_day": 8,
-        "focused_target_week": 40,
-        "focused_target_month": 160,
-        "focused_target_year": 1920,
-        "distracted_goal": 20,
+        "focused_target_day": 8.0,
+        "focused_target_week": 40.0,
+        "focused_target_month": 160.0,
+        "focused_target_year": 1920.0,
+        "distracted_goal": 20.0,
         "display_cards_idle": True,
         "display_timeline_idle": True,
       }
