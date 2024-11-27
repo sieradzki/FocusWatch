@@ -21,6 +21,7 @@ class PeriodSummaryCardView(CardWidget):
     self._viewmodel = viewmodel
     self._slice_tooltips = {}
     self._setup_ui()
+    self._set_title()
     self._connect_signals()
     self._show_event_connected = False
 
@@ -56,7 +57,8 @@ class PeriodSummaryCardView(CardWidget):
     # Create separate labels for percentage value and text
     self.focused_percent_value = QLabel("0%")
     self.focused_percent_value.setObjectName("focused_percent_value")
-    self.focused_percent_text = QLabel(" of 8h 0m")
+    self.focused_percent_text = QLabel(
+      f" of {self._viewmodel._focused_target_hours}")
     self.focused_percent_text.setObjectName("focused_percent_text")
 
     # Build a horizontal layout for the percentage, aligned to the right
@@ -118,6 +120,9 @@ class PeriodSummaryCardView(CardWidget):
     # Set the main container as the content of the card
     self.add_content_view(self.main_container)
 
+  def _set_title(self):
+    self.label_title.setText(self._viewmodel.card_title)
+
   def showEvent(self, event) -> None:
     """ Handle the show event to update the view initially. """
     super().showEvent(event)
@@ -128,6 +133,7 @@ class PeriodSummaryCardView(CardWidget):
   def _connect_signals(self) -> None:
     """ Connect signals from the ViewModel to the View. """
     self._viewmodel.period_data_changed.connect(self._update_view)
+    self._viewmodel.period_type_changed.connect(self._set_title)
 
   @Slot()
   def _update_view(self) -> None:
@@ -172,7 +178,7 @@ class PeriodSummaryCardView(CardWidget):
 
     # For distracted time
     distracted_color = self._get_distracted_percentage_color(
-        distracted_percent)
+        distracted_percent, self._viewmodel.distracted_goal)
     self.distracted_time_value.setStyleSheet(f"color: {distracted_color};")
     self.distracted_percent_value.setStyleSheet(
         f"color: {distracted_color};")
@@ -269,11 +275,11 @@ class PeriodSummaryCardView(CardWidget):
       return "#4CAF50"
 
   @staticmethod
-  def _get_distracted_percentage_color(percent: float) -> str:
+  def _get_distracted_percentage_color(percent: float, goal_percent) -> str:
     """ Return a color based on the percentage thresholds for distracted time. """
-    if percent <= 10:
+    if percent <= goal_percent:
       return "#4CAF50"
-    elif 10 < percent <= 20:
+    elif goal_percent < percent <= 1.5 * goal_percent:
       return "#FFC107"
     else:
       return "#F44336"

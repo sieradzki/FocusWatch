@@ -69,17 +69,24 @@ class FocusBreakdownView(CardWidget):
     """ Connect ViewModel signals to view slots. """
     self._viewmodel.breakdown_data_changed.connect(self.update_chart)
 
+  def _show_no_data_view(self) -> None:
+    """ Show the no data view. """
+    self.show_no_data_view("No data for the selected period")
+
   @Slot()
   def update_chart(self) -> None:
     """ Update the chart with new breakdown data. """
     breakdown_data: List[Dict[str, float]] = self._viewmodel.breakdown_data
 
+    for entry in breakdown_data:
+      if entry["focused"] != 0.0 or entry["distracted"] != 0.0 or entry["idle"] != 0.0:
+        break
+    else:
+      self.show_no_data_view("No data for the selected period")
+      return
+
     # Clear existing series
     self._chart.removeAllSeries()
-
-    if not breakdown_data:
-      # TODO , show a 'No data for selected period' label
-      return
 
     # Create sets for focused, distracted, and idle with specific colors
     focused_set = QBarSet("Focused")
@@ -134,8 +141,7 @@ class FocusBreakdownView(CardWidget):
     series.attachAxis(self._axis_x)
     series.attachAxis(self._axis_y)
 
-    y_max = (max_time // 10 + 1) * 10 if max_time > 0 else 60
-    self._axis_y.setRange(0, max(y_max, 60))
+    self._axis_y.setRange(0, 60)
     # Add some padding to the maximum value for better visualization
     self._axis_y.setLabelFormat("%.0fm")
 

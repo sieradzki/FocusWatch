@@ -54,20 +54,29 @@ class Config(MutableMapping):
   def initialize_config(self):
     """ Initialize the configuration file with default values """
     self._config = {
-      "General": {
+      "general": {
         "watch_interval": 1.0,
         "verbose": 0,
         "watch_afk": True,
         "afk_timeout": 10,
       },
-      "Database": {
+      "database": {
         "location": self.default_database_path,
       },
-      "Logging": {
+      "logging": {
         "location": self.default_log_path,
         "logger_config": self.default_logger_config_path,
         "log_level": "DEBUG",
       },
+      "dashboard": {
+        "focused_target_day": 8.0,
+        "focused_target_week": 40.0,
+        "focused_target_month": 160.0,
+        "focused_target_year": 1920.0,
+        "distracted_goal": 20.0,
+        "display_cards_idle": True,
+        "display_timeline_idle": True,
+      }
     }
     self.write_config_to_file()
 
@@ -76,10 +85,10 @@ class Config(MutableMapping):
     try:
       os.makedirs(os.path.dirname(self.config_file_path), exist_ok=True)
       os.makedirs(os.path.dirname(
-        self._config["Logging"]["location"]), exist_ok=True)
+        self._config["logging"]["location"]), exist_ok=True)
       with open(self.config_file_path, "w", encoding="utf-8") as config_file:
         yaml.dump(self._config, config_file, default_flow_style=False)
-      logger.info("Configuration file written successfully.")
+      # logger.info("Configuration file written successfully.")
     except FileNotFoundError as e:
       logger.error(f"The configuration file was not found. {e}")
     except IOError as e:
@@ -99,7 +108,7 @@ class Config(MutableMapping):
         with open(self.config_file_path, "r", encoding="utf-8") as config_file:
           self._config = yaml.safe_load(config_file) or {}
         # Check for required sections
-        required_sections = ["General", "Database", "Logging"]
+        required_sections = ["general", "database", "logging", "dashboard"]
         if not all(section in self._config for section in required_sections):
           logger.info(
             "Missing sections in configuration file. Reinitializing configuration.")
