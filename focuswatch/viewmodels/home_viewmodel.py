@@ -84,6 +84,7 @@ class HomeViewModel(QObject):
     self._period_summary_viewmodel = PeriodSummaryViewModel(
       self._activity_service,
       self._category_service,
+      self._config,
       self._period_start,
       self._period_end
     )

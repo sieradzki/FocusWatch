@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
 if TYPE_CHECKING:
+  from focuswatch.config import Config
   from focuswatch.services.activity_service import ActivityService
   from focuswatch.services.category_service import CategoryService
 
@@ -22,12 +23,14 @@ class PeriodSummaryViewModel(QObject):
       self,
       activity_service: "ActivityService",
       category_service: "CategoryService",
+      config: "Config",
       period_start: Optional[datetime] = None,
       period_end: Optional[datetime] = None,
   ):
     super().__init__()
     self._activity_service = activity_service
     self._category_service = category_service
+    self._config = config
 
     self._period_start = period_start or datetime.now().replace(
         hour=0, minute=0, second=0, microsecond=0
@@ -86,6 +89,10 @@ class PeriodSummaryViewModel(QObject):
     totals = {"focused": 0.0, "distracted": 0.0, "idle": 0.0}
 
     for activity in activities:
+      if not self._config["dashboard"]["display_cards_idle"]:
+        if activity.category_id == self._afk_category_id:
+          continue
+
       duration = (activity.time_stop -
                   activity.time_start).total_seconds()
 
