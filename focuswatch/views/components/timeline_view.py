@@ -174,21 +174,22 @@ class TimelineView(QWidget):
       parent_name = self._viewmodel.get_category_name(parent_id)
 
       # Calculate actual time range
-      start_hour = start_minutes // 60
-      start_minutes %= 60
+      start_time = self._viewmodel.period_start + \
+          timedelta(minutes=start_minutes)
+      end_time = start_time + timedelta(minutes=duration)
+      time_range = f"{start_time.strftime(
+        '%H:%M')} - {end_time.strftime('%H:%M')}"
 
-      duration_hours = duration // 60
-      duration_minutes = duration % 60
+      # Get top entries for the time range
+      top_entries = self._viewmodel.get_top_entries(
+        start_time.isoformat(), end_time.isoformat())
 
-      end_hour = start_hour + duration_hours
-      end_minutes = start_minutes + duration_minutes
-
-      if end_minutes >= 60:
-        end_minutes -= 60
-        end_hour += 1
-
-      time_range = f"{start_hour:02d}:{
-          start_minutes:02d} - {end_hour:02d}:{end_minutes:02d}"
+      # Prepare tooltip text
+      tooltip_text = f"Top Entries:\n"
+      for entry in top_entries:
+        duration_minutes = entry['duration'] / 60
+        tooltip_text += f"- {entry['window_class']} | {
+          entry['window_name']} ({duration_minutes:.1f} min)\n"
 
       # Create the activity card
       activity_card = ActivityCard(
@@ -201,6 +202,9 @@ class TimelineView(QWidget):
         parent=self._timeline_widget,
       )
 
+      # Set the tooltip
+      activity_card.setToolTip(tooltip_text)
+
       activity_card.setGeometry(
         50,  # Starting after the hour labels
         int(y_position),
@@ -209,6 +213,7 @@ class TimelineView(QWidget):
       )
 
       activity_card.show()
+
     self._current_time_line.raise_()
 
   def scroll_to_current_hour(self) -> None:
