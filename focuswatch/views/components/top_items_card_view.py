@@ -80,8 +80,15 @@ class TopItemsCardView(CardWidget):
 
   def _update_view(self) -> None:
     """ Update the view with the latest data. """
+    if not self._viewmodel.top_items:
+      self._show_no_data_view()
+      return
     self._update_list()
     self._update_chart()
+
+  def _show_no_data_view(self):
+    """ Show the no data view. """
+    self.show_no_data_view("No data for the selected period")
 
   def _update_chart(self) -> None:
     """ Update the pie chart with the given items. """
