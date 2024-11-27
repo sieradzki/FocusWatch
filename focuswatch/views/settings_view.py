@@ -436,7 +436,7 @@ class SettingsView(QWidget):
     self.daily_focused_goal = QDoubleSpinBox(group_box)
     self.daily_focused_goal.setObjectName("daily_focused_goal")
     self.daily_focused_goal.setValue(
-        self._viewmodel.dashboard_daily_focused_goal)
+        self._viewmodel.dashboard_focused_target_day)
     self.daily_focused_goal.setDecimals(1)
     self.daily_focused_goal.setMinimum(0.0)
     self.daily_focused_goal.setMaximum(24.0)
@@ -456,7 +456,7 @@ class SettingsView(QWidget):
     self.weekly_focused_goal = QDoubleSpinBox(group_box)
     self.weekly_focused_goal.setObjectName("weekly_focused_goal")
     self.weekly_focused_goal.setValue(
-        self._viewmodel.dashboard_weekly_focused_goal)
+        self._viewmodel.dashboard_focused_target_week)
     self.weekly_focused_goal.setDecimals(1)
     self.weekly_focused_goal.setMinimum(0.0)
     self.weekly_focused_goal.setMaximum(168.0)  # 24 * 7
@@ -476,7 +476,7 @@ class SettingsView(QWidget):
     self.monthly_focused_goal = QDoubleSpinBox(group_box)
     self.monthly_focused_goal.setObjectName("monthly_focused_goal")
     self.monthly_focused_goal.setValue(
-        self._viewmodel.dashboard_monthly_focused_goal)
+        self._viewmodel.dashboard_focused_target_month)
     self.monthly_focused_goal.setDecimals(1)
     self.monthly_focused_goal.setMinimum(0.0)
     # Approximate max hours in a month

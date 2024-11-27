@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 class HomeViewModel(QObject):
-  """ Viewmodel for the Home view."""
+  """ ViewModel for the Home view. """
   # Signals for property changes
   period_start_changed = Signal()
   period_end_changed = Signal()
@@ -86,7 +86,8 @@ class HomeViewModel(QObject):
       self._category_service,
       self._config,
       self._period_start,
-      self._period_end
+      self._period_end,
+      self._period_type
     )
 
     self._connect_period_changed()
