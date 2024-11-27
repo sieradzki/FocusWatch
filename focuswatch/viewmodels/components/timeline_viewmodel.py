@@ -9,6 +9,7 @@ from focuswatch.models.activity import Activity
 from focuswatch.utils.ui_utils import get_category_color_or_parent
 
 if TYPE_CHECKING:
+  from focuswatch.config import Config
   from focuswatch.services.activity_service import ActivityService
   from focuswatch.services.category_service import CategoryService
 
@@ -22,14 +23,20 @@ class TimelineViewModel(QObject):
 
   def __init__(self,
                activity_service: "ActivityService",
-               category_service: "CategoryService"):
+               category_service: "CategoryService",
+               config: "Config"):
     super().__init__()
     self._activity_service = activity_service
     self._category_service = category_service
+    self._config = config
+
     self._period_start: datetime = datetime.now().replace(
       hour=0, minute=0, second=0, microsecond=0)
     self._period_end: Optional[datetime] = None
     self._timeline_data: Dict[int, List[int]] = {}
+
+    self._afk_category_id = self._category_service.get_category_id_from_name(
+        "AFK")
 
     self.update_timeline_data()
 
@@ -75,6 +82,10 @@ class TimelineViewModel(QObject):
       timestamp_start = entry.time_start
       timestamp_stop = entry.time_stop
       category_id = entry.category_id
+
+      if not self._config["dashboard"]["display_timeline_idle"]:
+        if entry.category_id == self._afk_category_id:
+          continue
 
       while timestamp_start < timestamp_stop:
         hour_start = timestamp_start.hour

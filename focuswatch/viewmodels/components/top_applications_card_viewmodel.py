@@ -1,10 +1,12 @@
 import logging
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from focuswatch.viewmodels.components.top_items_card_viewmodel import TopItemsCardViewModel
+from focuswatch.viewmodels.components.top_items_card_viewmodel import \
+    TopItemsCardViewModel
 
 if TYPE_CHECKING:
+  from focuswatch.config import Config
   from focuswatch.services.activity_service import ActivityService
 
 logger = logging.getLogger(__name__)
@@ -15,10 +17,13 @@ class TopApplicationsCardViewModel(TopItemsCardViewModel):
 
   def __init__(self,
                activity_service: "ActivityService",
+               config: "Config",
                period_start: datetime,
-               period_end: Optional[datetime] = None):
+               period_end: Optional[datetime] = None
+               ):
     super().__init__(period_start, period_end)
     self._activity_service = activity_service
+    self._config = config
 
     self.update_top_items()
 
@@ -30,6 +35,9 @@ class TopApplicationsCardViewModel(TopItemsCardViewModel):
     # clear top items
     self._top_items.clear()
     for application, category, time, focused in top_applications:
+      if not self._config["dashboard"]["display_cards_idle"]:
+        if application == "afk":
+          continue
       self._top_items[application] = (
         time, None, None)
 

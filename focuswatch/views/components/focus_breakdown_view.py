@@ -134,8 +134,7 @@ class FocusBreakdownView(CardWidget):
     series.attachAxis(self._axis_x)
     series.attachAxis(self._axis_y)
 
-    y_max = (max_time // 10 + 1) * 10 if max_time > 0 else 60
-    self._axis_y.setRange(0, max(y_max, 60))
+    self._axis_y.setRange(0, 60)
     # Add some padding to the maximum value for better visualization
     self._axis_y.setLabelFormat("%.0fm")
 

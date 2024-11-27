@@ -51,30 +51,34 @@ class HomeViewModel(QObject):
 
     self._timeline_viewmodel = TimelineViewModel(
       self._activity_service,
-      self._category_service
+      self._category_service,
+      self._config
     )
     self._top_categories_card_viewmodel = TopCategoriesCardViewModel(
       self._activity_service,
       self._category_service,
+      self._config,
       self._period_start,
-      self._period_end,
-      self._config
+      self._period_end
     )
     self._top_applications_card_viewmodel = TopApplicationsCardViewModel(
       self._activity_service,
+      self._config,
       self._period_start,
       self._period_end
     )
 
     self._top_titles_card_viewmodel = TopTitlesCardViewModel(
       self._activity_service,
+      self._config,
       self._period_start,
       self._period_end
     )
 
     self._focus_breakdown_viewmodel = FocusBreakdownViewModel(
       self._activity_service,
-      self._category_service
+      self._category_service,
+      self._config
     )
 
     self._period_summary_viewmodel = PeriodSummaryViewModel(

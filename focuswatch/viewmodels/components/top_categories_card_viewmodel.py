@@ -10,6 +10,7 @@ from focuswatch.viewmodels.components.top_items_card_viewmodel import \
     TopItemsCardViewModel
 
 if TYPE_CHECKING:
+  from focuswatch.config import Config
   from focuswatch.services.activity_service import ActivityService
   from focuswatch.services.category_service import CategoryService
 
@@ -24,9 +25,10 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
   def __init__(self,
                activity_service: "ActivityService",
                category_service: "CategoryService",
+               config: "Config",
                period_start: datetime,
-               period_end: Optional[datetime] = None,
-               config=None):
+               period_end: Optional[datetime] = None
+               ):
     super().__init__(period_start, period_end)
     self._activity_service = activity_service
     self._category_service = category_service
