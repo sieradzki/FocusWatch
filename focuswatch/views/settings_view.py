@@ -2,7 +2,7 @@
 import logging
 from typing import Optional
 
-from PySide6.QtCore import (QCoreApplication, QEasingCurve, QObject,
+from PySide6.QtCore import (QCoreApplication, QEasingCurve, QEvent, QObject,
                             QPropertyAnimation, QSize, Qt, QTimer)
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QCheckBox, QDialogButtonBox, QDoubleSpinBox,
@@ -13,6 +13,15 @@ from PySide6.QtWidgets import (QCheckBox, QDialogButtonBox, QDoubleSpinBox,
 from focuswatch.utils.resource_utils import apply_stylesheet, load_icon
 
 logger = logging.getLogger(__name__)
+
+
+class WheelEventFilter(QObject):
+  """ Ignore wheel events for widgets that do not have focus. """
+
+  def eventFilter(self, obj, event):
+    if event.type() == QEvent.Wheel:
+      return True
+    return super().eventFilter(obj, event)
 
 
 class SettingsView(QWidget):
@@ -143,6 +152,23 @@ class SettingsView(QWidget):
     # Add Navigation and Right Layout to Main Layout
     self.main_layout.addWidget(self.navigation_panel, 0)
     self.main_layout.addLayout(self.right_layout, 1)
+
+    # Instantiate the event filter
+    self.wheel_event_filter = WheelEventFilter()
+
+    # Apply the event filter to all relevant widgets
+    widgets_with_wheel = [
+      self.watch_interval,
+      self.afk_timeout,
+      self.daily_focused_goal,
+      self.weekly_focused_goal,
+      self.monthly_focused_goal,
+      self.yearly_focused_goal,
+      self.distracted_goal
+    ]
+
+    for widget in widgets_with_wheel:
+      widget.installEventFilter(self.wheel_event_filter)
 
     # Initially set General as active
     self.scroll_to_section("general")
