@@ -6,6 +6,7 @@ from PySide6.QtCore import Property, QObject, Signal, Slot
 
 if TYPE_CHECKING:
   from focuswatch.config import Config
+  from focuswatch.models.activity import Activity
   from focuswatch.services.activity_service import ActivityService
   from focuswatch.services.category_service import CategoryService
 
@@ -43,6 +44,8 @@ class FocusBreakdownViewModel(QObject):
     # Retrieve AFK category ID
     self._afk_category_id = self._category_service.get_category_id_from_name(
         "AFK")
+
+    self._activities_per_hour = {}
 
     # Compute initial focus breakdown
     self.compute_focus_breakdown()
@@ -109,6 +112,11 @@ class FocusBreakdownViewModel(QObject):
         hour: {"focused": 0.0, "distracted": 0.0, "idle": 0.0} for hour in range(24)
     }
 
+    # Initialize activities per hour
+    self._activities_per_hour = {
+        hour: {"focused": [], "distracted": [], "idle": []} for hour in range(24)
+    }
+
     for activity in activities:
       if not self._config["dashboard"]["display_cards_idle"]:
         if activity.category_id == self._afk_category_id:
@@ -125,10 +133,13 @@ class FocusBreakdownViewModel(QObject):
 
         if self._afk_category_id and activity.category_id == self._afk_category_id:
           hour_totals[hour]["idle"] += duration
+          self._activities_per_hour[hour]["idle"].append(activity)
         elif getattr(activity, "focused", False):
           hour_totals[hour]["focused"] += duration
+          self._activities_per_hour[hour]["focused"].append(activity)
         else:
           hour_totals[hour]["distracted"] += duration
+          self._activities_per_hour[hour]["distracted"].append(activity)
 
         current_time = segment_end
 
@@ -159,3 +170,17 @@ class FocusBreakdownViewModel(QObject):
 
     self._breakdown_data = breakdown_data
     self.breakdown_data_changed.emit()
+
+  def get_activities_for_hour_and_category(self, hour: int, category: str) -> List["Activity"]:
+    """ Return the list of activities for a given hour and category. """
+    return self._activities_per_hour.get(hour, {}).get(category, [])
+
+  def get_activity_duration_in_hour(self, activity: "Activity", hour: int) -> float:
+    """ Calculate the duration of an activity within a specific hour. """
+    hour_start = self._period_start.replace(
+      hour=hour, minute=0, second=0, microsecond=0)
+    hour_end = hour_start + timedelta(hours=1)
+    activity_start = max(activity.time_start, hour_start)
+    activity_end = min(activity.time_stop, hour_end)
+    duration = (activity_end - activity_start).total_seconds()
+    return duration if duration > 0 else 0.0

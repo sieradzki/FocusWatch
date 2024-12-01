@@ -134,3 +134,8 @@ class CardWidget(QWidget):
     """ Hide the no data label and show the content views. """
     self.main_stacked_widget.setCurrentWidget(self.content_container)
     self.toggle_navigation_buttons(len(self.content_views) > 1)
+
+  def _ensure_content_view_visible(self):
+    """ Ensure the content view is visible. """
+    if self.main_stacked_widget.currentWidget() != self.content_container:
+      self.show_content_view()

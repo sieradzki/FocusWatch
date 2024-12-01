@@ -4,8 +4,8 @@ from typing import Dict, List, Optional
 from PySide6.QtCharts import (QBarCategoryAxis, QBarSet, QChart, QChartView,
                               QStackedBarSeries, QValueAxis)
 from PySide6.QtCore import Qt, Slot
-from PySide6.QtGui import QBrush, QColor, QPainter, QPen
-from PySide6.QtWidgets import QWidget
+from PySide6.QtGui import QBrush, QColor, QCursor, QPainter, QPen
+from PySide6.QtWidgets import QToolTip, QWidget
 
 from focuswatch.views.components.card_widget import CardWidget
 
@@ -73,6 +73,10 @@ class FocusBreakdownView(CardWidget):
     """ Show the no data view. """
     self.show_no_data_view("No data for the selected period")
 
+  def _show_content_view(self):
+    """ Show the content view. """
+    self.show_content_view()
+
   @Slot()
   def update_chart(self) -> None:
     """ Update the chart with new breakdown data. """
@@ -84,6 +88,8 @@ class FocusBreakdownView(CardWidget):
     else:
       self.show_no_data_view("No data for the selected period")
       return
+
+    self._ensure_content_view_visible()
 
     # Clear existing series
     self._chart.removeAllSeries()
@@ -110,6 +116,16 @@ class FocusBreakdownView(CardWidget):
       hour_max = max(focused_minutes, distracted_minutes, idle_minutes)
       if hour_max > max_time:
         max_time = hour_max
+
+    focused_set.hovered.connect(self.on_bar_hovered)
+    distracted_set.hovered.connect(self.on_bar_hovered)
+    idle_set.hovered.connect(self.on_bar_hovered)
+
+    self._bar_sets = {
+      "focused": focused_set,
+      "distracted": distracted_set,
+      "idle": idle_set
+    }
 
     # Remove borders from bars
     no_border_pen = QPen(Qt.NoPen)
@@ -150,3 +166,31 @@ class FocusBreakdownView(CardWidget):
     self._chart.legend().setAlignment(Qt.AlignmentFlag.AlignBottom)
     for marker in self._chart.legend().markers():
       marker.setLabelBrush(QBrush(QColor("#F9F9F9")))
+
+  def on_bar_hovered(self, status: bool, index: int):
+    """ Handle hover events over bar segments. """
+    if status:
+      sender_set = self.sender()
+      category = None
+      for key, bar_set in self._bar_sets.items():
+        if bar_set == sender_set:
+          category = key
+          break
+
+      if category:
+        hour = index
+        activities = self._viewmodel.get_activities_for_hour_and_category(
+          hour, category)
+        tooltip_text = f"{category.capitalize()}\nTop Activities:\n"
+        for activity in activities[:5]:  # config? maybe not
+          window_class = activity.window_class
+          window_name = activity.window_name
+          duration = self._viewmodel.get_activity_duration_in_hour(
+            activity, hour)
+          tooltip_text += f"- {window_class} | {
+            window_name} ({duration:.1f} min)\n"
+
+        QToolTip.showText(
+          QCursor.pos(), tooltip_text, self._chart_view)
+    else:
+      QToolTip.hideText()

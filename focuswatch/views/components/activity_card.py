@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 from PySide6.QtCore import QObject, QPoint, QSize, Qt, Signal, Slot
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QHoverEvent
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QScrollArea,
                                QSizePolicy, QSpacerItem, QToolTip, QVBoxLayout,
                                QWidget)
@@ -123,6 +123,8 @@ class ActivityCard(QWidget):
 
     # Add the text container to the main layout
     self._layout.addWidget(self._text_container)
+
+    self.setMouseTracking(True)
 
   def sizeHint(self) -> QSize:
     """Return the recommended size for the widget."""

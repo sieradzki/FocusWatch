@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Any
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
@@ -74,6 +74,7 @@ class TimelineViewModel(QObject):
   def update_timeline_data(self) -> None:
     period_entries: List[Activity] = self._activity_service.get_period_entries(
       self._period_start, self._period_end)
+    self._period_entries = period_entries
     hour_chunk_entries = defaultdict(dict)
     hour_entries = {i: [0, 0, 0, 0, 0, 0]
                     for i in range(24)}  # 6 quarters in an hour
@@ -112,6 +113,50 @@ class TimelineViewModel(QObject):
     self._timeline_data = dict(hour_entries)
     # logger.info(f"Timeline data updated")
     self.timeline_data_changed.emit()
+
+  def get_top_entries(self, start_time_str: str, end_time_str: str) -> List[Dict[str, Any]]:
+    """ Get top 5 entries between start_time and end_time.
+
+      Args:
+          start_time_str: Start time as a string in ISO format.
+          end_time_str: End time as a string in ISO format.
+
+      Returns:
+          A list of dicts with keys 'window_class', 'window_name', and 'duration'.
+      """
+    start_time = datetime.fromisoformat(start_time_str)
+    end_time = datetime.fromisoformat(end_time_str)
+
+    # Filter activities within the time range
+    activities_in_range = [
+      activity for activity in self._period_entries
+      if activity.time_start < end_time and activity.time_stop > start_time
+    ]
+
+    # Compute durations per window_class and window_name
+    entry_durations = defaultdict(float)
+    for activity in activities_in_range:
+      overlap_start = max(activity.time_start, start_time)
+      overlap_end = min(activity.time_stop, end_time)
+      duration = (overlap_end - overlap_start).total_seconds()
+      key = (activity.window_class, activity.window_name)
+      entry_durations[key] += duration
+
+    # Get top 5 entries by duration
+    sorted_entries = sorted(entry_durations.items(),
+                            key=lambda x: x[1], reverse=True)
+    top_entries = sorted_entries[:5]
+
+    # Prepare result
+    result = []
+    for (window_class, window_name), duration in top_entries:
+      result.append({
+        'window_class': window_class,
+        'window_name': window_name,
+        'duration': duration
+      })
+
+    return result
 
   @Slot(int, result=str)
   def get_category_name(self, category_id: int) -> str:
