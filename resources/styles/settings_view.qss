@@ -166,3 +166,13 @@ QSpinBox[disabled_control="true"] {
     background-color: #2A2A2A;
     border: 1px solid #363739;
 }
+
+QPushButton#button_restore_defaults {
+    background-color: #D9534F;
+    color: #FFFFFF;
+    border: none;
+}
+
+QPushButton#button_restore_defaults:hover {
+    background-color: #C9302C;
+}

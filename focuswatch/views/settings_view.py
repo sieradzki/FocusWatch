@@ -8,7 +8,7 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QCheckBox, QDialogButtonBox, QDoubleSpinBox,
                                QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QMessageBox, QScrollArea, QSizePolicy, QSpinBox,
-                               QToolButton, QVBoxLayout, QWidget)
+                               QToolButton, QVBoxLayout, QWidget, QPushButton)
 
 from focuswatch.utils.resource_utils import apply_stylesheet, load_icon
 
@@ -135,6 +135,13 @@ class SettingsView(QWidget):
     filter_layout.addWidget(self.filter_input)
     self.right_layout.addWidget(filter_container)
 
+    # Add a restore button next to the filter input
+    self.button_restore_defaults = QPushButton(
+        "Restore Defaults", self)
+    self.button_restore_defaults.setObjectName("button_restore_defaults")
+    filter_layout.addWidget(self.button_restore_defaults)
+    self.button_restore_defaults.setFixedHeight(30)
+
     # Add the scroll area below the filter input
     self.right_layout.addWidget(self.scroll_area)
 
@@ -186,6 +193,7 @@ class SettingsView(QWidget):
         self._on_watch_interval_changed)
     self.watch_afk.stateChanged.connect(self._on_watch_afk_changed)
     self.afk_timeout.valueChanged.connect(self._on_afk_timeout_changed)
+    self.button_restore_defaults.clicked.connect(self._restore_defaults)
 
     # Connect signals for dashboard settings
     self.daily_focused_goal.valueChanged.connect(
@@ -202,6 +210,26 @@ class SettingsView(QWidget):
         self._on_display_cards_idle_changed)
     self.display_timeline_idle.stateChanged.connect(
         self._on_display_timeline_idle_changed)
+
+  def _restore_defaults(self):
+    """ Restore default categories with confirmation. """
+    dialog = QMessageBox(self)
+    dialog.setWindowTitle("Restore Defaults")
+    dialog.setText(
+      "Are you sure you want to restore default settings?\n"
+      "This action cannot be undone."
+    )
+    dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+    dialog.setDefaultButton(QMessageBox.No)
+    result = dialog.exec_()
+
+    if result == QMessageBox.Yes:
+      # Perform restore defaults
+      self._viewmodel.restore_defaults()
+
+      QMessageBox.information(
+        self, "Restore Defaults", "Default settings restored successfully.\nRestart to apply changes."
+      )
 
   def _on_filter_text_changed(self, text: str) -> None:
     """ Handle changes to the filter text input. """

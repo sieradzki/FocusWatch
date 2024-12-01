@@ -140,3 +140,12 @@ class SettingsViewModel(QObject):
     else:
       add_to_autostart()
     self.autostart_enabled = not self._autostart_enabled
+
+  def restore_defaults(self) -> None:
+    """ Restore default settings. """
+    self._config.initialize_config()
+    self._config.write_config_to_file()
+    self.autostart_enabled = is_in_autostart()
+    self.autostart_available = self.is_autostart_available()
+
+    logger.info("Settings restored to default values.")
