@@ -2,17 +2,26 @@
 import logging
 from typing import Optional
 
-from PySide6.QtCore import (QCoreApplication, QEasingCurve, QObject,
+from PySide6.QtCore import (QCoreApplication, QEasingCurve, QEvent, QObject,
                             QPropertyAnimation, QSize, Qt, QTimer)
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QCheckBox, QDialogButtonBox, QDoubleSpinBox,
                                QGroupBox, QHBoxLayout, QLabel, QLineEdit,
                                QMessageBox, QScrollArea, QSizePolicy, QSpinBox,
-                               QToolButton, QVBoxLayout, QWidget)
+                               QToolButton, QVBoxLayout, QWidget, QPushButton)
 
 from focuswatch.utils.resource_utils import apply_stylesheet, load_icon
 
 logger = logging.getLogger(__name__)
+
+
+class WheelEventFilter(QObject):
+  """ Ignore wheel events for widgets that do not have focus. """
+
+  def eventFilter(self, obj, event):
+    if event.type() == QEvent.Wheel:
+      return True
+    return super().eventFilter(obj, event)
 
 
 class SettingsView(QWidget):
@@ -126,6 +135,13 @@ class SettingsView(QWidget):
     filter_layout.addWidget(self.filter_input)
     self.right_layout.addWidget(filter_container)
 
+    # Add a restore button next to the filter input
+    self.button_restore_defaults = QPushButton(
+        "Restore Defaults", self)
+    self.button_restore_defaults.setObjectName("button_restore_defaults")
+    filter_layout.addWidget(self.button_restore_defaults)
+    self.button_restore_defaults.setFixedHeight(30)
+
     # Add the scroll area below the filter input
     self.right_layout.addWidget(self.scroll_area)
 
@@ -144,6 +160,23 @@ class SettingsView(QWidget):
     self.main_layout.addWidget(self.navigation_panel, 0)
     self.main_layout.addLayout(self.right_layout, 1)
 
+    # Instantiate the event filter
+    self.wheel_event_filter = WheelEventFilter()
+
+    # Apply the event filter to all relevant widgets
+    widgets_with_wheel = [
+      self.watch_interval,
+      self.afk_timeout,
+      self.daily_focused_goal,
+      self.weekly_focused_goal,
+      self.monthly_focused_goal,
+      self.yearly_focused_goal,
+      self.distracted_goal
+    ]
+
+    for widget in widgets_with_wheel:
+      widget.installEventFilter(self.wheel_event_filter)
+
     # Initially set General as active
     self.scroll_to_section("general")
 
@@ -160,6 +193,7 @@ class SettingsView(QWidget):
         self._on_watch_interval_changed)
     self.watch_afk.stateChanged.connect(self._on_watch_afk_changed)
     self.afk_timeout.valueChanged.connect(self._on_afk_timeout_changed)
+    self.button_restore_defaults.clicked.connect(self._restore_defaults)
 
     # Connect signals for dashboard settings
     self.daily_focused_goal.valueChanged.connect(
@@ -176,6 +210,26 @@ class SettingsView(QWidget):
         self._on_display_cards_idle_changed)
     self.display_timeline_idle.stateChanged.connect(
         self._on_display_timeline_idle_changed)
+
+  def _restore_defaults(self):
+    """ Restore default categories with confirmation. """
+    dialog = QMessageBox(self)
+    dialog.setWindowTitle("Restore Defaults")
+    dialog.setText(
+      "Are you sure you want to restore default settings?\n"
+      "This action cannot be undone."
+    )
+    dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+    dialog.setDefaultButton(QMessageBox.No)
+    result = dialog.exec_()
+
+    if result == QMessageBox.Yes:
+      # Perform restore defaults
+      self._viewmodel.restore_defaults()
+
+      QMessageBox.information(
+        self, "Restore Defaults", "Default settings restored successfully.\nRestart to apply changes."
+      )
 
   def _on_filter_text_changed(self, text: str) -> None:
     """ Handle changes to the filter text input. """
