@@ -156,6 +156,12 @@ class CategoryService:
       bool: True if the deletion was successful, False otherwise.
     """
     try:
+      # Set the parent_category of children to NULL
+      update_children_query = "UPDATE categories SET parent_category = NULL WHERE parent_category = ?"
+      self._db_conn.execute_update(update_children_query, (category_id,))
+      logger.info(f"Updated children of category ID {
+                  category_id} to have no parent.")
+
       # Delete the category
       category_delete_query = "DELETE FROM categories WHERE id = ?"
       self._db_conn.execute_update(category_delete_query, (category_id,))
