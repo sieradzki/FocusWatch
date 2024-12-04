@@ -80,7 +80,6 @@ class CategoriesView(QWidget):
     # Import button
     self.button_import = QPushButton("Import", self.top_bar)
     self.button_import.setObjectName("button_import")
-    self.button_import.setEnabled(False)
     self.top_bar_layout.addWidget(self.button_import)
 
     # Export button
@@ -165,6 +164,7 @@ class CategoriesView(QWidget):
     self.button_retroactive.clicked.connect(self._retroactive_categorization)
     self.button_restore_defaults.clicked.connect(self._restore_defaults)
     self.button_export.clicked.connect(self._export_categories)
+    self.button_import.clicked.connect(self._import_categories)
 
   @Slot()
   def _on_categories_changed(self):
@@ -465,6 +465,8 @@ class CategoriesView(QWidget):
 
     if file_dialog.exec_() == QFileDialog.Accepted:
       file_path = file_dialog.selectedFiles()[0]
+      if not file_path.endswith('.yml') and not file_path.endswith('.yaml'):
+        file_path += '.yml'
       if os.path.exists(file_path):
         reply = QMessageBox.question(
             self,
@@ -484,4 +486,69 @@ class CategoriesView(QWidget):
             self,
             "Export Failed",
             f"An error occurred while exporting categories:\n{str(e)}"
+        )
+
+  def _import_categories(self):
+    """ Import categories from a file and perform retroactive categorization. """
+    file_dialog = QFileDialog(self,
+                              "Import Categories", "", "YAML Files (*.yml *.yaml);;All Files (*)")
+
+    if file_dialog.exec_() == QFileDialog.Accepted:
+      file_path = file_dialog.selectedFiles()[0]
+      try:
+        self._viewmodel.import_categories(file_path)
+        # Ask user if they want to perform retroactive categorization
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle("Retroactive Categorization")
+        dialog.setText(
+            "Categories imported successfully.\n"
+            "Do you want to retroactively categorize all entries based on the new categories?\n"
+            "This action cannot be undone and might take a while."
+        )
+        dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        dialog.setDefaultButton(QMessageBox.Yes)
+        result = dialog.exec_()
+
+        if result == QMessageBox.Yes:
+          # Show progress dialog
+          self.progress_dialog = self._show_progress_dialog(
+            "Progress", "Categorizing entries..."
+          )
+
+          # Connect the progress signal
+          self._viewmodel.retroactive_categorization_progress.connect(
+            self._update_progress_dialog
+          )
+
+          # Perform retroactive categorization
+          success = self._viewmodel.retroactive_categorization()
+
+          # Disconnect the signal
+          self._viewmodel.retroactive_categorization_progress.disconnect(
+            self._update_progress_dialog
+          )
+
+          self.progress_dialog.close()
+
+          if success:
+            QMessageBox.information(
+              self, "Retroactive Categorization", "Categorization completed successfully."
+            )
+          else:
+            QMessageBox.critical(
+              self, "Retroactive Categorization", "An error occurred during categorization."
+            )
+        else:
+          QMessageBox.information(
+            self, "Import Successful", "Categories imported successfully."
+          )
+
+        # Reload categories to reflect any changes
+        self._viewmodel._load_categories()
+
+      except Exception as e:
+        QMessageBox.critical(
+          self,
+          "Import Failed",
+          f"An error occurred while importing categories:\n{str(e)}"
         )

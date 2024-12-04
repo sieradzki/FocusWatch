@@ -173,8 +173,17 @@ class CategoriesViewModel(QObject):
     return self._activity_service.get_top_uncategorized_window_names(limit)
 
   def export_categories(self, file_path: str) -> bool:
-    """ Export categories to a JSON file. """
+    """ Export categories to a YAML file. """
     categories = self._category_service.export_categories_to_yml()
     with open(file_path, 'w') as file:
       file.write(categories)
+    return True
+
+  def import_categories(self, file_path: str) -> bool:
+    """ Import categories from a YAML file. """
+    with open(file_path, 'r') as file:
+      categories = file.read()
+
+    self._category_service.import_categories_from_yml(categories)
+    self._load_categories()
     return True
