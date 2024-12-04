@@ -171,3 +171,10 @@ class CategoriesViewModel(QObject):
   def get_top_uncategorized_window_names(self, limit: int = 10) -> List[tuple]:
     """ Get the top uncategorized window names. """
     return self._activity_service.get_top_uncategorized_window_names(limit)
+
+  def export_categories(self, file_path: str) -> bool:
+    """ Export categories to a JSON file. """
+    categories = self._category_service.export_categories_to_yml()
+    with open(file_path, 'w') as file:
+      file.write(categories)
+    return True

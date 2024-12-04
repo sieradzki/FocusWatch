@@ -1,12 +1,13 @@
 import logging
+import os
 from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import QCoreApplication, QObject, QRect, QSize, Qt, Slot
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLayout, QLineEdit,
-                               QMessageBox, QProgressDialog, QPushButton,
-                               QScrollArea, QSizePolicy, QSpacerItem,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QFileDialog, QFrame, QHBoxLayout, QLabel,
+                               QLayout, QLineEdit, QMessageBox,
+                               QProgressDialog, QPushButton, QScrollArea,
+                               QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
 from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.utils.ui_utils import get_category_color_or_parent
@@ -85,7 +86,6 @@ class CategoriesView(QWidget):
     # Export button
     self.button_export = QPushButton("Export", self.top_bar)
     self.button_export.setObjectName("button_export")
-    self.button_export.setEnabled(False)
     self.top_bar_layout.addWidget(self.button_export)
 
     # Restore defaults button
@@ -164,6 +164,7 @@ class CategoriesView(QWidget):
     self.button_helper.clicked.connect(self._show_categorization_helper)
     self.button_retroactive.clicked.connect(self._retroactive_categorization)
     self.button_restore_defaults.clicked.connect(self._restore_defaults)
+    self.button_export.clicked.connect(self._export_categories)
 
   @Slot()
   def _on_categories_changed(self):
@@ -456,3 +457,31 @@ class CategoriesView(QWidget):
     """ Handle the close event. """
     self._viewmodel.property_changed.disconnect(self.on_property_changed)
     super().closeEvent(event)
+
+  def _export_categories(self):
+    """ Export categories to a file. """
+    file_dialog = QFileDialog(self,
+                              "Export Categories", "", "YAML Files (*.yml *.yaml);;All Files (*)")
+
+    if file_dialog.exec_() == QFileDialog.Accepted:
+      file_path = file_dialog.selectedFiles()[0]
+      if os.path.exists(file_path):
+        reply = QMessageBox.question(
+            self,
+            "Overwrite Confirmation",
+            f"The file '{
+              file_path}' already exists.\nDo you want to overwrite it?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        if reply == QMessageBox.No:
+          return
+
+      try:
+        self._viewmodel.export_categories(file_path)
+      except Exception as e:
+        QMessageBox.critical(
+            self,
+            "Export Failed",
+            f"An error occurred while exporting categories:\n{str(e)}"
+        )

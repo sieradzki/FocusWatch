@@ -5,6 +5,8 @@ from typing import List, Optional, Tuple
 from datetime import datetime
 from focuswatch.models.category import Category
 from focuswatch.database.database_connection import DatabaseConnection
+from dataclasses import asdict
+import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +127,7 @@ class CategoryService:
                      category.parent_category_id} already exists.")
       return False
 
-    update_query = '''UPDATE categories 
+    update_query = '''UPDATE categories
                       SET name = ?, parent_category = ?, color = ?, focused = ?
                       WHERE id = ?'''
     update_params = (category.name, category.parent_category_id,
@@ -321,3 +323,20 @@ class CategoryService:
     params = (category_id,)
     result = self._db_conn.execute_query(query, params)
     return bool(result[0][0]) if result else False
+
+  def export_categories_to_yml(self) -> str:
+    """ Export categories to a YAML string.
+
+    Returns:
+        str: The YAML string representing the categories.
+    """
+    categories = self.get_all_categories()
+    categories_dict = [asdict(category) for category in categories]
+
+    try:
+      yaml_str = yaml.dump(categories_dict, sort_keys=False)
+      logger.debug(f"Exported categories to YAML:\n{yaml_str}")
+      return yaml_str
+    except yaml.YAMLError as e:
+      logger.error(f"Failed to serialize categories to YAML: {e}")
+      raise
