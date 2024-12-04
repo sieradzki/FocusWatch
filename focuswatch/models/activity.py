@@ -13,7 +13,7 @@ class Activity:
   window_name: str = ""
   category_id: Optional[int] = None
   project_id: Optional[int] = None
-  focused: bool = 0
+  focused: bool = False
 
   def __post_init__(self):
     """ Validate the activity data after initialization. """

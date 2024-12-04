@@ -10,7 +10,7 @@ class Category:
   name: str = ""
   parent_category_id: Optional[int] = None
   color: Optional[str] = None
-  focused: bool = 0
+  focused: bool = False
 
   def __post_init__(self):
     """ Validate the category data after initialization. """

@@ -1,10 +1,16 @@
 """ Category service module for the FocusWatch application. """
 
 import logging
-from typing import List, Optional, Tuple
+from dataclasses import asdict
 from datetime import datetime
-from focuswatch.models.category import Category
+from typing import List, Optional, Tuple
+
+import yaml
+
 from focuswatch.database.database_connection import DatabaseConnection
+from focuswatch.models.category import Category
+from focuswatch.models.keyword import Keyword
+from focuswatch.services.keyword_service import KeywordService
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +22,8 @@ class CategoryService:
     self._db_conn = DatabaseConnection()
     self._db_conn.connect()
 
+    self._keyword_service = KeywordService()
+
   def create_category(self, category: Category) -> bool:
     """ Create a new category in the database.
 
@@ -23,7 +31,7 @@ class CategoryService:
       category: The Category object to be created.
 
     Returns:
-      bool: True if the category was created successfully, False otherwise.
+      int: The ID of the newly created category if successful, None otherwise.
     """
     # Check if category exists within current scope
     # For example: we can have work->programming and hobby->programming but not work->programming and work->programming
@@ -75,7 +83,6 @@ class CategoryService:
     try:
       result = self._db_conn.execute_query(query, params)
       if result:
-        # name and id are swapped in the category model
         return Category(*result[0])
       return None
     except Exception as e:
@@ -125,7 +132,7 @@ class CategoryService:
                      category.parent_category_id} already exists.")
       return False
 
-    update_query = '''UPDATE categories 
+    update_query = '''UPDATE categories
                       SET name = ?, parent_category = ?, color = ?, focused = ?
                       WHERE id = ?'''
     update_params = (category.name, category.parent_category_id,
@@ -307,6 +314,27 @@ class CategoryService:
     result = self._db_conn.execute_query(query, params)
     return result[0][0] if result else None
 
+  def get_category_by_name(self, category_name: str) -> Optional[Category]:
+    """ Return a category given its name.
+
+    Args:
+      category_name: The name of the category.
+
+    Returns:
+      Optional[Category]: The Category object if found, None otherwise.
+    """
+    query = 'SELECT * FROM categories WHERE name = ?'
+    params = (category_name,)
+
+    try:
+      result = self._db_conn.execute_query(query, params)
+      if result:
+        return Category(*result[0])
+      return None
+    except Exception as e:
+      logger.error(f"Failed to retrieve category: {e}")
+      return None
+
   # TODO remove on watcher service refactor
   def get_category_focused(self, category_id: int) -> bool:
     """ Return whether a category is focused.
@@ -321,3 +349,121 @@ class CategoryService:
     params = (category_id,)
     result = self._db_conn.execute_query(query, params)
     return bool(result[0][0]) if result else False
+
+  def export_categories_to_yml(self) -> str:
+    """ Export categories and their keywords to a YAML string.
+
+    Returns:
+        str: The YAML string representing the categories and keywords.
+    """
+    categories = self.get_all_categories()
+    categories_dict = []
+
+    for category in categories:
+      category_dict = asdict(category)
+
+      # Retrieve parent_category_id
+      parent_category_id = category_dict.get('parent_category_id')
+
+      if parent_category_id is not None:
+        # Get the parent category's name
+        parent_category = self.get_category_by_id(parent_category_id)
+        if parent_category:
+          category_dict['parent_name'] = parent_category.name
+        else:
+          logger.warning(f"Parent category with ID {
+                         parent_category_id} not found.")
+          category_dict['parent_name'] = None
+      else:
+        category_dict['parent_name'] = None
+
+      # Remove 'parent_category_id' from the dict
+      category_dict.pop('parent_category_id', None)
+
+      # Get keywords for this category
+      keywords = self._keyword_service.get_keywords_for_category(category.id)
+      keyword_dicts = [{'name': k.name, 'match_case': k.match_case}
+                       for k in keywords]
+      category_dict['keywords'] = keyword_dicts
+
+      categories_dict.append(category_dict)
+
+    try:
+      yaml_str = yaml.dump(categories_dict, sort_keys=False)
+      logger.debug(f"Exported categories and keywords to YAML:\n{yaml_str}")
+      return yaml_str
+    except yaml.YAMLError as e:
+      logger.error(
+        f"Failed to serialize categories and keywords to YAML: {e}")
+      raise
+
+  def import_categories_from_yml(self, yml_str: str) -> bool:
+    """ Import categories and their keywords from a YAML string.
+
+    Args:
+      yml_str: The YAML string representing the categories and keywords.
+
+    Returns:
+      bool: True if the import was successful, False otherwise.
+    """
+    try:
+      categories = yaml.safe_load(yml_str)
+      self._db_conn.execute_update('DELETE FROM categories;')
+      self._db_conn.execute_update('DELETE FROM keywords;')
+
+      name_to_id = {}
+
+      for category_data in categories:
+        parent_name = category_data.pop('parent_name', None)
+        keywords_data = category_data.pop(
+          'keywords', [])
+        category_data.pop('id', None)
+
+        parent_category_id = None
+
+        if parent_name:
+          parent_id = name_to_id.get(parent_name)
+          if parent_id:
+            parent_category_id = parent_id
+          else:
+            parent_category = self.get_category_by_name(parent_name)
+            if parent_category:
+              parent_id = parent_category.id
+              name_to_id[parent_name] = parent_id
+              parent_category_id = parent_id
+            else:
+              logger.warning(f"Parent category '{parent_name}' not found for '{
+                             category_data['name']}'")
+              parent_category_id = None
+
+        category = Category(
+            name=category_data['name'],
+            parent_category_id=parent_category_id,
+            color=category_data.get('color'),
+            focused=category_data.get('focused', 0)
+        )
+
+        new_category_id = self.create_category(category)
+        if new_category_id:
+          # Store the mapping from category name to new ID
+          name_to_id[category.name] = new_category_id
+
+          # Add keywords associated with this category
+          for keyword_data in keywords_data:
+            keyword = Keyword(
+                name=keyword_data['name'],
+                category_id=new_category_id,
+                match_case=keyword_data.get('match_case', False)
+            )
+            self._keyword_service.add_keyword(keyword)
+        else:
+          logger.error(f"Failed to create category '{category.name}'")
+
+      return True
+    except yaml.YAMLError as e:
+      logger.error(
+        f"Failed to deserialize categories and keywords from YAML: {e}")
+      return False
+    except Exception as e:
+      logger.error(f"Failed to import categories and keywords: {e}")
+      return False
