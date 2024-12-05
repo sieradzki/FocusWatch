@@ -35,9 +35,6 @@ class TimelineViewModel(QObject):
     self._period_end: Optional[datetime] = None
     self._timeline_data: Dict[int, List[int]] = {}
 
-    self._afk_category_id = self._category_service.get_category_id_from_name(
-        "AFK")
-
     self.update_timeline_data()
 
   @Slot(datetime, datetime)
@@ -79,13 +76,18 @@ class TimelineViewModel(QObject):
     hour_entries = {i: [0, 0, 0, 0, 0, 0]
                     for i in range(24)}  # 6 quarters in an hour
 
+    afk_category_id = None
+    if not self._config["dashboard"]["display_timeline_idle"]:
+      afk_category_id = self._category_service.get_category_id_from_name(
+          "AFK")
+
     for entry in period_entries:
       timestamp_start = entry.time_start
       timestamp_stop = entry.time_stop
       category_id = entry.category_id
 
       if not self._config["dashboard"]["display_timeline_idle"]:
-        if entry.category_id == self._afk_category_id:
+        if entry.category_id == afk_category_id:
           continue
 
       while timestamp_start < timestamp_stop:
