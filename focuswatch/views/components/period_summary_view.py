@@ -20,7 +20,7 @@ class PeriodSummaryCardView(CardWidget):
     super().__init__("Period Summary", parent)
     self._viewmodel = viewmodel
     self._slice_tooltips = {}
-    self._setup_ui()
+    self._setup_content()
     self._set_title()
     self._connect_signals()
     self._show_event_connected = False
@@ -29,7 +29,7 @@ class PeriodSummaryCardView(CardWidget):
     apply_styles(self, ["components/card_widget.qss",
                         "components/period_summary_card.qss"])
 
-  def _setup_ui(self) -> None:
+  def _setup_content(self) -> None:
     """ Set up the UI components. """
     self.setMinimumSize(QSize(350, 300))
 
