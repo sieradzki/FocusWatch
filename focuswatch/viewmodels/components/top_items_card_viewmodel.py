@@ -2,16 +2,17 @@
 
 
 from datetime import datetime
-from typing import List, Optional, Tuple, Dict
+from typing import Dict, Optional, Tuple, List
 
-from PySide6.QtCore import Property, Slot
+from PySide6.QtCore import Property, QObject, Slot, Signal
 from PySide6.QtGui import QColor
 
-from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 
-
-class TopItemsCardViewModel(BaseViewModel):
+class TopItemsCardViewModel(QObject):
   """ Base ViewModel for Top Items cards. """
+  period_start_changed = Signal()
+  period_end_changed = Signal()
+  top_items_changed = Signal()
 
   def __init__(self,
                period_start: datetime,
@@ -31,31 +32,33 @@ class TopItemsCardViewModel(BaseViewModel):
     """ Update the time period for item analysis. """
     self.period_start = start
     self.period_end = end
-    self._update_top_items()
+    self.update_top_items()
 
-  @Property(datetime, notify=BaseViewModel.property_changed)
+  @Property(datetime, notify=period_start_changed)
   def period_start(self) -> datetime:
     return self._period_start
 
   @period_start.setter
   def period_start(self, value: datetime) -> None:
-    self._set_property('_period_start', value)
-    self._update_top_items()
+    if self._period_start != value:
+      self._period_start = value
+      self.period_start_changed.emit()
 
-  @Property(datetime, notify=BaseViewModel.property_changed)
+  @Property(datetime, notify=period_end_changed)
   def period_end(self) -> Optional[datetime]:
     return self._period_end
 
   @period_end.setter
   def period_end(self, value: Optional[datetime]) -> None:
-    self._set_property('_period_end', value)
-    self._update_top_items()
+    if self._period_end != value:
+      self._period_end = value
+      self.period_end_changed.emit()
 
-  @Property(list, notify=BaseViewModel.property_changed)
+  @Property(dict, notify=top_items_changed)
   def top_items(self) -> List[Tuple[str, float, Optional[QColor], Optional[str]]]:
     return self._top_items
 
-  def _update_top_items(self) -> None:
+  def update_top_items(self) -> None:
     """ Update the list of top items. To be implemented in derived classes. """
     raise NotImplementedError(
         "This method should be implemented in derived classes.")

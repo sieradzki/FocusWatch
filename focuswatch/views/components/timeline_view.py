@@ -22,7 +22,7 @@ class TimelineView(QWidget):
 
   def __init__(
     self,
-    viewmodel: 'TimelineViewModel',
+    viewmodel: "TimelineViewModel",
     minutes_per_chunk: int = 10,
     hour_height: int = 120,
     parent: Optional[QWidget] = None,
@@ -46,7 +46,7 @@ class TimelineView(QWidget):
     self._setup_ui()
     self._connect_signals()
 
-    self.update_timeline()
+    self._update_timeline()
     self.scroll_to_current_hour()
     apply_stylesheet(self, "components/timeline.qss")
 
@@ -93,15 +93,13 @@ class TimelineView(QWidget):
 
   def _connect_signals(self) -> None:
     """ Connect signals to slots. """
-    self._viewmodel.data_changed.connect(self.update_timeline)
-    self._viewmodel.property_changed.connect(self.on_property_changed)
+    self._viewmodel.timeline_data_changed.connect(
+      self.on_timeline_data_changed)
 
   @Slot()
-  def on_property_changed(self, property_name: str) -> None:
-    """ Handle property changes in the ViewModel. """
-    if property_name in ["period_start", "period_end"]:
-      self.update_timeline()
-      self._update_current_time_line()
+  def on_timeline_data_changed(self):
+    self._update_timeline()
+    self._update_current_time_line()
 
   def _create_time_grid(self) -> None:
     """ Create the time grid representing 24 hours. """
@@ -110,7 +108,7 @@ class TimelineView(QWidget):
       hour_widget.setFixedHeight(self._hour_height)
       hour_widget.setObjectName(f"hour_widget_{hour}")
       # Set custom property for styling
-      hour_widget.setProperty('cssClass', 'hour_widget')
+      hour_widget.setProperty("cssClass", "hour_widget")
 
       hour_layout = QHBoxLayout(hour_widget)
       hour_layout.setContentsMargins(0, 0, 0, 0)
@@ -123,7 +121,7 @@ class TimelineView(QWidget):
       hour_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
       hour_layout.addWidget(hour_label)
 
-      hour_label.setProperty('cssClass', 'hour_label')
+      hour_label.setProperty("cssClass", "hour_label")
 
       # Spacer to fill the rest of the space
       hour_spacer = QSpacerItem(
@@ -134,7 +132,7 @@ class TimelineView(QWidget):
       self._timeline_layout.addWidget(hour_widget)
 
   @Slot()
-  def update_timeline(self) -> None:
+  def _update_timeline(self) -> None:
     """ Update the timeline with activity cards based on the ViewModel data. """
     # Clear existing activity cards
     for child in self._timeline_widget.findChildren(QWidget):
@@ -157,6 +155,10 @@ class TimelineView(QWidget):
         index += 1
         continue  # No activity in this chunk
 
+      if not self._viewmodel.get_category_name(category_id):
+        index += 1
+        continue  # Skip non-existent categories
+
       # Start of a new activity block
       start_index = index
       duration = self._minutes_per_chunk  # Start with minutes per chunk
@@ -176,21 +178,22 @@ class TimelineView(QWidget):
       parent_name = self._viewmodel.get_category_name(parent_id)
 
       # Calculate actual time range
-      start_hour = start_minutes // 60
-      start_minutes %= 60
+      start_time = self._viewmodel.period_start + \
+          timedelta(minutes=start_minutes)
+      end_time = start_time + timedelta(minutes=duration)
+      time_range = f"{start_time.strftime(
+        '%H:%M')} - {end_time.strftime('%H:%M')}"
 
-      duration_hours = duration // 60
-      duration_minutes = duration % 60
+      # Get top entries for the time range
+      top_entries = self._viewmodel.get_top_entries(
+        start_time.isoformat(), end_time.isoformat())
 
-      end_hour = start_hour + duration_hours
-      end_minutes = start_minutes + duration_minutes
-
-      if end_minutes >= 60:
-        end_minutes -= 60
-        end_hour += 1
-
-      time_range = f"{start_hour:02d}:{
-          start_minutes:02d} - {end_hour:02d}:{end_minutes:02d}"
+      # Prepare tooltip text
+      tooltip_text = f"Top Entries:\n"
+      for entry in top_entries:
+        duration_minutes = entry['duration'] / 60
+        tooltip_text += f"- {entry['window_class']} | {
+          entry['window_name']} ({duration_minutes:.1f} min)\n"
 
       # Create the activity card
       activity_card = ActivityCard(
@@ -203,6 +206,9 @@ class TimelineView(QWidget):
         parent=self._timeline_widget,
       )
 
+      # Set the tooltip
+      activity_card.setToolTip(tooltip_text)
+
       activity_card.setGeometry(
         50,  # Starting after the hour labels
         int(y_position),
@@ -211,6 +217,7 @@ class TimelineView(QWidget):
       )
 
       activity_card.show()
+
     self._current_time_line.raise_()
 
   def scroll_to_current_hour(self) -> None:
@@ -245,5 +252,5 @@ class TimelineView(QWidget):
   def resizeEvent(self, event) -> None:
     """Handle widget resizing to adjust activity cards."""
     super().resizeEvent(event)
-    self.update_timeline()
+    self._update_timeline()
     self._update_current_time_line()

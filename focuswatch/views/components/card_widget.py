@@ -1,6 +1,8 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame,
-                               QHBoxLayout, QSizePolicy, QStackedWidget, QPushButton, QSpacerItem)
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QPushButton,
+                               QSizePolicy, QSpacerItem, QStackedWidget,
+                               QVBoxLayout, QWidget)
+
 from focuswatch.utils.resource_utils import apply_stylesheet
 
 
@@ -12,10 +14,10 @@ class CardWidget(QWidget):
     self.title = title
     self.current_index = 0
     self.content_views = []
-    self.setupUi()
+    self._setup_ui()
     apply_stylesheet(self, "components/card_widget.qss")
 
-  def setupUi(self):
+  def _setup_ui(self):
     layout = QVBoxLayout(self)
     layout.setContentsMargins(0, 0, 0, 0)
 
@@ -23,30 +25,37 @@ class CardWidget(QWidget):
     self.frame_container = QFrame(self)
     self.frame_container.setObjectName("frame_container")
 
-    verticalLayout = QVBoxLayout(self.frame_container)
-    verticalLayout.setContentsMargins(0, 0, 0, 0)
-    verticalLayout.setSpacing(0)
+    self.verticalLayout = QVBoxLayout(self.frame_container)
+    self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+    self.verticalLayout.setSpacing(0)
 
     self.label_title = QLabel(self.title, self.frame_container)
     self.label_title.setObjectName("label_title")
-    self.label_title.setFont(self.font())
-    verticalLayout.addWidget(self.label_title)
+    self.verticalLayout.addWidget(self.label_title)
 
     self.separator = QFrame(self.frame_container)
     self.separator.setObjectName("separator")
     self.separator.setFrameShape(QFrame.Shape.HLine)
     self.separator.setFrameShadow(QFrame.Shadow.Sunken)
     self.separator.setFixedHeight(2)
-    verticalLayout.addWidget(self.separator)
+    self.verticalLayout.addWidget(self.separator)
+
+    # Main stacked widget to switch between content and no data views
+    self.main_stacked_widget = QStackedWidget(self.frame_container)
+    self.main_stacked_widget.setObjectName("main_stacked_widget")
+
+    # Content view container
+    self.content_container = QWidget()
+    self.content_layout = QVBoxLayout(self.content_container)
+    self.content_layout.setContentsMargins(0, 0, 0, 0)
+    self.content_layout.setSpacing(0)
 
     # Stacked widget to hold multiple content views
-    self.stacked_widget = QStackedWidget(self.frame_container)
+    self.stacked_widget = QStackedWidget(self.content_container)
     self.stacked_widget.setObjectName("stacked_widget")
-    # self.stacked_widget.setMinimumSize(QSize(300, 200))
-    # self.stacked_widget.setMaximumHeight(300)
-    verticalLayout.addWidget(self.stacked_widget)
+    self.content_layout.addWidget(self.stacked_widget)
 
-    # Navigation buttons for switching content views
+    # Navigation layout for switching content views
     self.navigation_layout = QHBoxLayout()
     self.navigation_layout.setContentsMargins(0, 0, 0, 0)
     self.navigation_layout.setSpacing(10)
@@ -64,12 +73,33 @@ class CardWidget(QWidget):
     self.navigation_layout.addWidget(self.next_button)
 
     # Spacer to push buttons to the right
-    self.navigation_layout.addSpacerItem(QSpacerItem(
-      20, 40, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
-    verticalLayout.addLayout(self.navigation_layout)
+    spacer = QSpacerItem(
+        20, 40, QSizePolicy.Expanding, QSizePolicy.Minimum)
+    self.navigation_layout.addItem(spacer)
+    self.content_layout.addLayout(self.navigation_layout)
 
-    # Initially hide the navigation layout
-    self.toggle_navigation_buttons(False)
+    # No data view container
+    self.no_data_container = QWidget()
+    self.no_data_layout = QVBoxLayout(self.no_data_container)
+    self.no_data_layout.setContentsMargins(0, 0, 0, 0)
+    self.no_data_layout.setSpacing(0)
+
+    # No data label
+    self.no_data_label = QLabel(
+        "No data available", self.no_data_container)
+    self.no_data_label.setObjectName("no_data_label")
+    self.no_data_label.setAlignment(Qt.AlignCenter)
+    self.no_data_layout.addWidget(self.no_data_label)
+
+    # Add content and no data containers to the main stacked widget
+    self.main_stacked_widget.addWidget(self.content_container)
+    self.main_stacked_widget.addWidget(self.no_data_container)
+
+    # Add the main stacked widget to the layout
+    self.verticalLayout.addWidget(self.main_stacked_widget)
+
+    # Initially show content view
+    self.show_content_view()
 
     layout.addWidget(self.frame_container)
 
@@ -80,7 +110,7 @@ class CardWidget(QWidget):
     self.toggle_navigation_buttons(len(self.content_views) > 1)
 
   def toggle_navigation_buttons(self, show):
-    """ Show or hide navigation buttons based on the number of content views. """
+    """ Show or hide the navigation buttons. """
     self.prev_button.setVisible(show)
     self.next_button.setVisible(show)
 
@@ -93,3 +123,19 @@ class CardWidget(QWidget):
     """ Show the previous content view. """
     self.current_index = (self.current_index - 1) % len(self.content_views)
     self.stacked_widget.setCurrentIndex(self.current_index)
+
+  def show_no_data_view(self, message: str = "No data available"):
+    """ Display the no data label and hide the content views. """
+    self.no_data_label.setText(message)
+    self.main_stacked_widget.setCurrentWidget(self.no_data_container)
+    self.toggle_navigation_buttons(False)
+
+  def show_content_view(self):
+    """ Hide the no data label and show the content views. """
+    self.main_stacked_widget.setCurrentWidget(self.content_container)
+    self.toggle_navigation_buttons(len(self.content_views) > 1)
+
+  def _ensure_content_view_visible(self):
+    """ Ensure the content view is visible. """
+    if self.main_stacked_widget.currentWidget() != self.content_container:
+      self.show_content_view()

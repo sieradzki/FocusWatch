@@ -22,7 +22,7 @@ class ClassifierService:
     self._keyword_service = keyword_service
 
   def classify_entry(self, window_class: str, window_name: str) -> Optional[int]:
-    """Classify an entry based on the window class and name.
+    """ Classify an entry based on the window class and name.
 
     Args:
       window_class: The class of the window.

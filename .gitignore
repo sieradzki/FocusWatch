@@ -161,3 +161,4 @@ cython_debug/
 .vscode/settings.json
 /logs
 *.txt
+*.yml

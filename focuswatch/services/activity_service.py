@@ -11,14 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 class ActivityService:
-  """Service class for managing activities in the FocusWatch application."""
+  """ Service class for managing activities in the FocusWatch application. """
 
   def __init__(self):
     self._db_conn = DatabaseConnection()
     self._db_conn.connect()
 
   def insert_activity(self, activity: Activity) -> bool:
-    """Insert an activity into the database.
+    """ Insert an activity into the database.
 
     Args:
       activity: The Activity object to be inserted.
@@ -27,9 +27,9 @@ class ActivityService:
       bool: True if the activity was inserted successfully, False otherwise.
     """
     query = '''
-      INSERT INTO activity_log
-      (time_start, time_stop, window_class, window_name, category_id, project_id)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO activity
+      (time_start, time_stop, window_class, window_name, category_id, project_id, focused)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     '''
     params = (
       activity.time_start.isoformat(),
@@ -37,7 +37,8 @@ class ActivityService:
       activity.window_class,
       activity.window_name,
       activity.category_id,
-      activity.project_id
+      activity.project_id,
+      activity.focused
     )
 
     try:
@@ -49,7 +50,7 @@ class ActivityService:
       return False
 
   def update_category(self, activity_id: int, category_id: int) -> bool:
-    """Update the category id of an activity.
+    """ Update the category id of an activity.
 
     Args:
       activity_id: The id of the activity to update.
@@ -58,7 +59,7 @@ class ActivityService:
     Returns:
       bool: True if the category id was updated successfully, False otherwise.
     """
-    query = 'UPDATE activity_log SET category_id = ? WHERE id = ?'
+    query = 'UPDATE activity SET category_id = ? WHERE id = ?'
     params = (category_id, activity_id)
 
     try:
@@ -83,7 +84,7 @@ class ActivityService:
 
     # Construct placeholders for parameterized query
     placeholders = ','.join(['?'] * len(activity_ids))
-    query = f'UPDATE activity_log SET category_id = ? WHERE id IN ({
+    query = f'UPDATE activity SET category_id = ? WHERE id IN ({
         placeholders})'
     params = [category_id] + activity_ids
 
@@ -94,7 +95,6 @@ class ActivityService:
       logger.error(f"Failed to bulk update categories for activities: {e}")
       return False
 
-  # TODO the name sucks
   def bulk_update_category_by_name(self, activity_name: str, category_id: int) -> bool:
     """ Bulk update the category_id for multiple activities by activity name.
 
@@ -105,7 +105,7 @@ class ActivityService:
     Returns:
       bool: True if the categories were updated successfully, False otherwise.
     """
-    query = 'UPDATE activity_log SET category_id = ? WHERE window_class = ? OR window_name = ?'
+    query = 'UPDATE activity SET category_id = ? WHERE window_class = ? OR window_name = ?'
     params = (category_id, activity_name, activity_name)
 
     try:
@@ -122,7 +122,7 @@ class ActivityService:
     Returns:
       List[Activity]: A list of all Activity objects in the database.
     """
-    query = "SELECT * FROM activity_log"
+    query = "SELECT * FROM activity"
 
     try:
       results = self._db_conn.execute_query(query)
@@ -140,7 +140,7 @@ class ActivityService:
     Returns:
       List[Activity]: A list of Activity objects with the specified category id.
     """
-    query = "SELECT * FROM activity_log WHERE category_id = ?"
+    query = "SELECT * FROM activity WHERE category_id = ?"
     params = (category_id,)
 
     try:
@@ -152,13 +152,13 @@ class ActivityService:
       return []
 
   def get_todays_entries(self) -> List[Activity]:
-    """Return all entries for today.
+    """ Return all entries for today.
 
     Returns:
       List[Activity]: A list of Activity objects for today.
     """
     today = datetime.now().strftime("%Y-%m-%d")
-    query = "SELECT * FROM activity_log WHERE time_start LIKE ?"
+    query = "SELECT * FROM activity WHERE time_start LIKE ?"
     params = (f'{today}%',)
 
     try:
@@ -169,7 +169,7 @@ class ActivityService:
       return []
 
   def get_date_entries(self, date: datetime) -> List[Activity]:
-    """Return all entries for a given date.
+    """ Return all entries for a given date.
 
     Args:
       date: The date to retrieve entries for.
@@ -178,7 +178,7 @@ class ActivityService:
       List[Activity]: A list of Activity objects for the specified date.
     """
     formatted_date = date.strftime("%Y-%m-%d")
-    query = "SELECT * FROM activity_log WHERE time_start LIKE ?"
+    query = "SELECT * FROM activity WHERE time_start LIKE ?"
     params = (f'{formatted_date}%',)
 
     try:
@@ -190,7 +190,7 @@ class ActivityService:
       return []
 
   def get_period_entries(self, period_start: datetime, period_end: Optional[datetime] = None) -> List[Activity]:
-    """Return all entries for a given period.
+    """ Return all entries for a given period.
 
     Args:
       period_start: The start date of the period.
@@ -200,10 +200,10 @@ class ActivityService:
       List[Activity]: A list of Activity objects for the specified period.
     """
     if period_end:
-      query = "SELECT * FROM activity_log WHERE time_start BETWEEN ? AND ?"
+      query = "SELECT * FROM activity WHERE time_start BETWEEN ? AND ?"
       params = (period_start.isoformat(), period_end.isoformat())
     else:
-      query = "SELECT * FROM activity_log WHERE date(time_start) = date(?)"
+      query = "SELECT * FROM activity WHERE date(time_start) = date(?)"
       params = (period_start.isoformat(),)
 
     try:
@@ -214,20 +214,20 @@ class ActivityService:
       return []
 
   def get_date_entries_class_time_total(self, date: datetime) -> List[Tuple[str, Optional[int], int]]:
-    """Return the total time spent on each window class for a given date.
+    """ Return the total time spent on each window class for a given date.
 
     Args:
       date: The date to retrieve entries for.
 
     Returns:
-      List[Tuple[str, Optional[int], int]]: A list of tuples containing
-      (window_class, category_id, total_time_seconds).
+      List[Tuple[str, Optional[int], int, bool]]: A list of tuples containing
+      (window_class, category_id, total_time_seconds, focused).
     """
     formatted_date = date.strftime("%Y-%m-%d")
     query = """
-      SELECT window_class, category_id,
-      SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
-      FROM activity_log
+      SELECT window_class, category_id, 
+      SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds, focused
+      FROM activity
       WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
       GROUP BY window_class
       ORDER BY total_time_seconds DESC
@@ -242,21 +242,21 @@ class ActivityService:
       return []
 
   def get_period_entries_class_time_total(self, period_start: datetime, period_end: Optional[datetime] = None) -> List[Tuple[str, Optional[int], int]]:
-    """Return the total time spent on each window class for a given period.
+    """ Return the total time spent on each window class for a given period.
 
     Args:
       period_start: The start date of the period.
       period_end: The end date of the period. If None, only period_start is considered.
 
     Returns:
-      List[Tuple[str, Optional[int], int]]: A list of tuples containing
-      (window_class, category_id, total_time_seconds).
+      List[Tuple[str, Optional[int], int, bool]]: A list of tuples containing
+      (window_class, category_id, total_time_seconds, focused).
     """
     if period_end:
       query = """
         SELECT window_class, category_id,
-        SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
-        FROM activity_log
+        SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds, focused
+        FROM activity
         WHERE time_start BETWEEN ? AND ?
         GROUP BY window_class
         ORDER BY total_time_seconds DESC
@@ -265,8 +265,8 @@ class ActivityService:
     else:
       query = """
         SELECT window_class, category_id,
-        SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
-        FROM activity_log
+        SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds, focused
+        FROM activity
         WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
         GROUP BY window_class
         ORDER BY total_time_seconds DESC
@@ -280,21 +280,21 @@ class ActivityService:
       return []
 
   def get_period_entries_name_time_total(self, period_start: datetime, period_end: Optional[datetime] = None) -> List[Tuple[str, Optional[int], int]]:
-    """Return the total time spent on each window name for a given period.
+    """ Return the total time spent on each window name for a given period.
 
     Args:
       period_start: The start date of the period.
       period_end: The end date of the period. If None, only period_start is considered.
 
     Returns:
-      List[Tuple[str, Optional[int], int]]: A list of tuples containing
-      (window_name, category_id, total_time_seconds).
+      List[Tuple[str, Optional[int], int], bool]: A list of tuples containing
+      (window_name, category_id, total_time_seconds, bool).
     """
     if period_end:
       query = """
         SELECT window_name, category_id,
-        SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
-        FROM activity_log
+        SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds, focused
+        FROM activity
         WHERE time_start BETWEEN ? AND ?
         GROUP BY window_name
         ORDER BY total_time_seconds DESC
@@ -303,8 +303,8 @@ class ActivityService:
     else:
       query = """
         SELECT window_name, category_id,
-        SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds
-        FROM activity_log
+        SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds, focused
+        FROM activity
         WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
         GROUP BY window_name
         ORDER BY total_time_seconds DESC
@@ -318,7 +318,7 @@ class ActivityService:
       return []
 
   def get_longest_duration_category_id_for_window_class_on_date(self, date: datetime, window_class: str) -> Optional[int]:
-    """Return the category with the longest duration for a given window class on a given date.
+    """ Return the category with the longest duration for a given window class on a given date.
 
     Args:
       date: The date to retrieve entries for.
@@ -330,7 +330,7 @@ class ActivityService:
     formatted_date = date.strftime("%Y-%m-%d")
     query = """
       SELECT category_id
-      FROM activity_log
+      FROM activity
       WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
         AND window_class = ?
       GROUP BY category_id
@@ -348,7 +348,7 @@ class ActivityService:
       return None
 
   def get_longest_duration_category_id_for_window_class_in_period(self, period_start: datetime, window_class: str, period_end: Optional[datetime] = None) -> Optional[int]:
-    """Return the category with the longest duration for a given window class in a given period.
+    """ Return the category with the longest duration for a given window class in a given period.
 
     Args:
       period_start: The start date of the period.
@@ -361,7 +361,7 @@ class ActivityService:
     if period_end:
       query = """
         SELECT category_id
-        FROM activity_log
+        FROM activity
         WHERE time_start BETWEEN ? AND ?
           AND window_class = ?
         GROUP BY category_id
@@ -372,7 +372,7 @@ class ActivityService:
     else:
       query = """
         SELECT category_id
-        FROM activity_log
+        FROM activity
         WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
           AND window_class = ?
         GROUP BY category_id
@@ -392,7 +392,7 @@ class ActivityService:
   def get_top_uncategorized_window_classes(
       self, limit: int = 10, offset: int = 0, threshold_seconds: int = 60
   ) -> List[Tuple[str, int]]:
-    """Return the top uncategorized window classes sorted by total time spent.
+    """ Return the top uncategorized window classes sorted by total time spent.
 
     Entries with total time less than the threshold are excluded.
 
@@ -407,7 +407,7 @@ class ActivityService:
     query = """
       SELECT window_class,
              SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-      FROM activity_log
+      FROM activity
       WHERE (category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized'))
       GROUP BY window_class
       HAVING total_time_seconds >= ?
@@ -424,7 +424,7 @@ class ActivityService:
   def get_top_uncategorized_window_names(
       self, limit: int = 10, offset: int = 0, threshold_seconds: int = 60
   ) -> List[Tuple[str, int]]:
-    """Return the top uncategorized window names sorted by total time spent.
+    """ Return the top uncategorized window names sorted by total time spent.
 
     Entries with total time less than the threshold are excluded.
 
@@ -439,7 +439,7 @@ class ActivityService:
     query = """
       SELECT window_name,
              SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-      FROM activity_log
+      FROM activity
       WHERE (category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized'))
       GROUP BY window_name
       HAVING total_time_seconds >= ?
@@ -458,7 +458,7 @@ class ActivityService:
     query = """
         SELECT window_class, window_name,
               SUM(strftime('%s', time_stop) - strftime('%s', time_start)) AS total_time_seconds
-        FROM activity_log
+        FROM activity
         WHERE category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized')
         GROUP BY window_class, window_name
         ORDER BY total_time_seconds DESC

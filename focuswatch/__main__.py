@@ -43,7 +43,7 @@ def setup_logging():
     config_file = config.default_logger_config_path
   else:
     # If running in development mode
-    config_file = config.get_value("Logging", "logger_config")
+    config_file = config["logging"]["logger_config"]
 
   if not os.path.exists(config_file):
     raise FileNotFoundError(

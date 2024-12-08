@@ -1,20 +1,24 @@
 import logging
 from typing import Optional
 
-from PySide6.QtCore import Property, Slot
+from PySide6.QtCore import Property, QObject, Signal, Slot
 
 from focuswatch.models.keyword import Keyword
-from focuswatch.viewmodels.base_viewmodel import BaseViewModel
 
 logger = logging.getLogger(__name__)
 
 
-class KeywordDialogViewModel(BaseViewModel):
-  def __init__(self, keyword: Optional[Keyword] = None):
+class KeywordDialogViewModel(QObject):
+  """ ViewModel for the keyword dialog. """
+  name_changed = Signal()
+  match_case_changed = Signal()
+
+  def __init__(self, 
+               keyword: Optional[Keyword] = None):
     super().__init__()
     self._keyword = keyword or Keyword()
 
-  @Property(str, notify=BaseViewModel.property_changed)
+  @Property(str, notify=name_changed)
   def name(self) -> str:
     return self._keyword.name
 
@@ -22,9 +26,9 @@ class KeywordDialogViewModel(BaseViewModel):
   def name(self, value: str):
     if self._keyword.name != value:
       self._keyword.name = value
-      self.property_changed.emit('name')
+      self.name_changed.emit()
 
-  @Property(bool, notify=BaseViewModel.property_changed)
+  @Property(bool, notify=match_case_changed)
   def match_case(self) -> bool:
     return self._keyword.match_case
 
@@ -32,7 +36,7 @@ class KeywordDialogViewModel(BaseViewModel):
   def match_case(self, value: bool):
     if self._keyword.match_case != value:
       self._keyword.match_case = value
-      self.property_changed.emit('match_case')
+      self.match_case_changed.emit()
 
   def get_keyword(self) -> Keyword:
     return self._keyword
