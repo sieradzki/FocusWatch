@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Dict, List, Optional, Any
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
@@ -119,28 +119,66 @@ class TimelineViewModel(QObject):
   def get_top_entries(self, start_time_str: str, end_time_str: str) -> List[Dict[str, Any]]:
     """ Get top 5 entries between start_time and end_time.
 
-      Args:
-          start_time_str: Start time as a string in ISO format.
-          end_time_str: End time as a string in ISO format.
+    Args:
+      start_time_str: Start time as a string in ISO format.
+      end_time_str: End time as a string in ISO format.
 
-      Returns:
-          A list of dicts with keys 'window_class', 'window_name', and 'duration'.
-      """
+    Returns:
+      A list of dicts with keys 'window_class', 'window_name', and 'duration'.
+    """
     start_time = datetime.fromisoformat(start_time_str)
     end_time = datetime.fromisoformat(end_time_str)
 
-    # Filter activities within the time range
-    activities_in_range = [
-      activity for activity in self._period_entries
-      if activity.time_start < end_time and activity.time_stop > start_time
-    ]
+    # Extract the hour and minute
+    start_hour = start_time.hour
+    start_minute = start_time.minute
+    end_hour = end_time.hour
+    end_minute = end_time.minute
+
+    # Filter activities within the time range, checking only hours/minutes
+    activities_in_range = []
+    for activity in self._period_entries:
+      # Convert activity times to hour/minute for comparison
+      activity_start_hour = activity.time_start.hour
+      activity_start_minute = activity.time_start.minute
+      activity_end_hour = activity.time_stop.hour
+      activity_end_minute = activity.time_stop.minute
+
+      # Check if the activity overlaps with our target time window
+      activity_start_time = activity_start_hour * 60 + activity_start_minute
+      activity_end_time = activity_end_hour * 60 + activity_end_minute
+      target_start_time = start_hour * 60 + start_minute
+      target_end_time = end_hour * 60 + end_minute
+
+      # Handle cases where the activity spans midnight
+      if activity_end_time < activity_start_time:
+        activity_end_time += 24 * 60
+
+      if target_end_time < target_start_time:
+        target_end_time += 24 * 60
+
+      if (activity_start_time <= target_end_time and
+              activity_end_time >= target_start_time):
+        activities_in_range.append(activity)
 
     # Compute durations per window_class and window_name
     entry_durations = defaultdict(float)
     for activity in activities_in_range:
-      overlap_start = max(activity.time_start, start_time)
-      overlap_end = min(activity.time_stop, end_time)
+      activity_time = activity.time_start.replace(
+        year=start_time.year,
+        month=start_time.month,
+        day=start_time.day
+      )
+      activity_end_time = activity.time_stop.replace(
+        year=end_time.year,
+        month=end_time.month,
+        day=end_time.day
+      )
+
+      overlap_start = max(activity_time, start_time)
+      overlap_end = min(activity_end_time, end_time)
       duration = (overlap_end - overlap_start).total_seconds()
+
       key = (activity.window_class, activity.window_name)
       entry_durations[key] += duration
 
@@ -149,7 +187,6 @@ class TimelineViewModel(QObject):
                             key=lambda x: x[1], reverse=True)
     top_entries = sorted_entries[:5]
 
-    # Prepare result
     result = []
     for (window_class, window_name), duration in top_entries:
       result.append({
