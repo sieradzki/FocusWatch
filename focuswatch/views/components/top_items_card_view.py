@@ -28,12 +28,12 @@ class TopItemsCardView(CardWidget):
                parent: Optional[QWidget] = None):
     super().__init__(title, parent)
     self._viewmodel = viewmodel
-    self._setup_ui()
+    self._setup_content()
     self._connect_signals()
     self._show_event_connected = False
     self._slice_tooltips = {}
 
-  def _setup_ui(self) -> None:
+  def _setup_content(self) -> None:
     """ Set up the UI components. """
     self.stacked_widget.setMinimumSize(QSize(350, 300))
 

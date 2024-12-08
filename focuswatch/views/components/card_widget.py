@@ -14,10 +14,10 @@ class CardWidget(QWidget):
     self.title = title
     self.current_index = 0
     self.content_views = []
-    self.setupUi()
+    self._setup_ui()
     apply_stylesheet(self, "components/card_widget.qss")
 
-  def setupUi(self):
+  def _setup_ui(self):
     layout = QVBoxLayout(self)
     layout.setContentsMargins(0, 0, 0, 0)
 

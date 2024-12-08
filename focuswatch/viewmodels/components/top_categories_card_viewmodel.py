@@ -65,7 +65,7 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
       lambda: {'category': None, 'time': 0, 'children': [], 'visible': True}
     )
 
-    # First pass: Populate category_hierarchy with categories and time information
+    # First pass: Populate category_hierarchy with categories and sum children times
     for category_id, (time_spent, color, _) in self._top_items.items():
       if category_id == 'None':
         continue
@@ -78,7 +78,7 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
 
         category_data = category_hierarchy[category_id]
         category_data['category'] = category
-        category_data['time'] = time_spent
+        category_data['time'] += time_spent
 
         # Traverse up to the root parent and accumulate time
         parent_id = category.parent_category_id
@@ -87,7 +87,7 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
           parent_data['time'] += time_spent
           if parent_data['category'] is None:
             parent = self._category_service.get_category_by_id(
-              parent_id)  # get parent if it has no tracked time itself
+              parent_id)
             parent_data['category'] = parent
           parent_id = parent_data['category'].parent_category_id if parent_data['category'] else None
 

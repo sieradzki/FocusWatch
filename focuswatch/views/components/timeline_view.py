@@ -155,6 +155,10 @@ class TimelineView(QWidget):
         index += 1
         continue  # No activity in this chunk
 
+      if not self._viewmodel.get_category_name(category_id):
+        index += 1
+        continue  # Skip non-existent categories
+
       # Start of a new activity block
       start_index = index
       duration = self._minutes_per_chunk  # Start with minutes per chunk

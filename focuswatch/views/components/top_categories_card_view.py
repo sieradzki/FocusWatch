@@ -131,6 +131,8 @@ class TopCategoriesCardView(TopItemsCardView):
     row = 0
 
     for item_data in organized_categories.values():
+      if not item_data["category"]:
+        continue
       if not item_data["category"].parent_category_id:
         row = self._add_item_to_layout(item_data, row, total_time)
 

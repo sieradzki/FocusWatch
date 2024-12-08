@@ -3,12 +3,12 @@ from functools import partial
 from typing import TYPE_CHECKING, Optional
 
 from PySide6.QtCore import Qt, Slot
-from PySide6.QtGui import QAction, QColor
-from PySide6.QtWidgets import (QColorDialog, QComboBox, QDialog,
+from PySide6.QtGui import QAction, QColor, QFontMetrics
+from PySide6.QtWidgets import (QCheckBox, QColorDialog, QComboBox, QDialog,
                                QDialogButtonBox, QFormLayout, QFrame,
                                QGridLayout, QHBoxLayout, QLabel, QLineEdit,
                                QMenu, QMessageBox, QPushButton, QScrollArea,
-                               QSizePolicy, QSpacerItem, QVBoxLayout, QWidget, QCheckBox)
+                               QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
 from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.viewmodels.dialogs.category_dialog_viewmodel import \
@@ -252,19 +252,31 @@ class CategoryDialogView(QDialog):
     row = 0
     col = 0
     for index, keyword in enumerate(self._viewmodel.keywords):
-      keyword_button = QPushButton(keyword.name, self)
+      keyword_button = QPushButton(self)
       keyword_button.setObjectName(f"keywordButton_{index}")
       keyword_button.setProperty("class", "keywordButton")
       keyword_button.setCursor(Qt.PointingHandCursor)
 
-      keyword_button.setSizePolicy(
-        QSizePolicy.Expanding, QSizePolicy.Fixed)
+      keyword_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
       keyword_button.setFixedHeight(30)
+      keyword_button.setMaximumWidth(150)
+
+      # Elide text if it's too long
+      font_metrics = QFontMetrics(keyword_button.font())
+      elided_text = font_metrics.elidedText(
+          keyword.name, Qt.ElideRight, keyword_button.maximumWidth() - 30
+      )
+      keyword_button.setText(elided_text)
+
+      # Set tooltip if text was elided
+      if elided_text != keyword.name:
+        keyword_button.setToolTip(keyword.name)
 
       keyword_button.clicked.connect(partial(self._edit_keyword, index))
       keyword_button.setContextMenuPolicy(Qt.CustomContextMenu)
       keyword_button.customContextMenuRequested.connect(
-          partial(self._show_keyword_context_menu, index, keyword_button))
+          partial(self._show_keyword_context_menu, index, keyword_button)
+      )
       self._keywords_grid_layout.addWidget(keyword_button, row, col)
 
       col += 1
@@ -274,18 +286,19 @@ class CategoryDialogView(QDialog):
 
     # Place the "+" button in a new row, spanning all columns
     row += 1
-    self._keywords_grid_layout.addItem(QSpacerItem(
-        0, 0, QSizePolicy.Minimum, QSizePolicy.Minimum), row, 0)
+    self._keywords_grid_layout.addItem(
+        QSpacerItem(0, 0, QSizePolicy.Minimum, QSizePolicy.Minimum), row, 0
+    )
 
     add_keyword_button = QPushButton("+", self)
     add_keyword_button.setObjectName("addKeywordButton")
     add_keyword_button.setCursor(Qt.PointingHandCursor)
     add_keyword_button.setFixedHeight(30)
-    add_keyword_button.setSizePolicy(
-      QSizePolicy.Expanding, QSizePolicy.Fixed)
+    add_keyword_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     add_keyword_button.clicked.connect(self._show_keyword_dialog)
     self._keywords_grid_layout.addWidget(
-      add_keyword_button, row, 0, 1, max_columns)
+        add_keyword_button, row, 0, 1, max_columns
+    )
 
   def _show_keyword_context_menu(self, index: int, button: QPushButton, pos) -> None:
     """ Show the context menu for a keyword button. """

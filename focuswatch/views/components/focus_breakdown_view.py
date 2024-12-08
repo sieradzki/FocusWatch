@@ -23,11 +23,11 @@ class FocusBreakdownView(CardWidget):
     super().__init__("Focus Breakdown", parent)
     self._viewmodel = viewmodel
 
-    self._setup_ui()
+    self._setup_content()
     self._connect_signals()
     self.update_chart()
 
-  def _setup_ui(self) -> None:
+  def _setup_content(self) -> None:
     """ Set up the user interface. """
     self.stacked_widget.setMinimumHeight(200)
 
