@@ -18,6 +18,11 @@
         "line": "lineno",
         "thread_name": "threadName"
       }
+    },
+    "colored": {
+        "()": "focuswatch.logger.ColoredFormatter",
+        "format": "[%(levelname)s|%(module)s|L%(lineno)d] %(asctime)s: %(message)s",
+        "datefmt": "%Y-%m-%dT%H:%M:%S%z"
     }
   },
   "handlers": {

@@ -3,7 +3,13 @@ https://github.com/mCodingLLC/VideosSampleCode/blob/master/videos/135_modern_log
 import datetime as dt
 import json
 import logging
+import atexit
+import sys
+import os
 from typing import override
+
+from focuswatch.config import Config
+
 
 LOG_RECORD_BUILTIN_ATTRS = {
     "args",
@@ -76,3 +82,68 @@ class NonErrorFilter(logging.Filter):
   @override
   def filter(self, record: logging.LogRecord) -> bool | logging.LogRecord:
     return record.levelno <= logging.INFO
+
+
+class ColoredFormatter(logging.Formatter):
+  """ Formatter that adds color to log output based on level. """
+  BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE = range(8)
+
+  RESET_SEQ = "\033[0m"
+  COLOR_SEQ = "\033[1;%dm"
+  BOLD_SEQ = "\033[1m"
+
+  COLORS = {
+    "WARNING": YELLOW,
+    "INFO": WHITE,
+    "DEBUG": BLUE,
+    "CRITICAL": YELLOW,
+    "ERROR": RED
+  }
+
+  def format(self, record):
+    levelname = record.levelname
+    if levelname in self.COLORS:
+      levelname_color = self.COLOR_SEQ % (
+        30 + self.COLORS[levelname]) + levelname + self.RESET_SEQ
+      record.levelname = levelname_color
+    return logging.Formatter.format(self, record)
+
+
+def setup_logging():
+  # Get logging file path from config
+  config = Config()
+
+  if getattr(sys, "frozen", False):
+    # If the application is frozen (packaged)
+    config_file = config.default_logger_config_path
+    log_level = os.environ.get("FOCUSWATCH_LOG_LEVEL", "INFO").upper()
+  else:
+    # If running in development mode
+    config_file = config["logging"]["logger_config"]
+    log_level = os.environ.get("FOCUSWATCH_LOG_LEVEL", "DEBUG").upper()
+
+  if not os.path.exists(config_file):
+    raise FileNotFoundError(
+      f"Logging configuration file not found: {config_file}")
+
+  with open(config_file, encoding="utf-8") as f_in:
+    log_config = json.load(f_in)
+
+  # Replace the placeholder with the actual log file path
+  log_file_path = config.default_log_path
+  log_config["handlers"]["file_json"]["filename"] = log_file_path
+
+  # Set log levels based on environment variable
+  log_config["handlers"]["stdout"]["level"] = log_level
+  log_config["handlers"]["file_json"]["level"] = log_level
+  log_config["loggers"]["root"]["level"] = log_level
+
+  # Add color formatter to stdout handler
+  stdout_handler_config = log_config["handlers"]["stdout"]
+  stdout_handler_config["formatter"] = "colored"
+
+  logging.config.dictConfig(log_config)
+  queue_handler = logging.getHandlerByName("queue_handler")
+  if queue_handler is not None:
+    queue_handler.listener.start()
+    atexit.register(queue_handler.listener.stop)
