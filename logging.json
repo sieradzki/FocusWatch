@@ -18,6 +18,11 @@
         "line": "lineno",
         "thread_name": "threadName"
       }
+    },
+    "colored": {
+        "()": "focuswatch.logger.ColoredFormatter",
+        "format": "[%(levelname)s|%(module)s|L%(lineno)d] %(asctime)s: %(message)s",
+        "datefmt": "%Y-%m-%dT%H:%M:%S%z"
     }
   },
   "handlers": {
@@ -25,7 +30,7 @@
       "class": "logging.StreamHandler",
       "formatter": "simple",
       "stream": "ext://sys.stdout",
-      "level": "INFO"
+      "level": "{{LOG_LEVEL}}"
     },
     "stderr": {
       "class": "logging.StreamHandler",
@@ -35,7 +40,7 @@
     },
     "file_json": {
       "class": "logging.handlers.RotatingFileHandler",
-      "level": "DEBUG",
+      "level": "{{LOG_LEVEL}}",
       "formatter": "json",
       "filename": "{{LOG_FILE_PATH}}",
       "maxBytes": 5000000,
@@ -53,7 +58,7 @@
   },
   "loggers": {
     "root": {
-      "level": "DEBUG",
+      "level": "{{LOG_LEVEL}}",
       "handlers": [
         "queue_handler"
       ]

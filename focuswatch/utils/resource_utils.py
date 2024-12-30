@@ -129,7 +129,7 @@ def load_icon(icon_name: str) -> QIcon:
       logger.error(f"Failed to load icon (isNull): {icon_path}")
       return QIcon()
 
-    logger.debug(f"Successfully loaded icon: {icon_path}")
+    # logger.debug(f"Successfully loaded icon: {icon_path}")
     return icon
 
   except Exception as e:

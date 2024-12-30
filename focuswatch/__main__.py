@@ -1,6 +1,4 @@
 """ Main file for the FocusWatch application. """
-import atexit
-import json
 import logging.config
 import logging.handlers
 import os
@@ -12,7 +10,6 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QSystemTrayIcon
 
 from focuswatch.arguments import parse_arguments
-from focuswatch.config import Config
 from focuswatch.database.database_manager import DatabaseManager
 from focuswatch.services.activity_service import ActivityService
 from focuswatch.services.category_service import CategoryService
@@ -23,6 +20,7 @@ from focuswatch.viewmodels.main_viewmodel import MainViewModel
 from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 from focuswatch.views.mainwindow_view import MainWindowView
 from focuswatch.services.classifier_service import ClassifierService
+from focuswatch.logger import setup_logging
 
 # from qt_material import apply_stylesheet
 
@@ -32,35 +30,6 @@ logger = logging.getLogger(__name__)
 def start_watcher(watcher):
   logger.info("Starting the watcher")
   watcher.monitor()
-
-
-def setup_logging():
-  # Get logging file path from config
-  config = Config()
-
-  if getattr(sys, "frozen", False):
-    # If the application is frozen (packaged)
-    config_file = config.default_logger_config_path
-  else:
-    # If running in development mode
-    config_file = config["logging"]["logger_config"]
-
-  if not os.path.exists(config_file):
-    raise FileNotFoundError(
-      f"Logging configuration file not found: {config_file}")
-
-  with open(config_file, encoding="utf-8") as f_in:
-    log_config = json.load(f_in)
-
-  # Replace the placeholder with the actual log file path
-  log_file_path = config.default_log_path
-  log_config["handlers"]["file_json"]["filename"] = log_file_path
-
-  logging.config.dictConfig(log_config)
-  queue_handler = logging.getHandlerByName("queue_handler")
-  if queue_handler is not None:
-    queue_handler.listener.start()
-    atexit.register(queue_handler.listener.stop)
 
 
 def get_icon_path():
