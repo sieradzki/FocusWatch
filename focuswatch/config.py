@@ -48,7 +48,6 @@ class Config(MutableMapping):
     os.makedirs(os.path.dirname(self.default_log_path), exist_ok=True)
 
     self.config_file_path = config_file_path or self.default_config_path
-    self.config = []
     self.load_config()
 
   def initialize_config(self):

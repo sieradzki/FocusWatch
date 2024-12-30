@@ -93,8 +93,8 @@ class DatabaseConnection:
       cur.execute(query, params)
       self.conn.commit()
       rows_affected = cur.rowcount
-      logger.debug(
-        f"Execute update - Query: {query}, Params: {params}, Rows affected: {rows_affected}")
+      # logger.debug(
+      # f"Execute update - Query: {query}, Params: {params}, Rows affected: {rows_affected}")
       if return_cursor:
         return cur
       else:

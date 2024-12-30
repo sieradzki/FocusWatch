@@ -94,7 +94,7 @@ class SettingsViewModel(QObject):
     self._config = Config()
     self._filter_text = ""
     self._autostart_available = self.is_autostart_available()
-    self._autostart_enabled: bool = is_in_autostart()
+    self._autostart_enabled: bool = self.get_autostart_state()
 
   @Property(bool, notify=autostart_enabled_changed)
   def autostart_enabled(self) -> bool:
@@ -104,6 +104,7 @@ class SettingsViewModel(QObject):
   def autostart_enabled(self, value: bool):
     if self._autostart_enabled != value:
       self._autostart_enabled = value
+      self.toggle_autostart()
       self.autostart_enabled_changed.emit()
 
   @Property(str, notify=filter_text_changed)
@@ -133,19 +134,32 @@ class SettingsViewModel(QObject):
     """ Determine if autostart is available - for now just check if the app is frozen. """
     return is_frozen()
 
+  def get_autostart_state(self) -> bool:
+    """ Get the current autostart state dynamically. """
+    return is_in_autostart()
+
   def toggle_autostart(self) -> None:
     """ Toggle autostart state. """
+    logger.debug(f"Toggling autostart. Current state: {
+                 self._autostart_enabled}")
     if self._autostart_enabled:
-      remove_from_autostart()
+      success = add_to_autostart()
     else:
-      add_to_autostart()
-    self.autostart_enabled = not self._autostart_enabled
+      success = remove_from_autostart()
+
+    if success:
+      self.autostart_enabled_changed.emit()  # the state should be already changed
+      logger.info(f"Autostart {
+                  'enabled' if self._autostart_enabled else 'disabled'} successfully.")
+    else:
+      logger.error(f"Failed to toggle autostart. Keeping current state: {
+                   self._autostart_enabled}")
 
   def restore_defaults(self) -> None:
     """ Restore default settings. """
     self._config.initialize_config()
     self._config.write_config_to_file()
-    self.autostart_enabled = is_in_autostart()
-    self.autostart_available = self.is_autostart_available()
+    self._autostart_enabled = self.get_autostart_state()
+    self._autostart_available = self.is_autostart_available()
 
     logger.info("Settings restored to default values.")
