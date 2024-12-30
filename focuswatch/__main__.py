@@ -41,9 +41,11 @@ def setup_logging():
   if getattr(sys, "frozen", False):
     # If the application is frozen (packaged)
     config_file = config.default_logger_config_path
+    log_level = os.environ.get("FOCUSWATCH_LOG_LEVEL", "INFO").upper()
   else:
     # If running in development mode
     config_file = config["logging"]["logger_config"]
+    log_level = os.environ.get("FOCUSWATCH_LOG_LEVEL", "DEBUG").upper()
 
   if not os.path.exists(config_file):
     raise FileNotFoundError(
@@ -55,6 +57,11 @@ def setup_logging():
   # Replace the placeholder with the actual log file path
   log_file_path = config.default_log_path
   log_config["handlers"]["file_json"]["filename"] = log_file_path
+
+  # Set log levels based on environment variable
+  log_config["handlers"]["stdout"]["level"] = log_level
+  log_config["handlers"]["file_json"]["level"] = log_level
+  log_config["loggers"]["root"]["level"] = log_level
 
   logging.config.dictConfig(log_config)
   queue_handler = logging.getHandlerByName("queue_handler")

@@ -25,7 +25,7 @@
       "class": "logging.StreamHandler",
       "formatter": "simple",
       "stream": "ext://sys.stdout",
-      "level": "INFO"
+      "level": "{{LOG_LEVEL}}"
     },
     "stderr": {
       "class": "logging.StreamHandler",
@@ -35,7 +35,7 @@
     },
     "file_json": {
       "class": "logging.handlers.RotatingFileHandler",
-      "level": "DEBUG",
+      "level": "{{LOG_LEVEL}}",
       "formatter": "json",
       "filename": "{{LOG_FILE_PATH}}",
       "maxBytes": 5000000,
@@ -53,7 +53,7 @@
   },
   "loggers": {
     "root": {
-      "level": "DEBUG",
+      "level": "{{LOG_LEVEL}}",
       "handlers": [
         "queue_handler"
       ]
