@@ -1,36 +1,96 @@
-# FocusWatch
- Activity monitoring and logging with categorization
+# Focuswatch 
 
-Currently supports Linux systems with xorg.
-Windows support is currently broken, it will be fixed on the next release.
-When running on Windows, it has to be launched with administrator privileges.
-# Setup
+### Description:
+PySide6 desktop time tracking app for Linux systems with xorg and Windows.
 
-1. Install python 3.12
-2. Install required libraries
-```
-pip install -r requirements.txt
-```
+---
 
-## Additional steps for Linux
-(Example commands for Arch-based systems)
+## Table of Contents:
+- [Focuswatch](#focuswatch)
+    - [Description:](#description)
+  - [Table of Contents:](#table-of-contents)
+  - [1. Introduction](#1-introduction)
+  - [2. Features](#2-features)
+  - [3. Showcase # todo](#3-showcase--todo)
+  - [4. Installation and Setup](#4-installation-and-setup)
+    - [4.1 Development Setup](#41-development-setup)
+    - [4.2 Using the Latest Release](#42-using-the-latest-release)
 
-3. Install xdotool
-```console
-sudo pacman -S xdotool
-```
+---
 
-4. Install xprintidle
-```console
-sudo pacman -S xprintidle
-```
+## 1. Introduction
 
-# Usage
-```console
-cd focuswatch
-python -m focuswatch
-```
+Activity monitoring and logging with categorization and data visualization.
 
-Or you can download the latest release from the releases page and run the executable.
+---
 
-The program by default runs in the system tray, to open the dashboard right click on the icon and choose the option from the menu.
+## 2. Features
+- User-friendly interface for data visualization and categorization.
+- Track time spent on each activity.
+- Customizable categories for time tracking.
+- Focused / distracted activity tagging.
+- Categorization helper
+- Retroactive categorization based on current ruleset
+
+---
+
+## 3. Showcase # todo
+images/screenshots of the application # todo
+
+
+Main dashboard
+
+---
+
+## 4. Installation and Setup
+
+### 4.1 Development Setup
+Follow these steps to set up the project for development:
+
+1. **Clone the Repository:**
+   ```bash
+   git clone https://github.com/sieradzki/FocusWatch.git
+   cd FocusWatch
+   ```
+
+2. **Create a Virtual Environment (Optional):**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install Dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. (For Linux) **Install xorg Dependencies:**
+   ```bash
+   sudo pacman -S install xdotool xprintidle # Arch Linux
+   sudo apt-get install xdotool xprintidle # Debian/Ubuntu
+   ```
+
+5. **Run the Application:**
+   ```bash
+   python -m focuswatch
+   ```
+   By default the app will run in the background and will be accessible from the system tray.
+
+---
+
+### 4.2 Using the Latest Release
+1. **Download the Executable:**
+   - Visit the [Releases](https://github.com/sieradzki/FocusWatch/releases) section of the GitHub repository.
+   - Download the latest executable file for your operating system.
+
+2. **Run the Application:**
+   - Windows: Double-click the `.exe` file.
+   - Linux: Ensure the file has executable permissions, then run:
+     ```bash
+     ./focuswatch-linux
+     ```
+
+3. **No Installation Required:**
+   The application runs standalone; dependencies are bundled with the executable.
+
+---
