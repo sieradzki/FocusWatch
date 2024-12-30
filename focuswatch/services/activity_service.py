@@ -43,7 +43,7 @@ class ActivityService:
 
     try:
       self._db_conn.execute_update(query, params)
-      logger.debug(f"Inserted new activity: {activity.window_name}")
+      # logger.debug(f"Inserted new activity: {activity.window_name}")
       return True
     except Exception as e:
       logger.error(f"Failed to insert activity: {e}")
