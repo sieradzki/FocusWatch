@@ -32,7 +32,7 @@ class TopTitlesCardViewModel(TopItemsCardViewModel):
     top_titles = self._activity_service.get_period_entries_name_time_total(
       self._period_start, self._period_end)[:self._top_items_limit]
 
-    for name, category, time, focused in top_titles:
+    for name, _, time, _ in top_titles:
       if not self._config["dashboard"]["display_cards_idle"]:
         if name == "afk":
           continue

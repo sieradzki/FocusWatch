@@ -14,18 +14,18 @@ def get_base_path() -> str:
   Returns:
     The base path as a string.
   """
-  if getattr(sys, 'frozen', False):
+  if getattr(sys, "frozen", False):
     base_path = sys._MEIPASS
   else:
     base_path = os.path.abspath(os.path.join(
-      os.path.dirname(__file__), '..', '..'))
+      os.path.dirname(__file__), "..", ".."))
   return base_path
 
 
 BASE_DIR = get_base_path()
-BASE_RESOURCES_DIR = os.path.join(BASE_DIR, 'resources')
-BASE_STYLES_DIR = os.path.join(BASE_RESOURCES_DIR, 'styles')
-BASE_ICONS_DIR = os.path.join(BASE_RESOURCES_DIR, 'icons')
+BASE_RESOURCES_DIR = os.path.join(BASE_DIR, "resources")
+BASE_STYLES_DIR = os.path.join(BASE_RESOURCES_DIR, "styles")
+BASE_ICONS_DIR = os.path.join(BASE_RESOURCES_DIR, "icons")
 
 
 def apply_stylesheet(target, style_path: str) -> None:
@@ -43,7 +43,7 @@ def apply_stylesheet(target, style_path: str) -> None:
 
   file = QFile(stylesheet_path)
   if file.open(QFile.ReadOnly | QFile.Text):
-    stylesheet = str(file.readAll(), 'utf-8')
+    stylesheet = str(file.readAll(), "utf-8")
     target.setStyleSheet(stylesheet)
   else:
     logger.error(f"Failed to open stylesheet file: {style_path}")
@@ -80,7 +80,7 @@ def load_stylesheets(stylesheet_paths: list[str]) -> str:
 
     file = QFile(stylesheet_path)
     if file.open(QFile.ReadOnly | QFile.Text):
-      stylesheet = str(file.readAll(), 'utf-8')
+      stylesheet = str(file.readAll(), "utf-8")
       stylesheets.append(stylesheet)
 
   return "\n".join(stylesheets)
@@ -132,7 +132,6 @@ def load_icon(icon_name: str) -> QIcon:
     # logger.debug(f"Successfully loaded icon: {icon_path}")
     return icon
 
-  except Exception as e:
-    logger.exception(f"Exception occurred while loading icon '{
-        icon_path}': {e}")
+  except FileNotFoundError as e:
+    logger.error(f"Icon file not found: {icon_path} - {e}")
     return QIcon()

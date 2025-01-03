@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 
 class CategoriesViewModel(QObject):
+  """ Categories page view model for FocusWatch. """
   retroactive_categorization_progress = Signal(int, int)
   categories_changed = Signal()
   filter_text_changed = Signal()
@@ -82,24 +83,24 @@ class CategoriesViewModel(QObject):
     temp_cat_dict: Dict[int, Dict[str, Any]] = defaultdict(dict)
     for category in self._categories:
       category_dict = {
-          'category': category,
-          'keywords': cat_key[category.id],
-          'children': [],
-          'expanded': True,
+          "category": category,
+          "keywords": cat_key[category.id],
+          "children": [],
+          "expanded": True,
       }
       if category.parent_category_id is None:
         temp_cat_dict[category.id] = category_dict
       elif category.parent_category_id not in temp_cat_dict:
         temp_cat_dict[category.parent_category_id] = {
-            'category': None,
-            'keywords': [],
-            'children': [category.id],
-            'expanded': True,
+            "category": None,
+            "keywords": [],
+            "children": [category.id],
+            "expanded": True,
         }
         temp_cat_dict[category.id] = category_dict
       else:
         parent_category = temp_cat_dict[category.parent_category_id]
-        parent_category['children'].append(category.id)
+        parent_category["children"].append(category.id)
         temp_cat_dict[category.id] = category_dict
 
     cat_dict: Dict[int, Dict[str, Any]] = {}
@@ -107,7 +108,7 @@ class CategoriesViewModel(QObject):
     def organize_categories_recursive(cat_id):
       category_data = temp_cat_dict[cat_id]
       cat_dict[cat_id] = category_data
-      for child_id in category_data['children']:
+      for child_id in category_data["children"]:
         organize_categories_recursive(child_id)
 
     root_categories = [
@@ -175,13 +176,13 @@ class CategoriesViewModel(QObject):
   def export_categories(self, file_path: str) -> bool:
     """ Export categories to a YAML file. """
     categories = self._category_service.export_categories_to_yml()
-    with open(file_path, 'w') as file:
+    with open(file_path, "w", encoding="utf-8") as file:
       file.write(categories)
     return True
 
   def import_categories(self, file_path: str) -> bool:
     """ Import categories from a YAML file. """
-    with open(file_path, 'r') as file:
+    with open(file_path, "r", encoding="utf-8") as file:
       categories = file.read()
 
     self._category_service.import_categories_from_yml(categories)

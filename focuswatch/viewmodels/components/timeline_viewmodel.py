@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class TimelineViewModel(QObject):
+  """ Viewmodel for the Timeline component in the Dashboard. """
   period_start_changed = Signal()
   period_end_changed = Signal()
   timeline_data_changed = Signal()
@@ -108,7 +109,9 @@ class TimelineViewModel(QObject):
         timestamp_start += timedelta(minutes=duration_in_this_quarter)
 
     for quarter, entries in hour_chunk_entries.items():
-      max_category = max(entries, key=lambda category_id: entries[category_id])
+      max_category = max(entries, key=lambda category_id,
+                         # W0640 Capture 'entries' by value
+                         entries=entries: entries[category_id])
       hour, index = quarter.split(sep=":")
       hour_entries[int(hour)][int(index)] = max_category
 
@@ -190,9 +193,9 @@ class TimelineViewModel(QObject):
     result = []
     for (window_class, window_name), duration in top_entries:
       result.append({
-        'window_class': window_class,
-        'window_name': window_name,
-        'duration': duration
+        "window_class": window_class,
+        "window_name": window_name,
+        "duration": duration
       })
 
     return result

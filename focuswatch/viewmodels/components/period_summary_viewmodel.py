@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 

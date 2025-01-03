@@ -62,12 +62,12 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
   def organize_categories(self) -> None:
     """ Organize top items (categories) hierarchically """
     category_hierarchy = defaultdict(
-      lambda: {'category': None, 'time': 0, 'children': [], 'visible': True}
+      lambda: {"category": None, "time": 0, "children": [], "visible": True}
     )
 
     # First pass: Populate category_hierarchy with categories and sum children times
-    for category_id, (time_spent, color, _) in self._top_items.items():
-      if category_id == 'None':
+    for category_id, (time_spent, _, _) in self._top_items.items():
+      if category_id == "None":
         continue
       category_id = int(category_id)
       category = self._category_service.get_category_by_id(category_id)
@@ -77,33 +77,33 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
             continue
 
         category_data = category_hierarchy[category_id]
-        category_data['category'] = category
-        category_data['time'] += time_spent
+        category_data["category"] = category
+        category_data["time"] += time_spent
 
         # Traverse up to the root parent and accumulate time
         parent_id = category.parent_category_id
         while parent_id:
           parent_data = category_hierarchy[parent_id]
-          parent_data['time'] += time_spent
-          if parent_data['category'] is None:
+          parent_data["time"] += time_spent
+          if parent_data["category"] is None:
             parent = self._category_service.get_category_by_id(
               parent_id)
-            parent_data['category'] = parent
-          parent_id = parent_data['category'].parent_category_id if parent_data['category'] else None
+            parent_data["category"] = parent
+          parent_id = parent_data["category"].parent_category_id if parent_data["category"] else None
 
     # Second pass: Establish parent-child relationships and filter top-level categories
     self._organized_categories = {}
     for category_id, category_data in category_hierarchy.items():
-      category = category_data['category']
+      category = category_data["category"]
       parent_id = category.parent_category_id if category else None
       if category and parent_id:
-        category_hierarchy[parent_id]['children'].append(category_data)
+        category_hierarchy[parent_id]["children"].append(category_data)
       else:
         self._organized_categories[category_id] = category_data
 
     # Sort children by time in descending order
     for category_data in category_hierarchy.values():
-      category_data['children'].sort(key=lambda x: x['time'], reverse=True)
+      category_data["children"].sort(key=lambda x: x["time"], reverse=True)
 
     self.organized_categories_changed.emit()
 
@@ -113,16 +113,16 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
       if cat_id == category_id:
         return cat_data
 
-      if cat_data['children']:
+      if cat_data["children"]:
         # Check if the category is directly within the children
-        for child_data in cat_data['children']:
-          if child_data['category'].id == category_id:
+        for child_data in cat_data["children"]:
+          if child_data["category"].id == category_id:
             return child_data
 
         # Recurse into children categories
-        for child_data in cat_data['children']:
+        for child_data in cat_data["children"]:
           found = self._find_category_data(
-            category_id, {child_data['category'].id: child_data})
+            category_id, {child_data["category"].id: child_data})
           if found:
             return found
 
@@ -134,23 +134,23 @@ class TopCategoriesCardViewModel(TopItemsCardViewModel):
     cat_data = self._find_category_data(
       category_id, self._organized_categories)
     if cat_data:
-      cat_data['visible'] = not cat_data['visible']
+      cat_data["visible"] = not cat_data["visible"]
       self.visible_categories_changed.emit()
 
   def is_category_visible(self, category_id: int) -> bool:
     """ Check if a category is currently visible. """
     cat_data = self._find_category_data(
       category_id, self._organized_categories)
-    return cat_data['visible'] if cat_data else False
+    return cat_data["visible"] if cat_data else False
 
   def get_visible_categories(self) -> List[Tuple[int, int]]:
     """ Get the list of currently visible categories and their times. """
     visible_categories = []
 
     def add_visible_categories(cat_data: Dict):
-      if cat_data['visible']:
-        visible_categories.append((cat_data['category'].id, cat_data['time']))
-        for child in cat_data['children']:
+      if cat_data["visible"]:
+        visible_categories.append((cat_data["category"].id, cat_data["time"]))
+        for child in cat_data["children"]:
           add_visible_categories(list(child.values())[0])
 
     for cat_data in self._organized_categories.values():
