@@ -1,6 +1,7 @@
 """ Database connection module for FocusWatch. 
 
-This module is responsible for managing the connection to the SQLite database used by FocusWatch. It provides methods for creating, updating, and querying the database. The class uses the sqlite3 module to interact with the database.
+This module is responsible for managing the connection to the SQLite database used by FocusWatch. 
+It provides methods for creating, updating, and querying the database. The class uses the sqlite3 module to interact with the database.
 """
 
 import sqlite3
@@ -41,7 +42,7 @@ class DatabaseConnection:
         dburi, uri=True, check_same_thread=False, timeout=1)
     except sqlite3.OperationalError as e:
       logger.error(f"Error connecting to database: {e}")
-      raise ConnectionError(f"Failed to connect to the database: {e}")
+      raise ConnectionError(f"Failed to connect to the database: {e}") from e
 
   def connect_or_create(self):
     """ Connect to the database, creating it if it doesn't exist. """
