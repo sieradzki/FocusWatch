@@ -1,6 +1,7 @@
 """ Category service module for the FocusWatch application. """
 
 import logging
+import sqlite3
 from dataclasses import asdict
 from datetime import datetime
 from typing import List, Optional, Tuple
@@ -24,7 +25,7 @@ class CategoryService:
 
     self._keyword_service = KeywordService()
 
-  def create_category(self, category: Category) -> bool:
+  def create_category(self, category: Category) -> Optional[int]:
     """ Create a new category in the database.
 
     Args:
@@ -36,7 +37,7 @@ class CategoryService:
     # Check if category exists within current scope
     # For example: we can have work->programming and hobby->programming but not work->programming and work->programming
     if category.parent_category_id is None:
-      query = 'SELECT * FROM categories WHERE name=? AND parent_category IS NULL'
+      query = "SELECT * FROM categories WHERE name=? AND parent_category IS NULL"
       params = (category.name,)
     else:
       # Don't allow category with the same name as parent category
@@ -44,27 +45,27 @@ class CategoryService:
       if parent_category and category.name == parent_category.name:
         logger.warning(
           f"Cannot create category with same name as parent: {category.name}")
-        return False
-      query = 'SELECT * FROM categories WHERE name=? AND parent_category=?'
+        return None
+      query = "SELECT * FROM categories WHERE name=? AND parent_category=?"
       params = (category.name, category.parent_category_id)
 
-    if self._db_conn.execute_query(query, params):
-      logger.warning(
-        f"Category already exists within current scope: {category.name}")
-      return False
+    try:
+      if self._db_conn.execute_query(query, params):
+        logger.warning(
+          f"Category already exists within current scope: {category.name}")
+        return None
 
-    insert_query = 'INSERT INTO categories (name, parent_category, color, focused) VALUES (?, ?, ?, ?)'
-    insert_params = (
+      insert_query = "INSERT INTO categories (name, parent_category, color, focused) VALUES (?, ?, ?, ?)"
+      insert_params = (
         category.name, category.parent_category_id, category.color, category.focused)
 
-    try:
       cursor = self._db_conn.execute_update(
         insert_query, insert_params, return_cursor=True)
       new_category_id = cursor.lastrowid
       logger.info(f"Created new category: {
                   category.name} with ID {new_category_id}")
       return new_category_id
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to create category: {e}")
       return None
 
@@ -85,7 +86,7 @@ class CategoryService:
       if result:
         return Category(*result[0])
       return None
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve category: {e}")
       return None
 
@@ -100,7 +101,7 @@ class CategoryService:
     try:
       results = self._db_conn.execute_query(query)
       return [Category(*row) for row in results]
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve categories: {e}")
       return []
 
@@ -115,7 +116,7 @@ class CategoryService:
     """
     # Check if category exists within current scope
     if category.parent_category_id is None:
-      query = 'SELECT * FROM categories WHERE name=? AND parent_category IS NULL AND id!=?'
+      query = "SELECT * FROM categories WHERE name=? AND parent_category IS NULL AND id!=?"
       params = (category.name, category.id)
     else:
       # Don't allow category with the same name as parent category
@@ -124,25 +125,25 @@ class CategoryService:
         logger.warning(
           f"Cannot update category to same name as parent: {category.name}")
         return False
-      query = 'SELECT * FROM categories WHERE name=? AND parent_category=? AND id!=?'
+      query = "SELECT * FROM categories WHERE name=? AND parent_category=? AND id!=?"
       params = (category.name, category.parent_category_id, category.id)
 
-    if self._db_conn.execute_query(query, params):
-      logger.warning(f"Category with name {category.name} and parent_id {
-                     category.parent_category_id} already exists.")
-      return False
-
-    update_query = '''UPDATE categories
-                      SET name = ?, parent_category = ?, color = ?, focused = ?
-                      WHERE id = ?'''
-    update_params = (category.name, category.parent_category_id,
-                     category.color, category.focused, category.id)
-
     try:
+      if self._db_conn.execute_query(query, params):
+        logger.warning(f"Category with name {category.name} and parent_id {
+                       category.parent_category_id} already exists.")
+        return False
+
+      update_query = """UPDATE categories
+                        SET name = ?, parent_category = ?, color = ?, focused = ?
+                        WHERE id = ?"""
+      update_params = (category.name, category.parent_category_id,
+                       category.color, category.focused, category.id)
+
       self._db_conn.execute_update(update_query, update_params)
       logger.info(f"Updated category: {category.name}")
       return True
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to update category: {e}")
       return False
 
@@ -173,7 +174,7 @@ class CategoryService:
       logger.info(f"Deleted keywords for category ID: {category_id}")
 
       return True
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to delete category: {e}")
       return False
 
@@ -186,7 +187,7 @@ class CategoryService:
     Returns:
       int: The depth of the category (0 for root categories).
     """
-    query = '''
+    query = """
       WITH RECURSIVE CategoryHierarchy(id, depth) AS (
         SELECT id, 0 as depth FROM categories WHERE parent_category IS NULL
         UNION ALL
@@ -194,45 +195,48 @@ class CategoryService:
         JOIN CategoryHierarchy ch ON c.parent_category = ch.id
       )
       SELECT depth FROM CategoryHierarchy WHERE id = ?;
-    '''
+    """
     params = (category_id,)
 
     try:
       result = self._db_conn.execute_query(query, params)
       return result[0][0] if result else 0
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to get category depth: {e}")
       return 0
 
   def insert_default_categories(self) -> None:
     """ Insert default categories into the database."""
     logger.info("Inserting default categories.")
-    self._db_conn.execute_update('DELETE FROM categories;')
-    self._db_conn.execute_update('DELETE FROM keywords;')
+    try:
+      self._db_conn.execute_update("DELETE FROM categories;")
+      self._db_conn.execute_update("DELETE FROM keywords;")
 
-    categories = [
-      ("Work", None, "#00cc00", True), ("Programming", "Work", None, True),
-      ("Documents", "Work", None, True), ("Image", "Work", None, True),
-      ("Audio", "Work", None, True), ("3D", "Work", None, True),
-      ("Comms", None, "#33ccff", False), ("IM", "Comms", None, False),
-      ("Email", "Comms", None, False), ("Media", None, "#ff0000", False),
-      ("Games", "Media", None, False), ("Video", "Media", None, False),
-      ("Social media", "Media", None, False), ("Music", "Media", None, False),
-      ("Productivity", None, "#5546B5",
-       True), ("Uncategorized", None, "#8c8c8c", False),
-      ("AFK", None, "#3d3d3d", False)
-    ]
+      categories = [
+        ("Work", None, "#00cc00", True), ("Programming", "Work", None, True),
+        ("Documents", "Work", None, True), ("Image", "Work", None, True),
+        ("Audio", "Work", None, True), ("3D", "Work", None, True),
+        ("Comms", None, "#33ccff", False), ("IM", "Comms", None, False),
+        ("Email", "Comms", None, False), ("Media", None, "#ff0000", False),
+        ("Games", "Media", None, False), ("Video", "Media", None, False),
+        ("Social media", "Media", None, False), ("Music", "Media", None, False),
+        ("Productivity", None, "#5546B5",
+         True), ("Uncategorized", None, "#8c8c8c", False),
+        ("AFK", None, "#3d3d3d", False)
+      ]
 
-    category_ids = {}
-    for name, parent_name, color, focused in categories:
-      parent_id = category_ids.get(parent_name)
-      category = Category(
-        name=name, parent_category_id=parent_id, color=color, focused=focused)
-      if self.create_category(category):
-        category_id = self.get_category_id_from_name(name)
-        category_ids[name] = category_id
-      else:
-        logger.warning(f"Failed to create category: {name}")
+      category_ids = {}
+      for name, parent_name, color, focused in categories:
+        parent_id = category_ids.get(parent_name)
+        category = Category(
+          name=name, parent_category_id=parent_id, color=color, focused=focused)
+        if self.create_category(category):
+          category_id = self.get_category_id_from_name(name)
+          category_ids[name] = category_id
+        else:
+          logger.warning(f"Failed to create category: {name}")
+    except sqlite3.Error as e:
+      logger.error(f"Failed to insert default categories: {e}")
 
   def get_daily_category_time_totals(self) -> List[Tuple[int, int]]:
     """ Return the total time spent on each category for today.
@@ -248,7 +252,10 @@ class CategoryService:
       GROUP BY category_id
       ORDER BY total_time_seconds DESC;
     """
-    return self._db_conn.execute_query(query)
+    try:
+      return self._db_conn.execute_query(query)
+    except sqlite3.Error as e:
+      logger.error(f"Failed to get daily category time totals: {e}")
 
   def get_date_category_time_totals(self, date: datetime) -> List[Tuple[int, int]]:
     """ Return the total time spent on each category for a given date.
@@ -269,7 +276,12 @@ class CategoryService:
       ORDER BY total_time_seconds DESC;
     """
     params = (formatted_date,)
-    return self._db_conn.execute_query(query, params)
+    try:
+      return self._db_conn.execute_query(query, params)
+    except sqlite3.Error as e:
+      logger.error(f"Failed to get category time totals for {
+                   formatted_date}: {e}")
+      return []
 
   def get_period_category_time_totals(self, start_date: datetime, end_date: Optional[datetime] = None) -> List[Tuple[int, int]]:
     """ Return the total time spent on each category for a given period.
@@ -303,8 +315,11 @@ class CategoryService:
         ORDER BY total_time_seconds DESC;
       """
       params = (formatted_start_date,)
-
-    return self._db_conn.execute_query(query, params)
+    try:
+      return self._db_conn.execute_query(query, params)
+    except sqlite3.Error as e:
+      logger.error(f"Failed to get category time totals for period: {e}")
+      return []
 
   def get_category_id_from_name(self, category_name: str) -> Optional[int]:
     """ Return the id of a category given its name.
@@ -315,10 +330,14 @@ class CategoryService:
     Returns:
       Optional[int]: The ID of the category if found, None otherwise.
     """
-    query = 'SELECT id FROM categories WHERE name = ?'
+    query = "SELECT id FROM categories WHERE name = ?"
     params = (category_name,)
-    result = self._db_conn.execute_query(query, params)
-    return result[0][0] if result else None
+    try:
+      result = self._db_conn.execute_query(query, params)
+      return result[0][0] if result else None
+    except sqlite3.Error as e:
+      logger.error(f"Failed to get category id from name: {e}")
+      return None
 
   def get_category_by_name(self, category_name: str) -> Optional[Category]:
     """ Return a category given its name.
@@ -329,7 +348,7 @@ class CategoryService:
     Returns:
       Optional[Category]: The Category object if found, None otherwise.
     """
-    query = 'SELECT * FROM categories WHERE name = ?'
+    query = "SELECT * FROM categories WHERE name = ?"
     params = (category_name,)
 
     try:
@@ -337,8 +356,8 @@ class CategoryService:
       if result:
         return Category(*result[0])
       return None
-    except Exception as e:
-      logger.error(f"Failed to retrieve category: {e}")
+    except sqlite3.Error as e:
+      logger.error(f"Failed to retrieve category by name: {e}")
       return None
 
   # TODO remove on watcher service refactor
@@ -351,10 +370,14 @@ class CategoryService:
     Returns:
       bool: True if the category is focused, False otherwise.
     """
-    query = 'SELECT focused FROM categories WHERE id = ?'
+    query = "SELECT focused FROM categories WHERE id = ?"
     params = (category_id,)
-    result = self._db_conn.execute_query(query, params)
-    return bool(result[0][0]) if result else False
+    try:
+      result = self._db_conn.execute_query(query, params)
+      return bool(result[0][0]) if result else False
+    except sqlite3.Error as e:
+      logger.error(f"Failed to retrieve category focused status: {e}")
+      return False
 
   def export_categories_to_yml(self) -> str:
     """ Export categories and their keywords to a YAML string.
@@ -362,45 +385,44 @@ class CategoryService:
     Returns:
         str: The YAML string representing the categories and keywords.
     """
-    categories = self.get_all_categories()
-    categories_dict = []
-
-    for category in categories:
-      category_dict = asdict(category)
-
-      # Retrieve parent_category_id
-      parent_category_id = category_dict.get('parent_category_id')
-
-      if parent_category_id is not None:
-        # Get the parent category's name
-        parent_category = self.get_category_by_id(parent_category_id)
-        if parent_category:
-          category_dict['parent_name'] = parent_category.name
-        else:
-          logger.warning(f"Parent category with ID {
-                         parent_category_id} not found.")
-          category_dict['parent_name'] = None
-      else:
-        category_dict['parent_name'] = None
-
-      # Remove 'parent_category_id' from the dict
-      category_dict.pop('parent_category_id', None)
-
-      # Get keywords for this category
-      keywords = self._keyword_service.get_keywords_for_category(category.id)
-      keyword_dicts = [{'name': k.name, 'match_case': k.match_case}
-                       for k in keywords]
-      category_dict['keywords'] = keyword_dicts
-
-      categories_dict.append(category_dict)
-
     try:
+      categories = self.get_all_categories()
+      categories_dict = []
+
+      for category in categories:
+        category_dict = asdict(category)
+
+        # Retrieve parent_category_id
+        parent_category_id = category_dict.get("parent_category_id")
+
+        if parent_category_id is not None:
+          # Get the parent category's name
+          parent_category = self.get_category_by_id(parent_category_id)
+          if parent_category:
+            category_dict["parent_name"] = parent_category.name
+          else:
+            logger.warning(f"Parent category with ID {
+                           parent_category_id} not found.")
+            category_dict["parent_name"] = None
+        else:
+          category_dict["parent_name"] = None
+
+        # Remove 'parent_category_id' from the dict
+        category_dict.pop("parent_category_id", None)
+
+        # Get keywords for this category
+        keywords = self._keyword_service.get_keywords_for_category(category.id)
+        keyword_dicts = [{"name": k.name, "match_case": k.match_case}
+                         for k in keywords]
+        category_dict["keywords"] = keyword_dicts
+
+        categories_dict.append(category_dict)
+
       yaml_str = yaml.dump(categories_dict, sort_keys=False)
-      logger.debug(f"Exported categories and keywords to YAML:\n{yaml_str}")
+      logger.debug("Exported categories and keywords to YAML.")
       return yaml_str
-    except yaml.YAMLError as e:
-      logger.error(
-        f"Failed to serialize categories and keywords to YAML: {e}")
+    except (yaml.YAMLError, sqlite3.Error) as e:
+      logger.error(f"Failed to export categories and keywords: {e}")
       raise
 
   def import_categories_from_yml(self, yml_str: str) -> bool:
@@ -414,16 +436,16 @@ class CategoryService:
     """
     try:
       categories = yaml.safe_load(yml_str)
-      self._db_conn.execute_update('DELETE FROM categories;')
-      self._db_conn.execute_update('DELETE FROM keywords;')
+      self._db_conn.execute_update("DELETE FROM categories;")
+      self._db_conn.execute_update("DELETE FROM keywords;")
 
       name_to_id = {}
 
       for category_data in categories:
-        parent_name = category_data.pop('parent_name', None)
+        parent_name = category_data.pop("parent_name", None)
         keywords_data = category_data.pop(
-          'keywords', [])
-        category_data.pop('id', None)
+          "keywords", [])
+        category_data.pop("id", None)
 
         parent_category_id = None
 
@@ -439,14 +461,14 @@ class CategoryService:
               parent_category_id = parent_id
             else:
               logger.warning(f"Parent category '{parent_name}' not found for '{
-                             category_data['name']}'")
+                             category_data["name"]}'")
               parent_category_id = None
 
         category = Category(
-            name=category_data['name'],
+            name=category_data["name"],
             parent_category_id=parent_category_id,
-            color=category_data.get('color'),
-            focused=category_data.get('focused', 0)
+            color=category_data.get("color"),
+            focused=category_data.get("focused", 0)
         )
 
         new_category_id = self.create_category(category)
@@ -457,19 +479,15 @@ class CategoryService:
           # Add keywords associated with this category
           for keyword_data in keywords_data:
             keyword = Keyword(
-                name=keyword_data['name'],
+                name=keyword_data["name"],
                 category_id=new_category_id,
-                match_case=keyword_data.get('match_case', False)
+                match_case=keyword_data.get("match_case", False)
             )
             self._keyword_service.add_keyword(keyword)
         else:
           logger.error(f"Failed to create category '{category.name}'")
 
       return True
-    except yaml.YAMLError as e:
-      logger.error(
-        f"Failed to deserialize categories and keywords from YAML: {e}")
-      return False
-    except Exception as e:
+    except (yaml.YAMLError, sqlite3.Error) as e:
       logger.error(f"Failed to import categories and keywords: {e}")
       return False
