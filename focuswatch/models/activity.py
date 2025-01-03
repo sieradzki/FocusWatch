@@ -18,7 +18,7 @@ class Activity:
   def __post_init__(self):
     """ Validate the activity data after initialization. """
     if isinstance(self.time_start, str):
-        self.time_start = datetime.fromisoformat(self.time_start)
+      self.time_start = datetime.fromisoformat(self.time_start)
     if isinstance(self.time_stop, str):
       self.time_stop = datetime.fromisoformat(self.time_stop)
     if self.time_stop is not None and self.time_start > self.time_stop:
