@@ -1,22 +1,16 @@
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional
+from typing import Optional
 
-from PySide6.QtCore import QObject, QPoint, QSize, Qt, Signal, Slot
-from PySide6.QtGui import QColor, QHoverEvent
-from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QScrollArea,
-                               QSizePolicy, QSpacerItem, QToolTip, QVBoxLayout,
-                               QWidget)
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from focuswatch.utils.resource_utils import apply_stylesheet
-from focuswatch.viewmodels.components.timeline_viewmodel import \
-    TimelineViewModel
 
 logger = logging.getLogger(__name__)
 
 
 class ActivityCard(QWidget):
-  """A widget representing an activity in the timeline."""
+  """ A widget representing an activity in the timeline. """
 
   def __init__(
       self,
@@ -42,7 +36,7 @@ class ActivityCard(QWidget):
     apply_stylesheet(self, "components/activity_card.qss")
 
   def _setup_ui(self) -> None:
-    """Initialize the activity card UI."""
+    """ Initialize the activity card UI. """
     self._layout = QHBoxLayout(self)
     self._layout.setContentsMargins(0, 0, 0, 2)
     self._layout.setSpacing(0)
@@ -65,7 +59,7 @@ class ActivityCard(QWidget):
     # self._text_container.setStyleSheet(f"background-color: {self._color};")
 
     if self._duration and self._duration <= 20:
-      self.setProperty('durationType', 'short')
+      self.setProperty("durationType", "short")
       # For shorter durations: Combine parent->category and time in one row
       combined_layout = QHBoxLayout()
       combined_layout.setContentsMargins(0, 0, 0, 0)
@@ -78,7 +72,7 @@ class ActivityCard(QWidget):
       self._label_category = QLabel(
           label_text, self._text_container)
       self._label_category.setObjectName("activity_card_label_category")
-      self._label_category.setProperty('durationType', 'short')
+      self._label_category.setProperty("durationType", "short")
       self._label_category.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
       combined_layout.addWidget(self._label_category)
 
@@ -95,7 +89,7 @@ class ActivityCard(QWidget):
 
       self._text_container_layout.addLayout(combined_layout)
     else:
-      self.setProperty('durationType', 'long')
+      self.setProperty("durationType", "long")
       # For longer durations, display parent and category labels at the top
       if self._parent_category:
         self._label_parent = QLabel(
@@ -106,7 +100,7 @@ class ActivityCard(QWidget):
 
       self._label_category = QLabel(self._category_name, self._text_container)
       self._label_category.setObjectName("activity_card_label_category")
-      self._label_category.setProperty('durationType', 'long')
+      self._label_category.setProperty("durationType", "long")
       self._label_category.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
       self._text_container_layout.addWidget(self._label_category)
 
@@ -127,5 +121,5 @@ class ActivityCard(QWidget):
     self.setMouseTracking(True)
 
   def sizeHint(self) -> QSize:
-    """Return the recommended size for the widget."""
+    """ Return the recommended size for the widget. """
     return QSize(self.parent().width() - 50, 60)

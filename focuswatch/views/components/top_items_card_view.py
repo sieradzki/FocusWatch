@@ -5,8 +5,8 @@ import logging
 from typing import Optional
 
 from PySide6.QtCharts import QChart, QChartView, QPieSeries, QPieSlice
-from PySide6.QtCore import QSize, Qt, Slot
-from PySide6.QtGui import QBrush, QColor, QCursor, QFontMetrics, QPainter, QPen
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QBrush, QColor, QCursor, QPainter, QPen
 from PySide6.QtWidgets import (QGridLayout, QHBoxLayout, QLabel, QLayout,
                                QProgressBar, QSizePolicy, QSpacerItem,
                                QToolTip, QWidget)
@@ -113,24 +113,24 @@ class TopItemsCardView(CardWidget):
     base_color = QColor("#817DF3")
     variation_step = 100
 
-    for index, (application, (time, color, icon)) in enumerate(items.items()):
-      slice = series.append(application, time)
-      slice.setLabelVisible(False)
-      slice.setPen(QPen(QColor("#363739"), 1))
+    for index, (application, (time, color, _)) in enumerate(items.items()):
+      pie_slice = series.append(application, time)
+      pie_slice.setLabelVisible(False)
+      pie_slice.setPen(QPen(QColor("#363739"), 1))
 
       # Create a color variation based on the base color
       variation_color = base_color.lighter(variation_step + index * 5)
-      slice.setBrush(QBrush(variation_color))
+      pie_slice.setBrush(QBrush(variation_color))
 
       if not color:
-        color = slice.brush().color().name()
+        color = pie_slice.brush().color().name()
 
       percentage = time / total_time * 100
       tooltip = f"{application}\n{self._format_time(time)} ({percentage:.1f}%)"
-      self._slice_tooltips[slice] = tooltip
+      self._slice_tooltips[pie_slice] = tooltip
 
-      slice.hovered.connect(
-        lambda state, s=slice: self._on_slice_hover(state, s))
+      pie_slice.hovered.connect(
+        lambda state, current_slice=pie_slice: self._on_slice_hover(state, current_slice))
 
       self.scrollable_legend.add_item(
         application, color, depth=0)  # TODO application icons?
@@ -152,19 +152,19 @@ class TopItemsCardView(CardWidget):
     spacer = QSpacerItem(20, 40, QSizePolicy.Expanding, QSizePolicy.Expanding)
     self.scrollable_legend.layout.addItem(spacer)
 
-  def _on_slice_hover(self, state: bool, slice: QPieSlice, is_parent: bool = True) -> None:
+  def _on_slice_hover(self, state: bool, pie_slice: QPieSlice, is_parent: bool = True) -> None:
     """ Handle hover events for pie slices. """
     if state:
       if is_parent:
-        slice.setExploded(True)
-        slice.setExplodeDistanceFactor(0.1)
+        pie_slice.setExploded(True)
+        pie_slice.setExplodeDistanceFactor(0.1)
       else:
-        slice.setExploded(True)
-        slice.setExplodeDistanceFactor(0.02)
-      tooltip_text = self._slice_tooltips.get(slice, "")
+        pie_slice.setExploded(True)
+        pie_slice.setExplodeDistanceFactor(0.02)
+      tooltip_text = self._slice_tooltips.get(pie_slice, "")
       QToolTip.showText(QCursor.pos(), tooltip_text)
     else:
-      slice.setExploded(False)
+      pie_slice.setExploded(False)
       QToolTip.hideText()
 
   def mouseMoveEvent(self, event):  # TODO test this
@@ -175,12 +175,12 @@ class TopItemsCardView(CardWidget):
     # Find the slice under the cursor
     pos = self.chart_view.mapFromParent(event.pos())
     try:
-      slice = self.chart_view.chart().series()[0].sliceAt(pos)
+      hovered_slice = self.chart_view.chart().series()[0].sliceAt(pos)
     except AttributeError:
       logger.error("No slices found in the chart. Ignoring hover event.")
       return
-    if slice:
-      self._on_slice_hover(True, slice, slice.series() ==
+    if hovered_slice:
+      self._on_slice_hover(True, hovered_slice, hovered_slice.series() ==
                            self.chart_view.chart().series()[1])
     else:
       QToolTip.hideText()
@@ -207,10 +207,10 @@ class TopItemsCardView(CardWidget):
 
     # Create label, progress bar, and percentage label for the item
     label = self._create_category_label(
-      name, time, color if color else "#817DF3")
+      name, color if color else "#817DF3")
     progress_bar = self._create_progress_bar(
       time, total_time, color if color else "#817DF3")
-    percentage_label = self._create_duration_label(time, total_time)
+    percentage_label = self._create_duration_label(time)
 
     # Create left layout with label and icon if available
     left_layout = QHBoxLayout()
@@ -236,7 +236,7 @@ class TopItemsCardView(CardWidget):
 
     return row + 1
 
-  def _create_category_label(self, name: str, time: int, color: str) -> QLabel:
+  def _create_category_label(self, name: str, color: str) -> QLabel:
     full_text = f"{name}"
     label = ElidedLabel(full_text)
     font = label.font()
@@ -266,17 +266,17 @@ class TopItemsCardView(CardWidget):
     chunk_style = f"""
       QProgressBar::chunk {{
         background: QLinearGradient(x1: 0, y1: 0, x2: 1, y2: 0,
-          {' '.join(stops)}
+          {" ".join(stops)}
         );
       }}
     """
 
     progress.setToolTip(
       f"{int((time / total_time) * 100) if total_time > 0 else 0}%")
-    apply_combined_stylesheet(progress, ['progress_bar.qss'], chunk_style)
+    apply_combined_stylesheet(progress, ["progress_bar.qss"], chunk_style)
     return progress
 
-  def _create_duration_label(self, time: int, total_time: int) -> QLabel:
+  def _create_duration_label(self, time: int) -> QLabel:
     """ Create a label for the percentage of the given time compared to the total time. """
     progress_value = self._format_time(time)
     percentage_label = QLabel(f"{progress_value}")

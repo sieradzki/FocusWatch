@@ -1,6 +1,6 @@
 """ Custom widget for a scrollable legend. """
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
+from typing import Optional
 
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QPixmap
@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class ScrollableLegend(QScrollArea):
+  """ Custom widget for a scrollable legend. """
   def __init__(self, parent=None):
     super().__init__(parent)
     self.setWidgetResizable(True)
