@@ -17,7 +17,11 @@ logger = logging.getLogger(__name__)
 class ClassifierService:
   """Service class for classifying activities in the FocusWatch application."""
 
-  def __init__(self, category_service: 'CategoryService', keyword_service: 'KeywordService'):
+  def __init__(
+      self,
+      category_service: "CategoryService",
+      keyword_service: "KeywordService"
+    ):
     self._category_service = category_service
     self._keyword_service = keyword_service
 

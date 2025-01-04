@@ -3,13 +3,11 @@ from functools import partial
 from typing import TYPE_CHECKING, List, Tuple
 
 from PySide6.QtCore import QCoreApplication, Qt, Slot
-from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
-                               QDialogButtonBox, QFrame, QGridLayout,
-                               QGroupBox, QHBoxLayout, QLabel, QLayout,
-                               QLineEdit, QMessageBox, QProgressDialog,
-                               QPushButton, QScrollArea, QSizePolicy,
-                               QSpacerItem, QTabWidget, QVBoxLayout, QWidget,
-                               QWidgetItem)
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDialogButtonBox,
+                               QFrame, QHBoxLayout, QLabel, QLineEdit,
+                               QMessageBox, QProgressDialog, QPushButton,
+                               QScrollArea, QSizePolicy, QSpacerItem,
+                               QTabWidget, QVBoxLayout, QWidget)
 
 from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.viewmodels.dialogs.categorization_helper_dialog_viewmodel import \

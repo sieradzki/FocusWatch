@@ -56,7 +56,7 @@ def dynamic_properties(cls):
   config = Config()
   options = extract_config_options(config)
   for config_path, value in options:
-    prop_name = '_'.join(config_path)
+    prop_name = "_".join(config_path)
     signal_name = f"{prop_name}_changed"
     value_type = type(value)
 
@@ -150,7 +150,7 @@ class SettingsViewModel(QObject):
     if success:
       self.autostart_enabled_changed.emit()  # the state should be already changed
       logger.info(f"Autostart {
-                  'enabled' if self._autostart_enabled else 'disabled'} successfully.")
+                  "enabled" if self._autostart_enabled else "disabled"} successfully.")
     else:
       logger.error(f"Failed to toggle autostart. Keeping current state: {
                    self._autostart_enabled}")

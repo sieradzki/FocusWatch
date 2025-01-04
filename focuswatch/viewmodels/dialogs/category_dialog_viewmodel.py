@@ -145,41 +145,38 @@ class CategoryDialogViewModel(QObject):
   @Slot(result=bool)
   def save_category(self) -> bool:
     """ Save the category and apply keyword changes. """
-    try:
-      if self._category.id:  # Editing existing category
-        success = self._category_service.update_category(
-          self._category)
-      else:  # Creating new category
-        new_category_id = self._category_service.create_category(
-          self._category)
-        if new_category_id:
-          self._category.id = new_category_id
-          success = True
-        else:
-          success = False
-
-      if success:
-        # Apply keyword changes
-        for keyword in self._added_keywords:
-          keyword.category_id = self._category.id
-          self._keyword_service.add_keyword(keyword)
-        for keyword in self._updated_keywords:
-          self._keyword_service.update_keyword(keyword)
-        for keyword in self._removed_keywords:
-          if keyword.id:
-            self._keyword_service.delete_keyword(keyword.id)
-        # Reload keywords to reflect changes
-        self._load_keywords()
-        # Clear change trackers
-        self._added_keywords.clear()
-        self._updated_keywords.clear()
-        self._removed_keywords.clear()
+    if self._category.id:  # Editing existing category
+      success = self._category_service.update_category(
+        self._category)
+    else:  # Creating new category
+      new_category_id = self._category_service.create_category(
+        self._category)
+      if new_category_id:
+        self._category.id = new_category_id
+        success = True
       else:
-        logger.error("Failed to save category.")
-      return success
-    except Exception as e:
-      logger.error(f"Error saving category: {e}")
-      return False
+        success = False
+
+    if success:
+      # Apply keyword changes
+      for keyword in self._added_keywords:
+        keyword.category_id = self._category.id
+        self._keyword_service.add_keyword(keyword)
+      for keyword in self._updated_keywords:
+        self._keyword_service.update_keyword(keyword)
+      for keyword in self._removed_keywords:
+        if keyword.id:
+          self._keyword_service.delete_keyword(keyword.id)
+      # Reload keywords to reflect changes
+      self._load_keywords()
+      # Clear change trackers
+      self._added_keywords.clear()
+      self._updated_keywords.clear()
+      self._removed_keywords.clear()
+    else:
+      logger.error("Failed to save category.")
+    return success
+
 
   @Slot(result=List)
   def get_all_categories(self) -> List[Category]:
@@ -197,9 +194,5 @@ class CategoryDialogViewModel(QObject):
   def delete_category(self) -> bool:
     """ Delete the category. """
     if self.can_delete_category():
-      try:
-        return self._category_service.delete_category(self._category.id)
-      except Exception as e:
-        logger.error(f"Error deleting category: {e}")
-        return False
+      return self._category_service.delete_category(self._category.id)
     return False

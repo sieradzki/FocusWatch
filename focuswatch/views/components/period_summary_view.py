@@ -2,7 +2,7 @@ import logging
 from typing import Optional
 
 from PySide6.QtCharts import QChart, QChartView, QPieSeries, QPieSlice
-from PySide6.QtCore import QSize, Qt, Slot
+from PySide6.QtCore import QSize, Slot
 from PySide6.QtGui import QBrush, QColor, QCursor, QPainter, QPen
 from PySide6.QtWidgets import (QHBoxLayout, QLabel, QSizePolicy, QToolTip,
                                QVBoxLayout, QWidget)
@@ -214,18 +214,19 @@ class PeriodSummaryCardView(CardWidget):
       time = period_data.get(state, 0.0)
       if time > 0:
         percentage = time / total_time * 100
-        slice = series.append(state.capitalize(), time)
-        slice.setLabelVisible(False)
-        slice.setPen(QPen(QColor("#363739"), 1))
-        slice.setBrush(
+        pie_slice = series.append(state.capitalize(), time)
+        pie_slice.setLabelVisible(False)
+        pie_slice.setPen(QPen(QColor("#363739"), 1))
+        pie_slice.setBrush(
             QBrush(QColor(state_colors.get(state, "#FFFFFF"))))
 
-        tooltip = f"{state.capitalize()}\n{self._format_time(time)} ({
-            percentage:.1f}%)"
-        self._slice_tooltips[slice] = tooltip
+        tooltip = f"{state.capitalize()}\n{self._format_time(time)
+                                           } ({percentage:.1f}%)"
+        self._slice_tooltips[pie_slice] = tooltip
 
-        slice.hovered.connect(
-            lambda state, s=slice: self._on_slice_hover(state, s)
+        pie_slice.hovered.connect(
+            lambda state, current_slice=pie_slice: self._on_slice_hover(
+              state, current_slice)
         )
 
     chart.addSeries(series)
@@ -239,15 +240,15 @@ class PeriodSummaryCardView(CardWidget):
     self.chart_view.setChart(chart)
     self.chart_view.setRenderHint(QPainter.Antialiasing)
 
-  def _on_slice_hover(self, state: bool, slice: QPieSlice) -> None:
+  def _on_slice_hover(self, state: bool, pie_slice: QPieSlice) -> None:
     """ Handle hover events for pie slices. """
     if state:
-      slice.setExploded(True)
-      slice.setExplodeDistanceFactor(0.1)
-      tooltip_text = self._slice_tooltips.get(slice, "")
+      pie_slice.setExploded(True)
+      pie_slice.setExplodeDistanceFactor(0.1)
+      tooltip_text = self._slice_tooltips.get(pie_slice, "")
       QToolTip.showText(QCursor.pos(), tooltip_text)
     else:
-      slice.setExploded(False)
+      pie_slice.setExploded(False)
       QToolTip.hideText()
 
   @staticmethod
@@ -275,7 +276,7 @@ class PeriodSummaryCardView(CardWidget):
       return "#4CAF50"
 
   @staticmethod
-  def _get_distracted_percentage_color(percent: float, goal_percent) -> str:
+  def _get_distracted_percentage_color(percent: float, goal_percent: float) -> str:
     """ Return a color based on the percentage thresholds for distracted time. """
     if percent <= goal_percent:
       return "#4CAF50"

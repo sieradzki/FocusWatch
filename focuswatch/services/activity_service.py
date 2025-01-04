@@ -1,6 +1,7 @@
 """ Activity Service Module """
 
 import logging
+import sqlite3
 from datetime import datetime
 from typing import List, Optional, Tuple
 
@@ -28,7 +29,8 @@ class ActivityService:
     """
     query = '''
       INSERT INTO activity
-      (time_start, time_stop, window_class, window_name, category_id, project_id, focused)
+      (time_start, time_stop, window_class,
+       window_name, category_id, project_id, focused)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     '''
     params = (
@@ -45,7 +47,7 @@ class ActivityService:
       self._db_conn.execute_update(query, params)
       # logger.debug(f"Inserted new activity: {activity.window_name}")
       return True
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to insert activity: {e}")
       return False
 
@@ -59,13 +61,13 @@ class ActivityService:
     Returns:
       bool: True if the category id was updated successfully, False otherwise.
     """
-    query = 'UPDATE activity SET category_id = ? WHERE id = ?'
+    query = "UPDATE activity SET category_id = ? WHERE id = ?"
     params = (category_id, activity_id)
 
     try:
       self._db_conn.execute_update(query, params)
       return True
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to update category for activity: {e}")
       return False
 
@@ -83,15 +85,14 @@ class ActivityService:
       return True
 
     # Construct placeholders for parameterized query
-    placeholders = ','.join(['?'] * len(activity_ids))
-    query = f'UPDATE activity SET category_id = ? WHERE id IN ({
-        placeholders})'
+    placeholders = ",".join(["?"] * len(activity_ids))
+    query = f"UPDATE activity SET category_id = ? WHERE id IN ({placeholders})"
     params = [category_id] + activity_ids
 
     try:
       self._db_conn.execute_update(query, params)
       return True
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to bulk update categories for activities: {e}")
       return False
 
@@ -105,13 +106,13 @@ class ActivityService:
     Returns:
       bool: True if the categories were updated successfully, False otherwise.
     """
-    query = 'UPDATE activity SET category_id = ? WHERE window_class = ? OR window_name = ?'
+    query = "UPDATE activity SET category_id = ? WHERE window_class = ? OR window_name = ?"
     params = (category_id, activity_name, activity_name)
 
     try:
       self._db_conn.execute_update(query, params)
       return True
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to bulk update categories for activity_name {
                    activity_name}: {e}")
       return False
@@ -127,7 +128,7 @@ class ActivityService:
     try:
       results = self._db_conn.execute_query(query)
       return [Activity(*row) for row in results]
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve activities: {e}")
       return []
 
@@ -146,7 +147,7 @@ class ActivityService:
     try:
       results = self._db_conn.execute_query(query, params)
       return [Activity(*row) for row in results]
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve activities for category {
                    category_id}: {e}")
       return []
@@ -159,12 +160,12 @@ class ActivityService:
     """
     today = datetime.now().strftime("%Y-%m-%d")
     query = "SELECT * FROM activity WHERE time_start LIKE ?"
-    params = (f'{today}%',)
+    params = (f"{today}%",)
 
     try:
       results = self._db_conn.execute_query(query, params)
       return [Activity(*row) for row in results]
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve today's activities: {e}")
       return []
 
@@ -179,12 +180,12 @@ class ActivityService:
     """
     formatted_date = date.strftime("%Y-%m-%d")
     query = "SELECT * FROM activity WHERE time_start LIKE ?"
-    params = (f'{formatted_date}%',)
+    params = (f"{formatted_date}%",)
 
     try:
       results = self._db_conn.execute_query(query, params)
       return [Activity(*row) for row in results]
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve activities for date {
                    formatted_date}: {e}")
       return []
@@ -209,7 +210,7 @@ class ActivityService:
     try:
       results = self._db_conn.execute_query(query, params)
       return [Activity(*row) for row in results]
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve activities for period: {e}")
       return []
 
@@ -225,7 +226,7 @@ class ActivityService:
     """
     formatted_date = date.strftime("%Y-%m-%d")
     query = """
-      SELECT window_class, category_id, 
+      SELECT window_class, category_id,
       SUM(strftime('%s', time_stop, 'utc') - strftime('%s', time_start, 'utc')) AS total_time_seconds, focused
       FROM activity
       WHERE strftime('%Y-%m-%d', time_start) = strftime('%Y-%m-%d', ?)
@@ -236,12 +237,16 @@ class ActivityService:
 
     try:
       return self._db_conn.execute_query(query, params)
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve class time totals for date {
                    formatted_date}: {e}")
       return []
 
-  def get_period_entries_class_time_total(self, period_start: datetime, period_end: Optional[datetime] = None) -> List[Tuple[str, Optional[int], int]]:
+  def get_period_entries_class_time_total(
+          self,
+          period_start: datetime,
+          period_end: Optional[datetime] = None
+  ) -> List[Tuple[str, Optional[int], int]]:
     """ Return the total time spent on each window class for a given period.
 
     Args:
@@ -275,7 +280,7 @@ class ActivityService:
 
     try:
       return self._db_conn.execute_query(query, params)
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve class time totals for period: {e}")
       return []
 
@@ -313,7 +318,7 @@ class ActivityService:
 
     try:
       return self._db_conn.execute_query(query, params)
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve name time totals for period: {e}")
       return []
 
@@ -342,12 +347,19 @@ class ActivityService:
     try:
       result = self._db_conn.execute_query(query, params)
       return result[0][0] if result else None
-    except Exception as e:
-      logger.error(f"Failed to retrieve longest duration category for window class {
-                   window_class} on date {formatted_date}: {e}")
+    except sqlite3.Error as e:
+      logger.error(
+        f"Failed to retrieve longest duration category for window class "
+        f"{window_class} on date {formatted_date}: {e}"
+      )
       return None
 
-  def get_longest_duration_category_id_for_window_class_in_period(self, period_start: datetime, window_class: str, period_end: Optional[datetime] = None) -> Optional[int]:
+  def get_longest_duration_category_id_for_window_class_in_period(
+      self,
+      period_start: datetime,
+      window_class: str,
+      period_end: Optional[datetime] = None
+    ) -> Optional[int]:
     """ Return the category with the longest duration for a given window class in a given period.
 
     Args:
@@ -384,7 +396,7 @@ class ActivityService:
     try:
       result = self._db_conn.execute_query(query, params)
       return result[0][0] if result else None
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve longest duration category for window class {
                    window_class} in period: {e}")
       return None
@@ -410,14 +422,14 @@ class ActivityService:
       FROM activity
       WHERE (category_id IS NULL OR category_id = (SELECT id FROM categories WHERE name = 'Uncategorized'))
       GROUP BY window_class
-      HAVING total_time_seconds >= ?
+       HAVING total_time_seconds >= ?
       ORDER BY total_time_seconds DESC
       LIMIT ? OFFSET ?
     """
     params = (threshold_seconds, limit, offset)
     try:
       return self._db_conn.execute_query(query, params)
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve top uncategorized window classes: {e}")
       return []
 
@@ -449,7 +461,7 @@ class ActivityService:
     params = (threshold_seconds, limit, offset)
     try:
       return self._db_conn.execute_query(query, params)
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve top uncategorized window names: {e}")
       return []
 
@@ -468,6 +480,6 @@ class ActivityService:
     try:
       rows = self._db_conn.execute_query(query, params)
       return [(row[0], row[1], row[2]) for row in rows]
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve top uncategorized entries: {e}")
       return []

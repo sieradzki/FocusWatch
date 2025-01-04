@@ -5,10 +5,10 @@ from typing import Optional
 from PySide6.QtCore import (QCoreApplication, QEasingCurve, QEvent, QObject,
                             QPropertyAnimation, QSize, Qt, QTimer)
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (QCheckBox, QDialogButtonBox, QDoubleSpinBox,
-                               QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                               QMessageBox, QScrollArea, QSizePolicy, QSpinBox,
-                               QToolButton, QVBoxLayout, QWidget, QPushButton)
+from PySide6.QtWidgets import (QCheckBox, QDoubleSpinBox, QGroupBox,
+                               QHBoxLayout, QLabel, QLineEdit, QMessageBox,
+                               QPushButton, QScrollArea, QSizePolicy, QSpinBox,
+                               QToolButton, QVBoxLayout, QWidget)
 
 from focuswatch.utils.resource_utils import apply_stylesheet, load_icon
 
@@ -242,7 +242,7 @@ class SettingsView(QWidget):
     # If filter text is empty, show all sections and settings
     if not filter_text:
       for section in self.sections:
-        section_widget = section['widget']
+        section_widget = section["widget"]
         section_widget.setVisible(True)
         for child in section_widget.findChildren(QWidget):
           child.setVisible(True)
@@ -250,8 +250,8 @@ class SettingsView(QWidget):
 
     # Filter sections based on the filter text
     for section in self.sections:
-      section_widget = section['widget']
-      header_label = section['label']
+      section_widget = section["widget"]
+      header_label = section["label"]
 
       if filter_text in header_label.text().lower():
         # If section header matches, show entire section

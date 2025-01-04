@@ -1,7 +1,8 @@
 """ Keyword Service Module """
 
 import logging
-from typing import List, Optional, Tuple
+import sqlite3
+from typing import List, Optional
 from focuswatch.models.keyword import Keyword
 from focuswatch.database.database_connection import DatabaseConnection
 
@@ -9,14 +10,14 @@ logger = logging.getLogger(__name__)
 
 
 class KeywordService:
-  """Service class for managing keywords in the FocusWatch application."""
+  """ Service class for managing keywords in the FocusWatch application. """
 
   def __init__(self):
     self._db_conn = DatabaseConnection()
     self._db_conn.connect()
 
   def insert_default_keywords(self) -> None:
-    """Insert default keywords into the database."""
+    """ Insert default keywords into the database. """
     logger.info("Inserting default keywords.")
     keywords = [
       ("Google Docs", "Documents"), ("libreoffice", "Documents"),
@@ -57,19 +58,19 @@ class KeywordService:
     Returns:
         Optional[Keyword]: A Keyword object if found, None otherwise.
     """
-    query = 'SELECT name, category_id, id, match_case FROM keywords WHERE id = ?'
+    query = "SELECT name, category_id, id, match_case FROM keywords WHERE id = ?"
     params = (keyword_id,)
     try:
       result = self._db_conn.execute_query(query, params)
       if result:
         return Keyword(*result[0])
       return None
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve keyword: {e}")
       return None
 
   def add_keyword(self, keyword: Keyword) -> bool:
-    """ Add a keyword to a category. 
+    """ Add a keyword to a category.
 
     Args:
       keyword: The Keyword object to add.
@@ -79,30 +80,35 @@ class KeywordService:
     """
     logger.debug(f"Attempting to add keyword: {keyword}")
 
-    query = 'SELECT * FROM keywords WHERE category_id = ? AND name = ? AND match_case = ?'
+    query = "SELECT * FROM keywords WHERE category_id = ? AND name = ? AND match_case = ?"
     params = (keyword.category_id, keyword.name, keyword.match_case)
 
-    existing_keywords = self._db_conn.execute_query(query, params)
-    logger.debug(f"Existing keywords query result: {existing_keywords}")
+    try:
+      existing_keywords = self._db_conn.execute_query(query, params)
+      logger.debug(f"Existing keywords query result: {existing_keywords}")
 
-    if existing_keywords:
-      logger.debug(f"Keyword with name {keyword.name} already exists in category {
-                  keyword.category_id}.")
-      return True  # Consider it a success if the keyword already exists
+      if existing_keywords:
+        logger.debug(f"Keyword with name {keyword.name} already exists in category {
+                     keyword.category_id}.")
+        return True  # Consider it a success if the keyword already exists
 
-    insert_query = 'INSERT INTO keywords (category_id, name, match_case) VALUES (?, ?, ?)'
-    insert_params = (keyword.category_id, keyword.name, keyword.match_case)
+      insert_query = "INSERT INTO keywords (category_id, name, match_case) VALUES (?, ?, ?)"
+      insert_params = (keyword.category_id, keyword.name, keyword.match_case)
 
-    logger.debug(f"Executing insert query: {
-                insert_query} with params: {insert_params}")
-    rows_affected = self._db_conn.execute_update(insert_query, insert_params)
-    logger.debug(f"Rows affected by insert: {rows_affected}")
+      logger.debug(f"Executing insert query: {
+                   insert_query} with params: {insert_params}")
+      rows_affected = self._db_conn.execute_update(insert_query, insert_params)
+      logger.debug(f"Rows affected by insert: {rows_affected}")
 
-    if rows_affected > 0:
-      logger.info(f"Added new keyword: {keyword.name}")
-      return True
-    else:
-      logger.error(f"Failed to add keyword: {keyword.name}. No rows affected.")
+      if rows_affected > 0:
+        logger.info(f"Added new keyword: {keyword.name}")
+        return True
+      else:
+        logger.error(f"Failed to add keyword: {
+                     keyword.name}. No rows affected.")
+        return False
+    except sqlite3.Error as e:
+      logger.error(f"Failed to add keyword: {e}")
       return False
 
   def update_keyword(self, keyword: Keyword) -> bool:
@@ -116,24 +122,28 @@ class KeywordService:
     """
     logger.debug(f"Attempting to update keyword: {keyword}")
 
-    query = 'UPDATE keywords SET category_id = ?, name = ?, match_case = ? WHERE id = ?'
+    query = "UPDATE keywords SET category_id = ?, name = ?, match_case = ? WHERE id = ?"
     params = (keyword.category_id, keyword.name,
               keyword.match_case, keyword.id)
 
-    logger.debug(f"Executing update query: {query} with params: {params}")
-    rows_affected = self._db_conn.execute_update(query, params)
-    logger.debug(f"Rows affected by update: {rows_affected}")
+    try:
+      logger.debug(f"Executing update query: {query} with params: {params}")
+      rows_affected = self._db_conn.execute_update(query, params)
+      logger.debug(f"Rows affected by update: {rows_affected}")
 
-    if rows_affected > 0:
-      logger.info(f"Updated keyword: {keyword.name}")
-      return True
-    elif rows_affected == 0:
-      logger.warning(f"No changes made to keyword: {
-                     keyword.name}. It might not exist or no values were changed.")
-      return True  # Consider it a success if no changes were needed
-    else:
-      logger.error(f"Failed to update keyword: {
-                   keyword.name}. Unexpected number of rows affected: {rows_affected}")
+      if rows_affected > 0:
+        logger.info(f"Updated keyword: {keyword.name}")
+        return True
+      elif rows_affected == 0:
+        logger.warning(f"No changes made to keyword: {
+                       keyword.name}. It might not exist or no values were changed.")
+        return True  # Consider it a success if no changes were needed
+      else:
+        logger.error(f"Failed to update keyword: {
+                     keyword.name}. Unexpected number of rows affected: {rows_affected}")
+        return False
+    except sqlite3.Error as e:
+      logger.error(f"Failed to update keyword: {e}")
       return False
 
   def delete_keyword(self, keyword_id: int) -> bool:
@@ -147,23 +157,27 @@ class KeywordService:
     """
     logger.debug(f"Attempting to delete keyword with ID: {keyword_id}")
 
-    query = 'DELETE FROM keywords WHERE id = ?'
+    query = "DELETE FROM keywords WHERE id = ?"
     params = (keyword_id,)
 
-    logger.debug(f"Executing delete query: {query} with params: {params}")
-    rows_affected = self._db_conn.execute_update(query, params)
-    logger.debug(f"Rows affected by delete: {rows_affected}")
+    try:
+      logger.debug(f"Executing delete query: {query} with params: {params}")
+      rows_affected = self._db_conn.execute_update(query, params)
+      logger.debug(f"Rows affected by delete: {rows_affected}")
 
-    if rows_affected > 0:
-      logger.info(f"Deleted keyword with ID: {keyword_id}")
-      return True
-    elif rows_affected == 0:
-      logger.warning(f"No keyword found with ID: {
-                     keyword_id}. Nothing was deleted.")
-      return True  # Consider it a success if the keyword didn't exist
-    else:
-      logger.error(f"Failed to delete keyword with ID: {
-                   keyword_id}. Unexpected number of rows affected: {rows_affected}")
+      if rows_affected > 0:
+        logger.info(f"Deleted keyword with ID: {keyword_id}")
+        return True
+      elif rows_affected == 0:
+        logger.warning(f"No keyword found with ID: {
+                       keyword_id}. Nothing was deleted.")
+        return True  # Consider it a success if the keyword didn't exist
+      else:
+        logger.error(f"Failed to delete keyword with ID: {
+                     keyword_id}. Unexpected number of rows affected: {rows_affected}")
+        return False
+    except sqlite3.Error as e:
+      logger.error(f"Failed to delete keyword: {e}")
       return False
 
   def get_all_keywords(self) -> List[Keyword]:
@@ -176,7 +190,7 @@ class KeywordService:
     try:
       results = self._db_conn.execute_query(query)
       return [Keyword(*row) for row in results]
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve keywords: {e}")
       return []
 
@@ -194,9 +208,9 @@ class KeywordService:
     try:
       results = self._db_conn.execute_query(query, params)
       return [Keyword(*row) for row in results]
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve keywords for category {
-          category_id}: {e}")
+                   category_id}: {e}")
       return []
 
   def get_categories_from_keyword(self, keyword: str) -> List[int]:
@@ -222,11 +236,11 @@ class KeywordService:
       WHERE LOWER(k.name) LIKE LOWER(?)
       ORDER BY ch.depth DESC;
     """
-    params = (f'%{keyword}%',)
+    params = (f"%{keyword}%",)
     try:
       results = self._db_conn.execute_query(query, params)
       return [row[0] for row in results]
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve categories for keyword '{
                    keyword}': {e}")
       return []
@@ -241,12 +255,12 @@ class KeywordService:
     Returns:
       Optional[int]: The ID of the keyword if found, None otherwise.
     """
-    query = 'SELECT id FROM keywords WHERE name = ? AND category_id = ?'
+    query = "SELECT id FROM keywords WHERE name = ? AND category_id = ?"
     params = (keyword_name, category_id)
     try:
       result = self._db_conn.execute_query(query, params)
       return result[0][0] if result else None
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve keyword ID: {e}")
       return None
 
@@ -259,11 +273,11 @@ class KeywordService:
     Returns:
       Optional[int]: The ID of the category if found, None otherwise.
     """
-    query = 'SELECT id FROM categories WHERE name = ?'
+    query = "SELECT id FROM categories WHERE name = ?"
     params = (category_name,)
     try:
       result = self._db_conn.execute_query(query, params)
       return result[0][0] if result else None
-    except Exception as e:
+    except sqlite3.Error as e:
       logger.error(f"Failed to retrieve category ID: {e}")
       return None

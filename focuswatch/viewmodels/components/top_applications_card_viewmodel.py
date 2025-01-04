@@ -34,7 +34,7 @@ class TopApplicationsCardViewModel(TopItemsCardViewModel):
 
     # clear top items
     self._top_items.clear()
-    for application, category, time, focused in top_applications:
+    for application, _, time, _ in top_applications:
       if not self._config["dashboard"]["display_cards_idle"]:
         if application == "afk":
           continue
@@ -45,4 +45,4 @@ class TopApplicationsCardViewModel(TopItemsCardViewModel):
 
   def get_application_icon(self, application: str) -> Optional[str]:
     """ Get the icon path for an application. """
-    return None  # TODO
+    pass

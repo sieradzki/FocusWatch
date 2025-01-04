@@ -3,6 +3,7 @@ from focuswatch.models.category import Category
 
 
 class TestCategory(unittest.TestCase):
+  """ Test the Category model. """
 
   def setUp(self):
     self.category = Category(
@@ -50,5 +51,5 @@ class TestCategory(unittest.TestCase):
     self.assertFalse(non_root_category.is_root_category)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   unittest.main()

@@ -1,11 +1,10 @@
 import logging
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
-from PySide6.QtCore import QObject, QSize, Qt, Signal, Slot, QTimer
-from PySide6.QtGui import QColor
+from PySide6.QtCore import Qt, QTimer, Slot
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QScrollArea,
-                               QSpacerItem, QSizePolicy, QVBoxLayout, QWidget)
+                               QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
 from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.views.components.activity_card import ActivityCard
@@ -182,18 +181,18 @@ class TimelineView(QWidget):
           timedelta(minutes=start_minutes)
       end_time = start_time + timedelta(minutes=duration)
       time_range = f"{start_time.strftime(
-        '%H:%M')} - {end_time.strftime('%H:%M')}"
+        "%H:%M")} - {end_time.strftime("%H:%M")}"
 
       # Get top entries for the time range
       top_entries = self._viewmodel.get_top_entries(
         start_time.isoformat(), end_time.isoformat())
 
       # Prepare tooltip text
-      tooltip_text = f"Top Entries:\n"
+      tooltip_text = "Top Entries:\n"
       for entry in top_entries:
-        duration_minutes = entry['duration'] / 60
-        tooltip_text += f"- {entry['window_class']} | {
-          entry['window_name']} ({duration_minutes:.1f} min)\n"
+        duration_minutes = entry["duration"] / 60
+        tooltip_text += f"- {entry["window_class"]} | {
+          entry["window_name"]} ({duration_minutes:.1f} min)\n"
 
       # Create the activity card
       activity_card = ActivityCard(

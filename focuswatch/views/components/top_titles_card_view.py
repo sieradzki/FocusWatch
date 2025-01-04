@@ -7,6 +7,8 @@ logger = logging.getLogger(__name__)
 
 
 class TopTitlesCardView(TopItemsCardView):
+  """ View for the Top Titles card. """
+
   def __init__(self,
                viewmodel,
                parent=None):

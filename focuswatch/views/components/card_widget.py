@@ -25,20 +25,20 @@ class CardWidget(QWidget):
     self.frame_container = QFrame(self)
     self.frame_container.setObjectName("frame_container")
 
-    self.verticalLayout = QVBoxLayout(self.frame_container)
-    self.verticalLayout.setContentsMargins(0, 0, 0, 0)
-    self.verticalLayout.setSpacing(0)
+    self.vertical_layout = QVBoxLayout(self.frame_container)
+    self.vertical_layout.setContentsMargins(0, 0, 0, 0)
+    self.vertical_layout.setSpacing(0)
 
     self.label_title = QLabel(self.title, self.frame_container)
     self.label_title.setObjectName("label_title")
-    self.verticalLayout.addWidget(self.label_title)
+    self.vertical_layout.addWidget(self.label_title)
 
     self.separator = QFrame(self.frame_container)
     self.separator.setObjectName("separator")
     self.separator.setFrameShape(QFrame.Shape.HLine)
     self.separator.setFrameShadow(QFrame.Shadow.Sunken)
     self.separator.setFixedHeight(2)
-    self.verticalLayout.addWidget(self.separator)
+    self.vertical_layout.addWidget(self.separator)
 
     # Main stacked widget to switch between content and no data views
     self.main_stacked_widget = QStackedWidget(self.frame_container)
@@ -96,7 +96,7 @@ class CardWidget(QWidget):
     self.main_stacked_widget.addWidget(self.no_data_container)
 
     # Add the main stacked widget to the layout
-    self.verticalLayout.addWidget(self.main_stacked_widget)
+    self.vertical_layout.addWidget(self.main_stacked_widget)
 
     # Initially show content view
     self.show_content_view()

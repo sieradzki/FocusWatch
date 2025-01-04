@@ -60,9 +60,9 @@ class WatcherService():
   """
 
   def __init__(self,
-               activity_service: 'ActivityService',
-               category_service: 'CategoryService',
-               classifier_service: 'ClassifierService',
+               activity_service: "ActivityService",
+               category_service: "CategoryService",
+               classifier_service: "ClassifierService",
                watch_interval: Optional[float] = None,
                verbose: Optional[int] = None
                ):
@@ -159,7 +159,7 @@ class WatcherService():
       raise NotImplementedError("This platform is not supported")
 
   def save_entry(self) -> None:
-    """Save the current activity entry to the database."""
+    """ Save the current activity entry to the database. """
     if self._verbose:
       print(f"[{self._time_stop - self._time_start:.3f}] [{self._window_class}] {
             self._window_name[:32]} {self._category}")
@@ -284,8 +284,3 @@ class WatcherService():
         self._reset_activity_state()
 
       time.sleep(self._watch_interval)
-
-
-if __name__ == "__main__":
-  watcher = WatcherService()
-  watcher.monitor()

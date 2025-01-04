@@ -159,7 +159,19 @@ evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / stateme
 [BASIC]
 
 # Good variable names which should always be accepted, separated by a comma
-good-names=main,_,cbSize,dwTime
+good-names=
+  ,main
+  ,_
+  ,cbSize
+  ,dwTime
+  ,resizeEvent
+  ,enterEvent
+  ,leaveEvent
+  ,sizeHint
+  ,showEvent
+  ,mouseMoveEvent
+  ,closeEvent
+  ,eventFilter
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=

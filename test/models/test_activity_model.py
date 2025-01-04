@@ -4,6 +4,7 @@ from focuswatch.models.activity import Activity
 
 
 class TestActivity(unittest.TestCase):
+  """ Test the Activity model. """
 
   def setUp(self):
     self.time_start = datetime(2024, 8, 26, 14, 0, 0)
@@ -47,5 +48,5 @@ class TestActivity(unittest.TestCase):
     self.assertEqual(activity.duration, 3600)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   unittest.main()

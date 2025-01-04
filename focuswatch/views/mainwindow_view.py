@@ -1,11 +1,11 @@
 import logging
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import QCoreApplication, QMetaObject, QSize, Qt, QObject
-from PySide6.QtGui import QFont, QIcon
+from PySide6.QtCore import QCoreApplication, QSize, Qt
+from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
-                               QMenuBar, QPushButton, QSizePolicy, QSpacerItem,
-                               QStackedWidget, QStatusBar, QToolButton,
+                               QSizePolicy, QSpacerItem,
+                               QStackedWidget, QToolButton,
                                QVBoxLayout, QWidget)
 
 from focuswatch.utils.resource_utils import apply_stylesheet, load_icon
@@ -20,82 +20,84 @@ logger = logging.getLogger(__name__)
 
 
 class MainWindowView(QMainWindow):
+  """ Main window view. """
+
   def __init__(self,
                viewmodel: "MainWindowViewModel",
-               parent: Optional[QObject] = None):
+               parent: Optional[QWidget] = None):
     super().__init__(parent)
     self._viewmodel = viewmodel
-    self.setupUi()
-    self._retranslateUi()
+    self._setup_ui()
+    self._retranslate_ui()
     self._connect_signals()
 
-  def setupUi(self):
+  def _setup_ui(self):
     if not self.objectName():
-      self.setObjectName(u"MainWindow")
+      self.setObjectName("MainWindow")
     self.resize(*self._viewmodel.window_size)
     self.setWindowTitle(self._viewmodel.window_title)
 
     # Central widget
-    self.centralwidget = QWidget(self)
-    self.centralwidget.setObjectName(u"centralwidget")
-    self.horizontalLayout = QHBoxLayout(self.centralwidget)
-    self.horizontalLayout.setSpacing(0)
-    self.horizontalLayout.setObjectName(u"horizontalLayout")
-    self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+    self.central_widget = QWidget(self)
+    self.central_widget.setObjectName("central_widget")
+    self.horizontal_layout = QHBoxLayout(self.central_widget)
+    self.horizontal_layout.setSpacing(0)
+    self.horizontal_layout.setObjectName("horizontal_layout")
+    self.horizontal_layout.setContentsMargins(0, 0, 0, 0)
 
     # Sidebar
-    self.sidebar = QFrame(self.centralwidget)
-    self.sidebar.setObjectName(u"sidebar")
+    self.sidebar = QFrame(self.central_widget)
+    self.sidebar.setObjectName("sidebar")
     self.sidebar.setFixedWidth(100)
     self.sidebar.setStyleSheet(
-      u"background-color: #101010; border: none;")
+      "background-color: #101010; border: none;")
     self.sidebar.setFrameShape(QFrame.NoFrame)
     self.sidebar.setFrameShadow(QFrame.Raised)
 
     # Sidebar Layout
-    self.sidebarLayout = QVBoxLayout(self.sidebar)
-    self.sidebarLayout.setSpacing(6)
-    self.sidebarLayout.setObjectName(u"sidebarLayout")
-    self.sidebarLayout.setContentsMargins(0, 6, 0, 6)
+    self.sidebar_layout = QVBoxLayout(self.sidebar)
+    self.sidebar_layout.setSpacing(6)
+    self.sidebar_layout.setObjectName("sidebar_layout")
+    self.sidebar_layout.setContentsMargins(0, 6, 0, 6)
 
     # Logo
     self.logo_label = QLabel(self.sidebar)
-    self.logo_label.setObjectName(u"logo_label")
+    self.logo_label.setObjectName("logo_label")
     font1 = QFont()
     font1.setPointSize(10)
     font1.setBold(True)
     self.logo_label.setFont(font1)
     self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    self.sidebarLayout.addWidget(self.logo_label)
+    self.sidebar_layout.addWidget(self.logo_label)
 
     # Sidebar Buttons
     self.sidebar_button_home = self._create_sidebar_button(
       "Home", "home.png")
     self.sidebar_button_categories = self._create_sidebar_button(
       "Categories", "categories.png")
-    # self.sidebar_button_help = self.create_sidebar_button(
+    # self.sidebar_button_help = self._create_sidebar_button(
     # "Help", "help.png")
     self.sidebar_button_settings = self._create_sidebar_button(
       "Settings", "settings.png")
 
     # Add buttons to layout
-    self.sidebarLayout.addWidget(
+    self.sidebar_layout.addWidget(
       self.sidebar_button_home, 0, Qt.AlignmentFlag.AlignHCenter)
-    self.sidebarLayout.addWidget(
+    self.sidebar_layout.addWidget(
       self.sidebar_button_categories, 0, Qt.AlignmentFlag.AlignHCenter)
-    self.sidebarLayout.addSpacerItem(QSpacerItem(
+    self.sidebar_layout.addSpacerItem(QSpacerItem(
       20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
-    # self.sidebarLayout.addWidget(
+    # self.sidebar_layout.addWidget(
     # self.sidebar_button_help, 0, Qt.AlignmentFlag.AlignHCenter)
-    self.sidebarLayout.addWidget(
+    self.sidebar_layout.addWidget(
       self.sidebar_button_settings, 0, Qt.AlignmentFlag.AlignHCenter)
 
     # Add Sidebar to Main Layout
-    self.horizontalLayout.addWidget(self.sidebar)
+    self.horizontal_layout.addWidget(self.sidebar)
 
     # Main content area
-    self.stackedWidget = QStackedWidget(self.centralwidget)
-    self.horizontalLayout.addWidget(self.stackedWidget)
+    self.stacked_widget = QStackedWidget(self.central_widget)
+    self.horizontal_layout.addWidget(self.stacked_widget)
 
     # Pages
     self.page_home = HomeView(self._viewmodel.home_viewmodel)
@@ -104,26 +106,26 @@ class MainWindowView(QMainWindow):
     self.page_settings = SettingsView(self._viewmodel.settings_viewmodel)
 
     # Add pages to the stacked widget
-    self.stackedWidget.addWidget(self.page_home)
-    self.stackedWidget.addWidget(self.page_categories)
-    self.stackedWidget.addWidget(self.page_settings)
+    self.stacked_widget.addWidget(self.page_home)
+    self.stacked_widget.addWidget(self.page_categories)
+    self.stacked_widget.addWidget(self.page_settings)
 
     # Set the central widget
-    self.setCentralWidget(self.centralwidget)
+    self.setCentralWidget(self.central_widget)
 
     self._update_sidebar_buttons()
 
-  def _retranslateUi(self):
+  def _retranslate_ui(self):
     self.logo_label.setText(QCoreApplication.translate(
-      "MainWindow", u"focuswatch", None))
+      "MainWindow", "focuswatch", None))
     self.sidebar_button_home.setText(
-      QCoreApplication.translate("MainWindow", u"Home", None))
+      QCoreApplication.translate("MainWindow", "Home", None))
     self.sidebar_button_categories.setText(
-      QCoreApplication.translate("MainWindow", u"Categories", None))
+      QCoreApplication.translate("MainWindow", "Categories", None))
     # self.sidebar_button_help.setText(
-    # QCoreApplication.translate("MainWindow", u"Help", None))
+    # QCoreApplication.translate("MainWindow", "Help", None))
     self.sidebar_button_settings.setText(
-      QCoreApplication.translate("MainWindow", u"Settings", None))
+      QCoreApplication.translate("MainWindow", "Settings", None))
 
   def _create_sidebar_button(self, text: str, icon_path: str) -> QToolButton:
     """ Helper method to create sidebar buttons. """
@@ -146,7 +148,7 @@ class MainWindowView(QMainWindow):
 
     return button
 
-  def _create_mock_page(self, page_name: str) -> QWidget:
+  def _create_mock_page(self, page_name: str) -> QWidget:  # Not needed anymore
     """ Helper method to create a mock page with a label for distinguishing pages. """
     page = QWidget()
     layout = QVBoxLayout(page)
@@ -155,7 +157,7 @@ class MainWindowView(QMainWindow):
     layout.addWidget(label)
     return page
 
-  def closeEvent(self, event):
+  def closeEvent(self, event):  # noqa: N802
     self._viewmodel.exit_application()
     super().closeEvent(event)
 
@@ -192,7 +194,7 @@ class MainWindowView(QMainWindow):
 
   def _on_current_page_index_changed(self):
     """ Handle changes to the current page index. """
-    self.stackedWidget.setCurrentIndex(self._viewmodel.current_page_index)
+    self.stacked_widget.setCurrentIndex(self._viewmodel.current_page_index)
     self._update_sidebar_buttons()
 
   def _on_window_title_changed(self):

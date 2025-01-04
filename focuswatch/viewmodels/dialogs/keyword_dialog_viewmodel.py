@@ -13,8 +13,9 @@ class KeywordDialogViewModel(QObject):
   name_changed = Signal()
   match_case_changed = Signal()
 
-  def __init__(self, 
-               keyword: Optional[Keyword] = None):
+  def __init__(
+          self,
+          keyword: Optional[Keyword] = None):
     super().__init__()
     self._keyword = keyword or Keyword()
 

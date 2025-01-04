@@ -1,12 +1,10 @@
 import logging
-from functools import partial
 from typing import Optional
 
 from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (QCheckBox, QDialog, QDialogButtonBox,
-                               QFormLayout, QHBoxLayout, QLabel, QLineEdit,
-                               QMessageBox, QPushButton, QVBoxLayout, QWidget)
+                               QFormLayout, QLabel, QLineEdit, QMessageBox,
+                               QPushButton, QVBoxLayout, QWidget)
 
 from focuswatch.models.keyword import Keyword
 from focuswatch.utils.resource_utils import apply_stylesheet
@@ -95,7 +93,7 @@ class KeywordDialogView(QDialog):
 
     self._button_box.accepted.connect(self.accept)
     self._button_box.rejected.connect(self.reject)
-    if hasattr(self, '_delete_button'):
+    if hasattr(self, "_delete_button"):
       self._delete_button.clicked.connect(self._delete_keyword)
 
   @Slot()

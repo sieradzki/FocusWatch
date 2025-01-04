@@ -2,12 +2,13 @@ import logging
 import os
 from typing import TYPE_CHECKING, Optional
 
-from PySide6.QtCore import QCoreApplication, QObject, QRect, QSize, Qt, Slot
+import yaml
+from PySide6.QtCore import QCoreApplication, QObject, Qt, Slot
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (QFileDialog, QFrame, QHBoxLayout, QLabel,
-                               QLayout, QLineEdit, QMessageBox,
-                               QProgressDialog, QPushButton, QScrollArea,
-                               QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
+                               QLineEdit, QMessageBox, QProgressDialog,
+                               QPushButton, QScrollArea, QSizePolicy,
+                               QSpacerItem, QVBoxLayout, QWidget)
 
 from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.utils.ui_utils import get_category_color_or_parent
@@ -22,6 +23,8 @@ if TYPE_CHECKING:
 
 
 class CategoriesView(QWidget):
+  """ Categories page view. """
+
   def __init__(self, viewmodel: "CategoriesViewModel",
                parent: Optional[QObject] = None):
     super().__init__(parent)
@@ -193,9 +196,9 @@ class CategoriesView(QWidget):
 
     def add_categories(categories, depth=0):
       for category_id, category_data in categories.items():
-        category = category_data['category']
-        keywords = category_data['keywords']
-        children_ids = category_data.get('children', [])
+        category = category_data["category"]
+        keywords = category_data["keywords"]
+        children_ids = category_data.get("children", [])
 
         # Check if category or its descendants match the filter
         matches_filter = self._category_matches_filter(category_data)
@@ -204,7 +207,7 @@ class CategoriesView(QWidget):
           continue  # Skip this category and its children
 
         # Skip Uncategorized
-        if category.name == 'Uncategorized':
+        if category.name == "Uncategorized":
           continue
 
         # Create category row widget
@@ -223,12 +226,12 @@ class CategoriesView(QWidget):
         if children_ids:
           toggle_button = QPushButton()
           toggle_button.setCheckable(True)
-          toggle_button.setChecked(category_data.get('expanded', True))
+          toggle_button.setChecked(category_data.get("expanded", True))
           toggle_button.setFixedSize(16, 16)
-          toggle_button.setObjectName('toggle_button')
+          toggle_button.setObjectName("toggle_button")
           # Set icon based on expanded state
           self._update_toggle_button_icon(
-            toggle_button, category_data['expanded'])
+            toggle_button, category_data["expanded"])
           toggle_button.clicked.connect(
               lambda checked, cid=category_id: self._toggle_category(cid)
           )
@@ -256,7 +259,7 @@ class CategoriesView(QWidget):
             lambda checked, c_id=category_id: self._show_category_dialog(
               c_id)
         )
-        category_button.setFont(QFont('Arial', 12))
+        category_button.setFont(QFont("Arial", 12))
         category_button.setStyleSheet(
             "background-color: transparent; color: #F9F9F9; border: none; padding: 5px 0; text-align: left;"
         )
@@ -267,7 +270,7 @@ class CategoriesView(QWidget):
         keywords_layout.setSpacing(5)
         displayed_keywords = keywords[:self._max_keywords_display]
         if len(keywords) > self._max_keywords_display:
-          displayed_keywords.append('...')
+          displayed_keywords.append("...")
         for keyword in displayed_keywords:
           keyword_label = QLabel(keyword)
           keyword_label.setObjectName("keyword_chip")
@@ -278,7 +281,7 @@ class CategoriesView(QWidget):
         self.categories_layout.addWidget(category_row_widget)
 
         # If the category is expanded, add its children
-        if category_data.get('expanded', True) and children_ids:
+        if category_data.get("expanded", True) and children_ids:
           child_categories = {
               child_id: self._viewmodel.organized_categories[child_id]
               for child_id in children_ids
@@ -289,7 +292,7 @@ class CategoriesView(QWidget):
     root_categories = {
         cid: cdata
         for cid, cdata in self._viewmodel.organized_categories.items()
-        if cdata['category'].parent_category_id is None
+        if cdata["category"].parent_category_id is None
     }
     add_categories(root_categories)
 
@@ -298,9 +301,9 @@ class CategoriesView(QWidget):
 
   def _category_matches_filter(self, category_data):
     """ Check if a category or any of its descendants match the filter. """
-    category = category_data['category']
-    keywords = category_data['keywords']
-    children_ids = category_data.get('children', [])
+    category = category_data["category"]
+    keywords = category_data["keywords"]
+    children_ids = category_data.get("children", [])
     filter_text = self._viewmodel.filter_text.lower()
 
     # Check if the category itself matches the filter
@@ -319,17 +322,17 @@ class CategoriesView(QWidget):
   def _toggle_category(self, category_id):
     # Toggle the expanded state
     category_data = self._viewmodel.organized_categories[category_id]
-    category_data['expanded'] = not category_data.get('expanded', True)
+    category_data["expanded"] = not category_data.get("expanded", True)
     # Refresh the category display
     self._populate_categories()
 
   def _update_toggle_button_icon(self, button, expanded):
     if expanded:
-      # button.setIcon(QIcon(':/icons/arrow_down.png'))
-      button.setText('▼')
+      # button.setIcon(QIcon(":/icons/arrow_down.png"))
+      button.setText("▼")
     else:
-      # button.setIcon(QIcon(':/icons/arrow_right.png'))
-      button.setText('►')
+      # button.setIcon(QIcon(":/icons/arrow_right.png"))
+      button.setText("►")
     button.setStyleSheet("background-color: transparent; border: none;")
 
   def _clear_layout(self, layout):
@@ -401,7 +404,7 @@ class CategoriesView(QWidget):
 
   def _update_progress_dialog(self, current: int, total: int):
     """ Update the progress dialog during retroactive categorization. """
-    if hasattr(self, 'progress_dialog'):
+    if hasattr(self, "progress_dialog"):
       progress = int((current / total) * 100)
       self.progress_dialog.setValue(progress)
       QCoreApplication.processEvents()
@@ -453,11 +456,6 @@ class CategoriesView(QWidget):
         self, "Restore Defaults", "Default categories restored successfully."
       )
 
-  def closeEvent(self, event):
-    """ Handle the close event. """
-    self._viewmodel.property_changed.disconnect(self.on_property_changed)
-    super().closeEvent(event)
-
   def _export_categories(self):
     """ Export categories to a file. """
     file_dialog = QFileDialog(self,
@@ -465,27 +463,39 @@ class CategoriesView(QWidget):
 
     if file_dialog.exec_() == QFileDialog.Accepted:
       file_path = file_dialog.selectedFiles()[0]
-      if not file_path.endswith('.yml') and not file_path.endswith('.yaml'):
-        file_path += '.yml'
+      if not file_path.endswith(".yml") and not file_path.endswith(".yaml"):
+        file_path += ".yml"
       if os.path.exists(file_path):
         reply = QMessageBox.question(
-            self,
-            "Overwrite Confirmation",
-            f"The file '{
-              file_path}' already exists.\nDo you want to overwrite it?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
+          self,
+          "Overwrite Confirmation",
+          f"The file '{
+            file_path}' already exists.\nDo you want to overwrite it?",
+          QMessageBox.Yes | QMessageBox.No,
+          QMessageBox.No
         )
         if reply == QMessageBox.No:
           return
 
       try:
         self._viewmodel.export_categories(file_path)
-      except Exception as e:
+      except (FileNotFoundError, PermissionError) as e:
         QMessageBox.critical(
-            self,
-            "Export Failed",
-            f"An error occurred while exporting categories:\n{str(e)}"
+          self,
+          "Export Failed",
+          f"Could not write to the file '{file_path}':\n{str(e)}"
+        )
+      except (ValueError, TypeError) as e:
+        QMessageBox.critical(
+          self,
+          "Export Failed",
+          f"Data formatting error while exporting categories:\n{str(e)}"
+        )
+      except yaml.YAMLError as e:
+        QMessageBox.critical(
+          self,
+          "Export Failed",
+          f"Error while writing YAML data:\n{str(e)}"
         )
 
   def _import_categories(self):
@@ -501,9 +511,9 @@ class CategoriesView(QWidget):
         dialog = QMessageBox(self)
         dialog.setWindowTitle("Retroactive Categorization")
         dialog.setText(
-            "Categories imported successfully.\n"
-            "Do you want to retroactively categorize all entries based on the new categories?\n"
-            "This action cannot be undone and might take a while."
+          "Categories imported successfully.\n"
+          "Do you want to retroactively categorize all entries based on the new categories?\n"
+          "This action cannot be undone and might take a while."
         )
         dialog.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         dialog.setDefaultButton(QMessageBox.Yes)
@@ -536,7 +546,7 @@ class CategoriesView(QWidget):
             )
           else:
             QMessageBox.critical(
-              self, "Retroactive Categorization", "An error occurred during categorization."
+              self, "Retroactive Categorization", "An error occurred during categorization. Check logs for details."
             )
         else:
           QMessageBox.information(
@@ -546,9 +556,15 @@ class CategoriesView(QWidget):
         # Reload categories to reflect any changes
         self._viewmodel._load_categories()
 
-      except Exception as e:
+      except (FileNotFoundError, PermissionError) as e:
         QMessageBox.critical(
           self,
           "Import Failed",
-          f"An error occurred while importing categories:\n{str(e)}"
+          f"Could not read from the file '{file_path}':\n{str(e)}"
+        )
+      except yaml.YAMLError as e:
+        QMessageBox.critical(
+          self,
+          "Import Failed",
+          f"Error while parsing YAML data:\n{str(e)}"
         )

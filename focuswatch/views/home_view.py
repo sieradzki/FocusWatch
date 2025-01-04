@@ -2,14 +2,12 @@ import logging
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from PySide6.QtCore import QCoreApplication, QSize, Qt, QTimer, Slot
-from PySide6.QtGui import QFont
+from PySide6.QtCore import QCoreApplication, QSize, Slot
 from PySide6.QtWidgets import (QCalendarWidget, QDialog, QFrame, QGridLayout,
                                QHBoxLayout, QMenu, QPushButton, QSizePolicy,
                                QSpacerItem, QVBoxLayout, QWidget)
 
 from focuswatch.utils.resource_utils import apply_styles, apply_stylesheet
-from focuswatch.views.components.card_widget import CardWidget
 from focuswatch.views.components.focus_breakdown_view import FocusBreakdownView
 from focuswatch.views.components.timeline_view import TimelineView
 from focuswatch.views.components.top_applications_card_view import \
@@ -26,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 class HomeView(QWidget):
+  """ Home page view. """
   def __init__(self,
                viewmodel: "HomeViewModel",
                parent=None):
@@ -42,71 +41,71 @@ class HomeView(QWidget):
     self.setObjectName("page_home")
 
     # Main Vertical Layout
-    self.verticalLayout_3 = QVBoxLayout(self)
-    self.verticalLayout_3.setObjectName("verticalLayout_3")
-    self.verticalLayout_3.setContentsMargins(6, 9, 6, 6)
+    self.vertical_layout_3 = QVBoxLayout(self)
+    self.vertical_layout_3.setObjectName("vertical_layout_3")
+    self.vertical_layout_3.setContentsMargins(6, 9, 6, 6)
 
     # Home Layout
-    self.home_verticalLayout = QVBoxLayout()
-    self.home_verticalLayout.setObjectName("home_verticalLayout")
-    self.verticalLayout_3.addLayout(self.home_verticalLayout)
+    self.home_vertical_layout = QVBoxLayout()
+    self.home_vertical_layout.setObjectName("home_vertical_layout")
+    self.vertical_layout_3.addLayout(self.home_vertical_layout)
 
     # Navigation
-    self.home_nav_horizontalLayout = QHBoxLayout()
-    self.home_nav_horizontalLayout.setSpacing(0)
-    self.home_nav_horizontalLayout.setObjectName(
-        "home_nav_horizontalLayout")
-    self.home_nav_horizontalLayout.setContentsMargins(0, 0, 0, 0)
+    self.home_nav_horizontal_layout = QHBoxLayout()
+    self.home_nav_horizontal_layout.setSpacing(0)
+    self.home_nav_horizontal_layout.setObjectName(
+        "home_nav_horizontal_layout")
+    self.home_nav_horizontal_layout.setContentsMargins(0, 0, 0, 0)
 
     # Frame for Navigation
     self.home_nav_frame = QFrame(self)
     self.home_nav_frame.setObjectName("home_nav_frame")
-    sizePolicy2 = QSizePolicy(
+    size_policy_2 = QSizePolicy(
         QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
-    sizePolicy2.setHeightForWidth(
+    size_policy_2.setHeightForWidth(
         self.home_nav_frame.sizePolicy().hasHeightForWidth())
-    self.home_nav_frame.setSizePolicy(sizePolicy2)
+    self.home_nav_frame.setSizePolicy(size_policy_2)
     self.home_nav_frame.setFrameShape(QFrame.Shape.NoFrame)
     self.home_nav_frame.setFrameShadow(QFrame.Shadow.Raised)
 
-    self.horizontalLayout_5 = QHBoxLayout(self.home_nav_frame)
-    self.horizontalLayout_5.setSpacing(0)
-    self.horizontalLayout_5.setObjectName("horizontalLayout_5")
-    self.horizontalLayout_5.setContentsMargins(0, 0, 0, 0)
+    self.horizontal_layout_5 = QHBoxLayout(self.home_nav_frame)
+    self.horizontal_layout_5.setSpacing(0)
+    self.horizontal_layout_5.setObjectName("horizontal_layout_5")
+    self.horizontal_layout_5.setContentsMargins(0, 0, 0, 0)
 
     # Navigation Buttons
     self.date_prev_button = QPushButton(self.home_nav_frame)
     self.date_prev_button.setObjectName("date_prev_button")
-    self.horizontalLayout_5.addWidget(self.date_prev_button)
+    self.horizontal_layout_5.addWidget(self.date_prev_button)
 
     self.date_button = QPushButton(self.home_nav_frame)
     self.date_button.setObjectName("date_button")
     self.date_button.setMinimumSize(QSize(200, 0))
-    self.horizontalLayout_5.addWidget(self.date_button)
+    self.horizontal_layout_5.addWidget(self.date_button)
 
     self.date_next_button = QPushButton(self.home_nav_frame)
     self.date_next_button.setObjectName("date_next_button")
-    self.horizontalLayout_5.addWidget(self.date_next_button)
+    self.horizontal_layout_5.addWidget(self.date_next_button)
 
-    self.horizontalSpacer_period = QSpacerItem(
+    self.horizontal_spacer_period = QSpacerItem(
         20, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
-    self.horizontalLayout_5.addItem(self.horizontalSpacer_period)
+    self.horizontal_layout_5.addItem(self.horizontal_spacer_period)
 
     self.period_type_button = QPushButton(self.home_nav_frame)
     self.period_type_button.setObjectName("period_type_button")
     self.period_type_button.setMinimumSize(QSize(70, 0))
-    self.horizontalLayout_5.addWidget(self.period_type_button)
+    self.horizontal_layout_5.addWidget(self.period_type_button)
 
-    self.horizontalSpacer_ref = QSpacerItem(
+    self.horizontal_spacer_ref = QSpacerItem(
         40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-    self.horizontalLayout_5.addItem(self.horizontalSpacer_ref)
+    self.horizontal_layout_5.addItem(self.horizontal_spacer_ref)
 
-    self.refreshButton = QPushButton(self.home_nav_frame)
-    self.refreshButton.setObjectName("refreshButton")
-    self.horizontalLayout_5.addWidget(self.refreshButton)
+    self.refresh_button = QPushButton(self.home_nav_frame)
+    self.refresh_button.setObjectName("refresh_button")
+    self.horizontal_layout_5.addWidget(self.refresh_button)
 
-    self.home_nav_horizontalLayout.addWidget(self.home_nav_frame)
-    self.home_verticalLayout.addLayout(self.home_nav_horizontalLayout)
+    self.home_nav_horizontal_layout.addWidget(self.home_nav_frame)
+    self.home_vertical_layout.addLayout(self.home_nav_horizontal_layout)
 
     # Line Separator
     self.line = QFrame(self)
@@ -115,11 +114,11 @@ class HomeView(QWidget):
     self.line.setFrameShadow(QFrame.Shadow.Plain)
     self.line.setFrameShape(QFrame.Shape.HLine)
 
-    self.home_verticalLayout.addWidget(self.line)
+    self.home_vertical_layout.addWidget(self.line)
 
     # Main content layout
     self.main_layout = QHBoxLayout()
-    self.home_verticalLayout.addLayout(self.main_layout)
+    self.home_vertical_layout.addLayout(self.main_layout)
 
     # Timeline frame
     self._timeline_view = TimelineView(
@@ -175,7 +174,7 @@ class HomeView(QWidget):
         QCoreApplication.translate("Home", "<", None))
     self.date_next_button.setText(
         QCoreApplication.translate("Home", ">", None))
-    self.refreshButton.setText(
+    self.refresh_button.setText(
         QCoreApplication.translate("Home", "Refresh", None))
     self._update_period_type_button_text()
     self._update_date_button_text()
@@ -194,7 +193,7 @@ class HomeView(QWidget):
     self.date_next_button.clicked.connect(self._on_date_next_clicked)
     self.date_button.clicked.connect(self._show_calendar)
     self.period_type_button.clicked.connect(self._show_period_menu)
-    self.refreshButton.clicked.connect(self._on_refresh_clicked)
+    self.refresh_button.clicked.connect(self._on_refresh_clicked)
 
   def _update_date_button_text(self):
     """ Update the text of the date button based on the current period. """
@@ -209,7 +208,7 @@ class HomeView(QWidget):
         self.date_button.setText(period_start.strftime("%d-%m-%Y"))
     elif period_type == "Week":
       self.date_button.setText(f"{period_start.strftime(
-          '%b %d')} - {period_end.strftime('%b %d, %Y')}")
+          "%b %d")} - {period_end.strftime("%b %d, %Y")}")
     elif period_type == "Month":
       self.date_button.setText(period_start.strftime("%B %Y"))
     elif period_type == "Year":

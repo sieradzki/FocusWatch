@@ -16,11 +16,11 @@ class Category:
     """ Validate the category data after initialization. """
     if self.color:
       if self.color.startswith("#"):
-        if not re.match(r'^#[0-9A-Fa-f]{6}$', self.color):
+        if not re.match(r"^#[0-9A-Fa-f]{6}$", self.color):
           raise ValueError(
             "color must start with # and follow the format #RRGGBB")
       elif self.color.startswith("rgb("):
-        match = re.match(r'^rgb\((\d{1,3}),(\d{1,3}),(\d{1,3})\)$', self.color)
+        match = re.match(r"^rgb\((\d{1,3}),(\d{1,3}),(\d{1,3})\)$", self.color)
         if not match or not all(0 <= int(value) <= 255 for value in match.groups()):
           raise ValueError(
             "color must be in the format rgb(r,g,b) where r, g, b are between 0 and 255")

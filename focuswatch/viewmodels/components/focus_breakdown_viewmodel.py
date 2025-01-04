@@ -101,8 +101,13 @@ class FocusBreakdownViewModel(QObject):
       activities = self._activity_service.get_period_entries(
           self._period_start, self._period_end
       )
-    except Exception as e:
-      logger.error(f"Error fetching activities: {e}")
+    except (ConnectionError, TimeoutError) as e:
+      logger.error(f"Network-related error fetching activities: {e}")
+      self._breakdown_data = []
+      self.breakdown_data_changed.emit()
+      return
+    except ValueError as e:
+      logger.error(f"Value error fetching activities: {e}")
       self._breakdown_data = []
       self.breakdown_data_changed.emit()
       return

@@ -5,6 +5,8 @@ logger = logging.getLogger(__name__)
 
 
 class CategorizationService:
+  """ Categorization module for FocusWatch. """
+
   def __init__(self, activity_service, classifier):
     self._activity_service = activity_service
     self._classifier = classifier

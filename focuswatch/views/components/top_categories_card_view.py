@@ -13,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class TopCategoriesCardView(TopItemsCardView):
+  """ View for the Top Categories Card. """
+
   def __init__(self,
                viewmodel,
                parent=None):
@@ -52,7 +54,7 @@ class TopCategoriesCardView(TopItemsCardView):
     parent_series.setHoleSize(0.6)  # Parents start where children end
     parent_series.setPieSize(0.85)
 
-    for category_id, category_data in organized_categories.items():
+    for _, category_data in organized_categories.items():
       category = category_data["category"]
       if category and not category.parent_category_id:
         # Create parent legend item
@@ -147,11 +149,11 @@ class TopCategoriesCardView(TopItemsCardView):
       toggle_button = self._create_toggle_button(item_data)
 
     label = self._create_category_label(
-      category.name, item_data["time"], self._viewmodel.get_category_color(category.id))
+      category.name, self._viewmodel.get_category_color(category.id))
     label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
 
     percentage_label = self._create_duration_label(
-      item_data["time"], total_value)
+      item_data["time"])
     progress_bar = self._create_progress_bar(
       item_data["time"], total_value, self._viewmodel.get_category_color(category.id))
 

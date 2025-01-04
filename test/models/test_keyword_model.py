@@ -3,6 +3,7 @@ from focuswatch.models.keyword import Keyword
 
 
 class TestKeyword(unittest.TestCase):
+  """ Test the Keyword model. """
 
   def setUp(self):
     self.keyword = Keyword(id=1, name="Test", category_id=1, match_case=False)
@@ -53,5 +54,5 @@ class TestKeyword(unittest.TestCase):
     self.assertFalse(partial_keyword.matches("Worst case"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   unittest.main()

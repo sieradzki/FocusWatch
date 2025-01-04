@@ -19,7 +19,7 @@ class ElidedLabel(QLabel):
       self.full_text, Qt.ElideRight, self.width())
 
     # Check if the text is actually elided
-    self.is_elided = (elided_text != self.full_text)
+    self.is_elided = elided_text != self.full_text
 
     self.setText(elided_text)
     super().resizeEvent(event)
