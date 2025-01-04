@@ -4,10 +4,10 @@ from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 from focuswatch.viewmodels.settings_viewmodel import SettingsViewModel
 from focuswatch.viewmodels.categories_viewmodel import CategoriesViewModel
 from focuswatch.viewmodels.home_viewmodel import HomeViewModel
-from focuswatch.services.classifier_service import ClassifierService
 
 
 class TestMainWindowViewModel(unittest.TestCase):
+  """ Test the MainWindowViewModel. """
   PAGES = ["home", "categories", "settings"]
 
   def setUp(self) -> None:
