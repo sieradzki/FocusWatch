@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, List
 
 from PySide6.QtCore import Property, QObject, Signal
 
@@ -29,7 +29,7 @@ class CategorizationHelperDialogViewModel(QObject):
       activity_service: "ActivityService",
       category_service: "CategoryService",
       keyword_service: "KeywordService",
-      classifier: 'ClassifierService'
+      classifier: "ClassifierService"
   ):
     super().__init__()
     self._activity_service = activity_service
