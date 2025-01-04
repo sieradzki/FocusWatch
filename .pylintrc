@@ -170,6 +170,8 @@ good-names=
   ,sizeHint
   ,showEvent
   ,mouseMoveEvent
+  ,closeEvent
+  ,eventFilter
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=
