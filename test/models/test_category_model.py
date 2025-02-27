@@ -1,5 +1,5 @@
 import unittest
-from focuswatch.models.category import Category
+from focuswatch.database.models.category import Category
 
 
 class TestCategory(unittest.TestCase):

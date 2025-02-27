@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
-from focuswatch.models.category import Category
+from focuswatch.database.models.category import Category
 from focuswatch.services.categorization_service import CategorizationService
 
 logger = logging.getLogger(__name__)

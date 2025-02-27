@@ -172,6 +172,7 @@ good-names=
   ,mouseMoveEvent
   ,closeEvent
   ,eventFilter
+  ,_SessionFactory
 
 # Bad variable names which should always be refused, separated by a comma
 bad-names=

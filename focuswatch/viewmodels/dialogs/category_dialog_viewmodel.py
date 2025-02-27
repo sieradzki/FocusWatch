@@ -3,8 +3,8 @@ from typing import TYPE_CHECKING, List, Optional
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
-from focuswatch.models.category import Category
-from focuswatch.models.keyword import Keyword
+from focuswatch.database.models.category import Category
+from focuswatch.database.models.keyword import Keyword
 
 if TYPE_CHECKING:
   from focuswatch.services.category_service import CategoryService

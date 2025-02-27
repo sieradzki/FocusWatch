@@ -34,7 +34,7 @@ class TopApplicationsCardViewModel(TopItemsCardViewModel):
 
     # clear top items
     self._top_items.clear()
-    for application, _, time, _ in top_applications:
+    for application, _, time in top_applications:
       if not self._config["dashboard"]["display_cards_idle"]:
         if application == "afk":
           continue
