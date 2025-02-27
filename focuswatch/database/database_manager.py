@@ -1,110 +1,117 @@
 """ Database manager for FocusWatch.
 
-This module provides a class for managing the database for FocusWatch.
+This module provides a class for managing the database setup and initialization for FocusWatch.
 """
 
 import logging
-import sqlite3
+from typing import Optional
+
+from sqlalchemy.exc import SQLAlchemyError
 
 from focuswatch.database.database_connection import DatabaseConnection
+from focuswatch.database.models import Base
+from focuswatch.database.models.metadata import Metadata
 from focuswatch.services.category_service import CategoryService
 from focuswatch.services.keyword_service import KeywordService
 
 logger = logging.getLogger(__name__)
 
+CURRENT_SCHEMA_VERSION = "1.0"
+
 
 class DatabaseManager:
-  """ Class for managing the database for FocusWatch. """
+  """ Class for managing the database setup for FocusWatch. """
 
-  def __init__(self):
-    """ Initialize the database manager. """
+  def __init__(self,
+               category_service: Optional[CategoryService] = None,
+               keyword_service: Optional[KeywordService] = None):
+    """ Initialize the database manager.
 
+    Args:
+      category_service: Optional CategoryService instance for dependency injection.
+      keyword_service: Optional KeywordService instance for dependency injection.
+    """
     self._db_conn = DatabaseConnection()
-    self._db_conn.connect_or_create()
+    self._setup_database()
 
-    if not self.database_exists():
-      logger.info("Database does not exist. Creating database.")
-      self._create_db()
+    self._category_service = category_service or CategoryService(
+      db_conn=self._db_conn)
+    self._keyword_service = keyword_service or KeywordService(
+      db_conn=self._db_conn)
 
-      self._category_service = CategoryService()
-      self._keyword_service = KeywordService()
+    if not self._is_defaults_inserted():
+      logger.info("Defaults not yet inserted. Inserting default data.")
+      self._insert_default_data()
+      self._mark_defaults_inserted()
 
-      self._category_service.insert_default_categories()
-      self._keyword_service.insert_default_keywords()
+    self._ensure_schema_version()
 
-  def database_exists(self) -> bool:
-    """ Check if the database and tables exist. 
+  def _setup_database(self):
+    """ Set up the database by creating tables if they don't exist. """
+    try:
+      Base.metadata.create_all(self._db_conn.engine)
+      logger.info("Database tables checked/created successfully.")
+    except SQLAlchemyError as e:
+      logger.error(f"Error setting up database: {e}")
+      raise
+
+  def _is_defaults_inserted(self) -> bool:
+    """ Check if default data has been inserted.
 
     Returns:
-      bool: True if the database and tables exist, False otherwise.
+      bool: True if defaults have been inserted, False otherwise.
     """
-    query = "SELECT name FROM sqlite_master WHERE type='table' AND name='activity';"
-    result = self._db_conn.execute_query(query)
-    try:
-      result = self._db_conn.execute_query(query)
-      return bool(result)
-    except sqlite3.Error as e:
-      logger.error(f"Error checking database existence: {e}")
-      return False
+    with self._db_conn.get_session() as session:
+      try:
+        result = session.query(Metadata).filter(
+          Metadata.key == "defaults_inserted").first()
+        return result.value.lower() == "true" if result else False
+      except SQLAlchemyError as e:
+        logger.error(f"Error checking defaults insertion status: {e}")
+        return False
 
-  def _create_db(self):
-    """ Create the database. """
-    create_table_queries = [
-      '''
-      CREATE TABLE "activity" (
-          "id" INTEGER NOT NULL UNIQUE,
-          "time_start" TEXT NOT NULL,
-          "time_stop" TEXT NOT NULL,
-          "window_class" TEXT NOT NULL,
-          "window_name" TEXT NOT NULL,
-          "category_id" INTEGER,
-          "project_id" INTEGER,
-          "focused" INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY("category_id") REFERENCES "categories"("id"),
-          PRIMARY KEY("id" AUTOINCREMENT)
-      );''',
-      '''
-      CREATE TABLE "categories" (
-          "id" INTEGER NOT NULL UNIQUE,
-          "name" TEXT NOT NULL,
-          "parent_category" INTEGER,
-          "color" TEXT,
-          "focused" INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY("parent_category") REFERENCES "categories"("id"),
-          PRIMARY KEY("id" AUTOINCREMENT)
-      );''',
-      '''
-      CREATE TABLE "keywords" (
-          "id" INTEGER NOT NULL UNIQUE,
-          "name" TEXT NOT NULL,
-          "category_id" INTEGER,
-          "match_case" INTEGER NOT NULL DEFAULT 0,
-          FOREIGN KEY("category_id") REFERENCES "categories"("id")
-          ON DELETE CASCADE ON UPDATE CASCADE,
-          PRIMARY KEY("id" AUTOINCREMENT)
-      );''',
-      '''
-      CREATE TABLE "projects" (
-          "id" INTEGER NOT NULL UNIQUE,
-          "name" TEXT NOT NULL,
-          "color" TEXT NOT NULL,
-          PRIMARY KEY("id" AUTOINCREMENT)
-      );''',
-      '''
-      CREATE TABLE "tasks" (
-          "id" INTEGER NOT NULL UNIQUE,
-          "name" TEXT NOT NULL,
-          "project_id" INTEGER,
-          "completed" INTEGER,
-          FOREIGN KEY("project_id") REFERENCES "projects"("id")
-          ON DELETE CASCADE ON UPDATE CASCADE,
-          PRIMARY KEY("id" AUTOINCREMENT)
-      );'''
-    ]
+  def _mark_defaults_inserted(self):
+    """ Mark that default data has been inserted in the database. """
+    with self._db_conn.get_session() as session:
+      try:
+        metadata = Metadata(key="defaults_inserted", value="true")
+        session.merge(metadata)
+        session.commit()
+        logger.info("Marked defaults as inserted.")
+      except SQLAlchemyError as e:
+        logger.error(f"Error marking defaults as inserted: {e}")
+        session.rollback()
 
+  def _ensure_schema_version(self):
+    """ Ensure the schema version is recorded and log the current version. """
+    with self._db_conn.get_session() as session:
+      try:
+        current_version = session.query(Metadata).filter(
+          Metadata.key == "schema_version").first()
+        if not current_version:
+          metadata = Metadata(key="schema_version",
+                              value=CURRENT_SCHEMA_VERSION)
+          session.add(metadata)
+          session.commit()
+          logger.info(
+            f"Schema version initialized to {CURRENT_SCHEMA_VERSION}.")
+        else:
+          logger.info(f"Current schema version: {current_version.value}")
+          if current_version.value != CURRENT_SCHEMA_VERSION:
+            logger.warning(
+              f"Schema version {current_version.value} does not match expected {CURRENT_SCHEMA_VERSION}. "
+              "Future migrations may be required."
+            )
+      except SQLAlchemyError as e:
+        logger.error(f"Error ensuring schema version: {e}")
+        session.rollback()
+
+  def _insert_default_data(self):
+    """ Insert default categories and keywords into the database. """
     try:
-      for query in create_table_queries:
-        self._db_conn.execute_update(query)
-      logger.info("Database created successfully")
-    except sqlite3.DatabaseError as e:
-      logger.error(f"Error creating database: {e}")
+      self._category_service.insert_default_categories()
+      self._keyword_service.insert_default_keywords()
+      logger.info("Default data inserted successfully.")
+    except SQLAlchemyError as e:
+      logger.error(f"Error inserting default data: {e}")
+      raise
