@@ -4,6 +4,7 @@ This module manages the database connection and sessions using SQLAlchemy for Fo
 """
 
 import logging
+from typing import Callable, Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
@@ -18,7 +19,7 @@ class DatabaseConnection:
   """ Manages the database connection and sessions using SQLAlchemy. """
 
   _engine = None
-  _SessionFactory = None
+  _SessionFactory: Optional[Callable[[], Session]] = None
 
   def __init__(self):
     """ Initialize the database connection configuration. """
@@ -39,7 +40,7 @@ class DatabaseConnection:
         db_uri = f"sqlite:///{db_name}"
         cls._engine = create_engine(db_uri, pool_pre_ping=True)
         cls._SessionFactory = sessionmaker(bind=cls._engine)
-        logger.info(f"Database engine initialized.")
+        logger.info("Database engine initialized.")
       except SQLAlchemyError as e:
         logger.error(f"Failed to initialize database engine: {e}")
         raise
@@ -63,7 +64,7 @@ class DatabaseConnection:
     """
     if self._SessionFactory is None:
       self._initialize_engine(self.db_name)
-    return self._SessionFactory()
+    return self._SessionFactory() # pylint: disable=not-callable
 
   def test_connection(self) -> bool:
     """ Test the database connection.
