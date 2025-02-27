@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, List
 
 from PySide6.QtCore import Property, QObject, Signal
 
-from focuswatch.models.keyword import Keyword
+from focuswatch.database.models.keyword import Keyword
 from focuswatch.services.categorization_service import CategorizationService
 
 if TYPE_CHECKING:

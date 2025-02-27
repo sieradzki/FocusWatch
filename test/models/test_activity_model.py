@@ -1,6 +1,6 @@
 import unittest
 from datetime import datetime, timedelta
-from focuswatch.models.activity import Activity
+from focuswatch.database.models.activity import Activity
 
 
 class TestActivity(unittest.TestCase):

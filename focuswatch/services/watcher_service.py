@@ -14,7 +14,7 @@ from typing import Optional, TYPE_CHECKING
 import psutil
 
 from focuswatch.config import Config
-from focuswatch.models.activity import Activity
+from focuswatch.database.models.activity import Activity
 
 if TYPE_CHECKING:
   from focuswatch.services.activity_service import ActivityService

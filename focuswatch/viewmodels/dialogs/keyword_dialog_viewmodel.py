@@ -3,7 +3,7 @@ from typing import Optional
 
 from PySide6.QtCore import Property, QObject, Signal, Slot
 
-from focuswatch.models.keyword import Keyword
+from focuswatch.database.models.keyword import Keyword
 
 logger = logging.getLogger(__name__)
 

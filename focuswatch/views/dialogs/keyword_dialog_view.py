@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QCheckBox, QDialog, QDialogButtonBox,
                                QFormLayout, QLabel, QLineEdit, QMessageBox,
                                QPushButton, QVBoxLayout, QWidget)
 
-from focuswatch.models.keyword import Keyword
+from focuswatch.database.models.keyword import Keyword
 from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.viewmodels.dialogs.keyword_dialog_viewmodel import \
     KeywordDialogViewModel

@@ -9,8 +9,8 @@ from typing import List, Optional, Tuple
 import yaml
 
 from focuswatch.database.database_connection import DatabaseConnection
-from focuswatch.models.category import Category
-from focuswatch.models.keyword import Keyword
+from focuswatch.database.models.category import Category
+from focuswatch.database.models.keyword import Keyword
 from focuswatch.services.keyword_service import KeywordService
 
 logger = logging.getLogger(__name__)
