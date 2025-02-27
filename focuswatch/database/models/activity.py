@@ -19,17 +19,17 @@ class Activity(Base):
   window_class = Column(String, nullable=False)
   window_name = Column(String, nullable=False)
   category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
-  project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
+  # project_id = Column(Integer, ForeignKey("projects.id"), nullable=True)
   focused = Column(Boolean, nullable=False, default=False)
 
-  def __init__(self, 
-               time_start: Optional[datetime] = None, 
+  def __init__(self,
+               time_start: Optional[datetime] = None,
                time_stop: Optional[datetime] = None,
-               window_class: str = "", 
-               window_name: str = "", 
+               window_class: str = "",
+               window_name: str = "",
                category_id: Optional[int] = None,
-               project_id: Optional[int] = None, 
-               focused: bool = False, 
+               project_id: Optional[int] = None,
+               focused: bool = False,
                id: Optional[int] = None):
     """ Initialize and validate the activity.
 
