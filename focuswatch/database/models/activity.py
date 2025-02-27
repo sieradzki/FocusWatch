@@ -15,7 +15,7 @@ class Activity(Base):
 
   id = Column(Integer, primary_key=True, autoincrement=True)
   time_start = Column(String, nullable=False)
-  time_stop = Column(String, nullable=False)
+  time_stop = Column(String, nullable=True)
   window_class = Column(String, nullable=False)
   window_name = Column(String, nullable=False)
   category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
@@ -62,8 +62,14 @@ class Activity(Base):
 
   @property
   def duration(self) -> float:
-    """ Returns the duration of the activity in seconds. """
+    """ Returns the duration of the activity in seconds.
+
+    Raises:
+      ValueError: If time_stop is None, as duration cannot be computed.
+    """
     start = datetime.fromisoformat(self.time_start)
+    if self.time_stop is None:
+      raise ValueError("Cannot compute duration without a stop time")
     stop = datetime.fromisoformat(self.time_stop)
     return (stop - start).total_seconds()
 
