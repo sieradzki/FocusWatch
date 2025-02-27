@@ -3,7 +3,7 @@
 import logging
 import sqlite3
 from typing import List, Optional
-from focuswatch.models.keyword import Keyword
+from focuswatch.database.models.keyword import Keyword
 from focuswatch.database.database_connection import DatabaseConnection
 
 logger = logging.getLogger(__name__)

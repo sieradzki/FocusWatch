@@ -1,5 +1,5 @@
 import unittest
-from focuswatch.models.keyword import Keyword
+from focuswatch.database.models.keyword import Keyword
 
 
 class TestKeyword(unittest.TestCase):

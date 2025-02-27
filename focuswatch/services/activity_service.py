@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import List, Optional, Tuple
 
 from focuswatch.database.database_connection import DatabaseConnection
-from focuswatch.models.activity import Activity
+from focuswatch.database.models.activity import Activity
 
 logger = logging.getLogger(__name__)
 

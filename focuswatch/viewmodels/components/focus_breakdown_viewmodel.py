@@ -6,7 +6,7 @@ from PySide6.QtCore import Property, QObject, Signal, Slot
 
 if TYPE_CHECKING:
   from focuswatch.config import Config
-  from focuswatch.models.activity import Activity
+  from focuswatch.database.models.activity import Activity
   from focuswatch.services.activity_service import ActivityService
   from focuswatch.services.category_service import CategoryService
 
