@@ -1,112 +1,89 @@
-""" Database connection module for FocusWatch. 
+""" Database connection module for FocusWatch.
 
-This module is responsible for managing the connection to the SQLite database used by FocusWatch. 
-It provides methods for creating, updating, and querying the database. The class uses the sqlite3 module to interact with the database.
+This module manages the database connection and sessions using SQLAlchemy for FocusWatch.
 """
 
-import sqlite3
-from focuswatch.config import Config
 import logging
+
+from sqlalchemy import create_engine
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session, sessionmaker
+
+from focuswatch.config import Config
 
 logger = logging.getLogger(__name__)
 
 
 class DatabaseConnection:
-  """ Class for managing the connection to the database. """
+  """ Manages the database connection and sessions using SQLAlchemy. """
+
+  _engine = None
+  _SessionFactory = None
 
   def __init__(self):
-    """ Initialize the database connection. """
-    self.conn = None
+    """ Initialize the database connection configuration. """
     self._config = Config()
     self.db_name = self._config["database"]["location"]
+    if self._engine is None:
+      self._initialize_engine(self.db_name)
 
-  def __del__(self):
-    """ Close the database connection when the object is deleted. """
-    self.close()
-
-  def close(self):
-    """ Close the database connection. """
-    if self.conn:
-      self.conn.close()
-      self.conn = None
-
-  def connect(self):
-    """ Connect to the database.
-
-    Raises:
-      ConnectionError: If there is an error connecting to the database.
-    """
-    try:
-      dburi = f"file:{self.db_name}?mode=rw"
-      self.conn = sqlite3.connect(
-        dburi, uri=True, check_same_thread=False, timeout=1)
-    except sqlite3.OperationalError as e:
-      logger.error(f"Error connecting to database: {e}")
-      raise ConnectionError(f"Failed to connect to the database: {e}") from e
-
-  def connect_or_create(self):
-    """ Connect to the database, creating it if it doesn't exist. """
-    try:
-      self.connect()
-    except ConnectionError:
-      logger.info("Database does not exist, creating new database.")
-      self.conn = sqlite3.connect(
-        self.db_name, check_same_thread=False, timeout=1)
-
-  def execute_query(self, query: str, params: tuple = ()) -> list:
-    """ Execute a query on the database.
+  @classmethod
+  def _initialize_engine(cls, db_name: str):
+    """ Initialize the SQLAlchemy engine and session factory if not already done.
 
     Args:
-      query (str): The SQL query to execute.
-      params (tuple): The parameters to pass to the query.
+      db_name: The database file path or URI suffix (e.g., path for SQLite).
+    """
+    if cls._engine is None:
+      try:
+        db_uri = f"sqlite:///{db_name}"
+        cls._engine = create_engine(db_uri, pool_pre_ping=True)
+        cls._SessionFactory = sessionmaker(bind=cls._engine)
+        logger.info(f"Database engine initialized.")
+      except SQLAlchemyError as e:
+        logger.error(f"Failed to initialize database engine: {e}")
+        raise
+
+  @property
+  def engine(self):
+    """ Get the SQLAlchemy engine.
 
     Returns:
-      list: The results of the query.
+      sqlalchemy.engine.Engine: The database engine instance.
     """
-    if not self.conn:
-      raise ConnectionError("Database connection is not established.")
-    cur = self.conn.cursor()
-    try:
-      cur.execute(query, params)
-      result = cur.fetchall()
-    except sqlite3.DatabaseError as e:
-      logger.error(f"Error executing query: {e}")
-      result = []
-    finally:
-      cur.close()
-    return result
+    if self._engine is None:
+      self._initialize_engine(self.db_name)
+    return self._engine
 
-  def execute_update(self, query: str, params: tuple = (), return_cursor: bool = False):
-    """ Execute an update query on the database.
-
-    Args:
-      query (str): The SQL query to execute.
-      params (tuple): The parameters to pass to the query.
-      return_cursor (bool): Whether to return the cursor object.
+  def get_session(self) -> Session:
+    """ Create and return a new database session.
 
     Returns:
-      int or sqlite3.Cursor: The number of rows affected by the update, or the cursor if return_cursor is True.
+      Session: A new SQLAlchemy session object.
     """
-    if not self.conn:
-      raise ConnectionError("Database connection is not established.")
-    cur = self.conn.cursor()
+    if self._SessionFactory is None:
+      self._initialize_engine(self.db_name)
+    return self._SessionFactory()
+
+  def test_connection(self) -> bool:
+    """ Test the database connection.
+
+    Returns:
+      bool: True if the connection is successful, False otherwise.
+    """
     try:
-      cur.execute(query, params)
-      self.conn.commit()
-      rows_affected = cur.rowcount
-      # logger.debug(
-      # f"Execute update - Query: {query}, Params: {params}, Rows affected: {rows_affected}")
-      if return_cursor:
-        return cur
-      else:
-        cur.close()
-        return rows_affected
-    except sqlite3.OperationalError as e:
-      logger.error(f"Error executing update {
-                   query} with params: {params}: {e}")
-      self.conn.rollback()
-      cur.close()
-      if return_cursor:
-        return None
-      else:
-        return -1
+      with self.engine.connect() as connection:
+        connection.execute("SELECT 1")
+        logger.info("Database connection successful.")
+        return True
+    except SQLAlchemyError as e:
+      logger.error(f"Database connection failed: {e}")
+      return False
+
+  def close_engine(self):
+    """ Close the database engine and reset internal state. """
+    if self._engine:
+      self._engine.dispose()
+      self._engine = None
+      self._SessionFactory = None
+      logger.info("Database engine closed.")
