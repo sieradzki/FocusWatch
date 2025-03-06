@@ -189,6 +189,9 @@ class SettingsView(QWidget):
     self.filter_input.textChanged.connect(self._on_filter_text_changed)
     self.autostart_checkbox.stateChanged.connect(
         self._on_autostart_changed)
+    self.start_minimized_checkbox.stateChanged.connect(
+      self._on_start_minimized_changed
+    )
     self.watch_interval.valueChanged.connect(
         self._on_watch_interval_changed)
     self.watch_afk.stateChanged.connect(self._on_watch_afk_changed)
@@ -364,6 +367,20 @@ class SettingsView(QWidget):
     # Set custom property for styling
     self.autostart_note.setProperty("disabled_note", True)
     group_layout.addWidget(self.autostart_note)
+
+    # Start minimized Checkbox Setting
+    self.start_minimized_checkbox = QCheckBox(group_box)
+    self.start_minimized_checkbox.setObjectName("start_minimized_checkbox")
+    self.start_minimized_checkbox.setText(
+        QCoreApplication.translate(
+            "SettingsView", "Minimize FocusWatch to system tray on startup.", None)
+    )
+    self.start_minimized_checkbox.setChecked(
+      self._viewmodel.general_start_minimized)
+
+    start_minimized_setting = self._create_setting_widget(
+        self.start_minimized_checkbox)
+    group_layout.addWidget(start_minimized_setting)
 
     return group_box
 
@@ -642,6 +659,10 @@ class SettingsView(QWidget):
   def _on_autostart_changed(self, state: int) -> None:
     """ Handle changes to the autostart checkbox. """
     self._viewmodel.autostart_enabled = state == 2
+
+  def _on_start_minimized_changed(self, state: int) -> None:
+    """ Handle changes to the start minimized checkbox. """
+    self._viewmodel.general_start_minimized = state == 2
 
   def _on_watch_interval_changed(self, value: float) -> None:
     """ Handle changes to the watch interval spin box. """

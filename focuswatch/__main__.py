@@ -10,17 +10,18 @@ from PySide6.QtGui import QAction, QIcon
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QSystemTrayIcon
 
 from focuswatch.arguments import parse_arguments
+from focuswatch.config import Config
 from focuswatch.database.database_manager import DatabaseManager
+from focuswatch.logger import setup_logging
 from focuswatch.services.activity_service import ActivityService
 from focuswatch.services.category_service import CategoryService
+from focuswatch.services.classifier_service import ClassifierService
 from focuswatch.services.keyword_service import KeywordService
 from focuswatch.services.watcher_service import WatcherService
 from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.viewmodels.main_viewmodel import MainViewModel
 from focuswatch.viewmodels.mainwindow_viewmodel import MainWindowViewModel
 from focuswatch.views.mainwindow_view import MainWindowView
-from focuswatch.services.classifier_service import ClassifierService
-from focuswatch.logger import setup_logging
 
 # from qt_material import apply_stylesheet
 
@@ -140,6 +141,10 @@ def main():
     target=start_watcher, args=(watcher_service,))
   watcher_thread.daemon = True  # This makes the thread exit when the main program exits
   watcher_thread.start()
+
+  config = Config()
+  if not config["general"]["start_minimized"]:
+    main_window.show()
 
   sys.exit(app.exec())
 

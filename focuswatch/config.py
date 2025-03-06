@@ -18,6 +18,7 @@ class Config(MutableMapping):
       "verbose": 0,
       "watch_afk": True,
       "afk_timeout": 10,
+      "start_minimized": False,
     },
     "database": {
       "location": None,
