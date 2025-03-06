@@ -12,6 +12,31 @@ logger = logging.getLogger(__name__)
 
 class Config(MutableMapping):
   """ Configuration class for FocusWatch """
+  DEFAULT_CONFIG = {
+    "general": {
+      "watch_interval": 1.0,
+      "verbose": 0,
+      "watch_afk": True,
+      "afk_timeout": 10,
+    },
+    "database": {
+      "location": None,
+    },
+    "logging": {
+      "location": None,
+      "logger_config": None,
+      "log_level": "DEBUG",
+    },
+    "dashboard": {
+      "focused_target_day": 8.0,
+      "focused_target_week": 40.0,
+      "focused_target_month": 160.0,
+      "focused_target_year": 1920.0,
+      "distracted_goal": 20.0,
+      "display_cards_idle": True,
+      "display_timeline_idle": True,
+    }
+  }
 
   def __init__(self, config_file_path: Optional[str] = None):
     self.is_frozen = getattr(sys, "frozen", False)
@@ -47,36 +72,16 @@ class Config(MutableMapping):
 
     os.makedirs(os.path.dirname(self.default_log_path), exist_ok=True)
 
+    self.DEFAULT_CONFIG["database"]["location"] = self.default_database_path
+    self.DEFAULT_CONFIG["logging"]["location"] = self.default_log_path
+    self.DEFAULT_CONFIG["logging"]["logger_config"] = self.default_logger_config_path
+
     self.config_file_path = config_file_path or self.default_config_path
     self.load_config()
 
   def initialize_config(self):
     """ Initialize the configuration file with default values """
-    self._config = {
-      "general": {
-        "watch_interval": 1.0,
-        "verbose": 0,
-        "watch_afk": True,
-        "afk_timeout": 10,
-      },
-      "database": {
-        "location": self.default_database_path,
-      },
-      "logging": {
-        "location": self.default_log_path,
-        "logger_config": self.default_logger_config_path,
-        "log_level": "DEBUG",
-      },
-      "dashboard": {
-        "focused_target_day": 8.0,
-        "focused_target_week": 40.0,
-        "focused_target_month": 160.0,
-        "focused_target_year": 1920.0,
-        "distracted_goal": 20.0,
-        "display_cards_idle": True,
-        "display_timeline_idle": True,
-      }
-    }
+    self._config = self.DEFAULT_CONFIG.copy()
     self.write_config_to_file()
 
   def write_config_to_file(self):
@@ -107,14 +112,39 @@ class Config(MutableMapping):
         with open(self.config_file_path, "r", encoding="utf-8") as config_file:
           self._config = yaml.safe_load(config_file) or {}
         # Check for required sections
-        required_sections = ["general", "database", "logging", "dashboard"]
+        required_sections = self.DEFAULT_CONFIG.keys()
         if not all(section in self._config for section in required_sections):
           logger.info(
             "Missing sections in configuration file. Reinitializing configuration.")
           self.initialize_config()
+          return
+
+        self._validate_config_keys()
+
     except (IOError, yaml.YAMLError) as e:
       logger.error(f"Error loading configuration file: {e}")
       raise
+
+  def _validate_config_keys(self):
+    """ Check and optionally add missing sections/keys in the loaded config. """
+    updated = False
+    for section, defaults in self.DEFAULT_CONFIG.items():
+      if section not in self._config:
+        logger.warning(
+          f"Section '{section}' missing from config. Adding with defaults: {defaults}")
+        self._config[section] = defaults.copy()
+        updated = True
+        continue
+      for key, default_value in defaults.items():
+        if key not in self._config[section]:
+          logger.warning(
+            f"Key '{key}' missing in section '{section}' of config file {self.config_file_path}. "
+            f"Adding default value: {default_value}"
+          )
+          self._config[section][key] = default_value
+          updated = True
+    if updated:
+      self.write_config_to_file()
 
   def __getitem__(self, key: str) -> Any:
     return self._config[key]
