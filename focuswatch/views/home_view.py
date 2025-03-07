@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 class HomeView(QWidget):
   """ Home page view. """
+
   def __init__(self,
                viewmodel: "HomeViewModel",
                parent=None):
@@ -124,6 +125,7 @@ class HomeView(QWidget):
     self._timeline_view = TimelineView(
         self._viewmodel.timeline_viewmodel, parent=self)
     self.timeline_frame = self._timeline_view
+    self.timeline_frame.setFixedWidth(300)
 
     self.main_layout.addWidget(self.timeline_frame)
 
