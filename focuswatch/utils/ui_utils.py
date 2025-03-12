@@ -1,4 +1,7 @@
+import re
+
 from PySide6.QtGui import QColor
+
 from focuswatch.services.category_service import CategoryService
 
 
@@ -41,3 +44,28 @@ def get_category_color(category_id):
     return "#F9F9F9"
   color = category.color
   return color if color else "#F9F9F9"
+
+
+def validate_color_format(color: str) -> bool:
+  """Validate the color matches rgb(r,g,b) or #RRGGBB format.
+
+  Args:
+      color (str): The color string to validate.
+
+  Returns:
+      bool: True if the color is valid, False otherwise.
+  """
+  if not color:
+    return False
+
+  if color.startswith("#"):
+    if re.match(r"^#[0-9A-Fa-f]{6}$", color):
+      return True
+  elif color.startswith("rgb("):
+    match = re.match(r"^rgb\((\d{1,3}),(\d{1,3}),(\d{1,3})\)$", color)
+    if match and all(0 <= int(value) <= 255 for value in match.groups()):
+      return True
+  else:
+    return False
+
+  return False

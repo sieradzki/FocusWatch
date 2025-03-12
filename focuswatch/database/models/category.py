@@ -1,11 +1,11 @@
 """ Category model for FocusWatch. """
 
-import re
 from typing import Optional
 
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 
 from focuswatch.database.models import Base
+from focuswatch.utils.ui_utils import validate_color_format
 
 
 class Category(Base):
@@ -39,23 +39,14 @@ class Category(Base):
     self.name = name
     self.parent_category_id = parent_category_id
     self.focused = focused
-
-    if color:
-      if color.startswith("#"):
-        if not re.match(r"^#[0-9A-Fa-f]{6}$", color):
-          raise ValueError(
-            "color must start with # and follow the format #RRGGBB")
-      elif color.startswith("rgb("):
-        match = re.match(r"^rgb\((\d{1,3}),(\d{1,3}),(\d{1,3})\)$", color)
-        if not match or not all(0 <= int(value) <= 255 for value in match.groups()):
-          raise ValueError(
-            "color must be in the format rgb(r,g,b) with values 0-255")
+    if color is not None:
+      if validate_color_format(color):
+        self.color = color
       else:
         raise ValueError(
-          "color must start with # or be in the format rgb(r,g,b)")
-    if parent_category_id and id and parent_category_id == id:
-      raise ValueError("category cannot be its own parent")
-    self.color = color
+          f"Invalid color format: {color}. Use #RRGGBB or rgb(r,g,b).")
+    else:
+      self.color = None
 
   @property
   def is_root_category(self) -> bool:
