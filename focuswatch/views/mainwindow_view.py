@@ -75,6 +75,9 @@ class MainWindowView(QMainWindow):
       "Home", "home.png")
     self.sidebar_button_categories = self._create_sidebar_button(
       "Categories", "categories.png")
+    self.sidebar_button_projects = self._create_sidebar_button(
+      "Projects", "projects.png"
+    )
     # self.sidebar_button_help = self._create_sidebar_button(
     # "Help", "help.png")
     self.sidebar_button_settings = self._create_sidebar_button(
@@ -85,6 +88,8 @@ class MainWindowView(QMainWindow):
       self.sidebar_button_home, 0, Qt.AlignmentFlag.AlignHCenter)
     self.sidebar_layout.addWidget(
       self.sidebar_button_categories, 0, Qt.AlignmentFlag.AlignHCenter)
+    self.sidebar_layout.addWidget(
+      self.sidebar_button_projects, 0, Qt.AlignmentFlag.AlignHCenter)
     self.sidebar_layout.addSpacerItem(QSpacerItem(
       20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
     # self.sidebar_layout.addWidget(

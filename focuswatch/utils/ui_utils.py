@@ -2,7 +2,6 @@ import re
 
 from PySide6.QtGui import QColor
 
-from focuswatch.services.category_service import CategoryService
 
 
 def get_contrasting_text_color(background_color):
@@ -14,6 +13,7 @@ def get_contrasting_text_color(background_color):
 
 
 def get_category_color_or_parent(category_id):
+  from focuswatch.services.category_service import CategoryService
   """ Returns the color of a category. If the category does not have a color, return parent category's color or default (#F9F9F9). """
   category_service = CategoryService()
   current_id = category_id
@@ -37,6 +37,7 @@ def get_category_color_or_parent(category_id):
 
 
 def get_category_color(category_id):
+  from focuswatch.services.category_service import CategoryService
   """ Returns the color of a category. If the category does not have a color, return default (#F9F9F9). """
   category_service = CategoryService()
   category = category_service.get_category_by_id(category_id)
