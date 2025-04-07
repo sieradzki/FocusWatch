@@ -18,10 +18,8 @@ SERVICE_FILE = f"/etc/systemd/system/{APP_NAME}.service"
 
 
 def create_service_file() -> str:
-  """ Create a systemd service file for the application. 
-  note:
-    the service should wait for the graphical session to start before running to ensure that the application can access the display and system tray. 
-
+  """ Create a systemd service file for the application.
+  The service should wait for the graphical session to start before running to ensure that the application can access the display and system tray.
   Returns:
     str: The content of the service file.
   """
@@ -44,10 +42,8 @@ def create_service_file() -> str:
 
 def run_pkexec_script(script_content: str) -> None:
   """ Run a script with elevated privileges using pkexec (PolicyKit). 
-
   Args:
     script_content (str): The script content to be executed.
-
   Raises:
     subprocess.CalledProcessError: If the script fails to execute.
   """
@@ -61,8 +57,7 @@ def run_pkexec_script(script_content: str) -> None:
 
 
 def write_service_file(service_content: str) -> None:
-  """ Write the service file to the systemd directory. 
-
+  """ Write the service file to the systemd directory.
   Args:
     service_content (str): The content of the service file.
   """
@@ -84,11 +79,9 @@ def enable_service() -> None:
 
 
 def add_to_autostart_linux() -> bool:
-  """ Add the application to Linux autostart using systemd. 
-
+  """ Add the application to Linux autostart using systemd.
   Returns:
-    bool: True if the application was successfully added to autostart, False otherwise. 
-
+    bool: True if the application was successfully added to autostart, False otherwise.
   Raises:
     IOError: If the service file fails to be written.
     subprocess.CalledProcessError: If the service fails to be enabled or started.
@@ -104,11 +97,9 @@ def add_to_autostart_linux() -> bool:
 
 
 def remove_service_file() -> bool:
-  """ Remove the service file from the systemd directory. 
-
+  """ Remove the service file from the systemd directory.
   Returns:
     bool: True if the service file was successfully removed, False otherwise.
-
   Raises:
     subprocess.CalledProcessError: If the service fails to be stopped or disabled.
   """
@@ -128,10 +119,8 @@ def remove_service_file() -> bool:
 
 def is_admin() -> bool:
   """ Check if the application is running with administrator privileges - Windows only.
-
   Returns:
     bool: True if the application is running with administrator privileges, False otherwise.
-
   Raises:
     OSError: If there's an error invoking the Windows API call.
   """
@@ -143,14 +132,11 @@ def is_admin() -> bool:
 
 
 def run_as_admin(func: callable) -> bool:
-  """ Run a function with elevated privileges - Windows only. 
-
+  """ Run a function with elevated privileges - Windows only.
   Args:
     func (callable): The function to be executed with elevated privileges.
-
   Returns:
     bool: True if the function was executed successfully, False otherwise.
-
   Raises:
     OSError: If there's an error invoking the Windows API call to elevate privileges.
   """
@@ -167,11 +153,9 @@ def run_as_admin(func: callable) -> bool:
 
 
 def add_to_autostart_windows() -> bool:
-  """ Add the application to Windows autostart. 
-
+  """ Add the application to Windows autostart.
   Returns:
     bool: True if the application was successfully added to autostart, False otherwise.
-
   Raises:
     OSError: If there's an error adding the application to the Windows registry.
   """
@@ -188,11 +172,9 @@ def add_to_autostart_windows() -> bool:
 
 
 def add_to_autostart() -> bool:
-  """ Add the application to autostart. 
-
+  """ Add the application to autostart.
   Returns:
     bool: True if the application was successfully added to autostart, False otherwise.
-
   Raises:
     OSError: If the operating system is not supported.
   """
@@ -205,14 +187,14 @@ def add_to_autostart() -> bool:
     return True
 
   if is_windows():
-    return run_as_admin(add_to_autostart_windows)
+    return add_to_autostart_windows()
   elif is_linux():
     init_system = detect_init_system()
     if init_system == "systemd":
       return add_to_autostart_linux()
     else:
-      logger.warning(f"Unsupported init system: {
-                     init_system}. Please refer to your distribution's documentation for enabling services.")
+      logger.warning(
+        f"Unsupported init system: {init_system}. Please refer to your distribution's documentation for enabling services.")
       service_content = create_service_file()
       write_service_file(service_content)
       return False
@@ -221,13 +203,11 @@ def add_to_autostart() -> bool:
 
 
 def remove_from_autostart() -> bool:
-  """ Remove the application from autostart. 
-
+  """ Remove the application from autostart.
   Returns:
     bool: True if the application was successfully removed from autostart, False otherwise.
-
   Raises:
-    OSError: If the operating system is not supported or if there's an error removing the application from the Windows registry. 
+    OSError: If the operating system is not supported or if there's an error removing the application from the Windows registry.
   """
   if not is_frozen():
     logger.warning("Autostart can only be set for the packaged application.")
@@ -253,21 +233,19 @@ def remove_from_autostart() -> bool:
     if init_system == "systemd":
       return remove_service_file()
     else:
-      logger.warning(f"Unsupported init system: {
-                     init_system}. Please refer to your distribution's documentation for disabling services.")
+      logger.warning(
+        f"Unsupported init system: {init_system}. Please refer to your distribution's documentation for disabling services.")
       return False
   else:
     raise OSError("Unsupported operating system")
 
 
 def is_in_autostart() -> bool:
-  """ Check if the application is in autostart. 
-
+  """ Check if the application is in autostart.
   Returns:
     bool: True if the application is in autostart, False otherwise.
-
   Raises:
-    OSError: If the operating system is not supported or if there's an error checking the Windows registry. 
+    OSError: If the operating system is not supported or if there's an error checking the Windows registry.
   """
   if is_windows():
     key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
@@ -285,10 +263,10 @@ def is_in_autostart() -> bool:
 
 
 def detect_init_system() -> str:
-  """ Detect the init system used by the Linux distribution - currently only supports systemd. 
-
+  """ Detect the init system used by the Linux distribution - currently only supports systemd.
   Returns:
-    str: The init system used by the Linux distribution. """
+    str: The init system used by the Linux distribution.
+  """
   if os.path.exists("/bin/systemctl"):
     return "systemd"
   return "unknown"
