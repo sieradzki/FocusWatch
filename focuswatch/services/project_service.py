@@ -103,6 +103,8 @@ class ProjectService:
           return False
         existing_project.name = project.name
         existing_project.description = project.description
+        existing_project.color = project.color
+        existing_project.status = project.status
         session.commit()
         logger.info(f"Updated project: {project.name}")
         return True

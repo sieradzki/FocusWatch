@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class ClassifierService:
-  """Service class for classifying activities in the FocusWatch application."""
+  """ Service class for classifying activities in the FocusWatch application. """
 
   def __init__(
       self,
