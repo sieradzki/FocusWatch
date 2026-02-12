@@ -25,8 +25,15 @@ class Project(Base):
   name = Column(String, nullable=False)
   color = Column(String, nullable=True)
   description = Column(Text, nullable=True)
-  status = Column(Enum(ProjectStatus), nullable=False,
-                  default=ProjectStatus.ACTIVE.value)
+  status = Column(
+    Enum(
+      ProjectStatus,
+      values_callable=lambda enum_cls: [e.value for e in enum_cls],
+      name="projectstatus",
+    ),
+    nullable=False,
+    default=ProjectStatus.ACTIVE,
+  )
 
   def __init__(self,
                name: str = "",
@@ -42,9 +49,10 @@ class Project(Base):
       status (ProjectStatus): The status of the project (default: active).
     """
     self.name = name
-    self.color = color
     self.description = description
-    self.status = status.value
+    self.status = status
+    # Treat empty strings as None for color
+    color = color if color and color.strip() else None
     if color is not None:
       if validate_color_format(color):
         self.color = color
@@ -56,11 +64,11 @@ class Project(Base):
 
   def archive(self):
     """ Archive the project. """
-    self.status = ProjectStatus.ARCHIVED.value
+    self.status = ProjectStatus.ARCHIVED
 
   def activate(self):
     """ Activate the project. """
-    self.status = ProjectStatus.ACTIVE.value
+    self.status = ProjectStatus.ACTIVE
 
   def __repr__(self):
     return f"<Project(id={self.id}, name={self.name}, status={self.status})>"

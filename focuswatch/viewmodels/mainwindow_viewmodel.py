@@ -6,6 +6,8 @@ from PySide6.QtCore import Property, QObject, Signal
 from focuswatch.config import Config
 from focuswatch.viewmodels.categories_viewmodel import CategoriesViewModel
 from focuswatch.viewmodels.home_viewmodel import HomeViewModel
+from focuswatch.viewmodels.project_page_viewmodel import ProjectPageViewModel
+from focuswatch.viewmodels.projects_viewmodel import ProjectsViewModel
 from focuswatch.viewmodels.settings_viewmodel import SettingsViewModel
 
 if TYPE_CHECKING:
@@ -13,6 +15,7 @@ if TYPE_CHECKING:
   from focuswatch.services.category_service import CategoryService
   from focuswatch.services.classifier_service import ClassifierService
   from focuswatch.services.keyword_service import KeywordService
+  from focuswatch.services.project_service import ProjectService
   from focuswatch.viewmodels.main_viewmodel import MainViewModel
 
 logger = logging.getLogger(__name__)
@@ -30,7 +33,8 @@ class MainWindowViewModel(QObject):
                activity_service: "ActivityService",
                category_service: "CategoryService",
                keyword_service: "KeywordService",
-               classifier_service: "ClassifierService"):
+               classifier_service: "ClassifierService",
+               project_service: "ProjectService" = None):
     super().__init__()
     self._main_viewmodel = main_viewmodel
     self._config = Config()
@@ -40,6 +44,7 @@ class MainWindowViewModel(QObject):
     self._category_service = category_service
     self._keyword_service = keyword_service
     self._classifier_service = classifier_service
+    self._project_service = project_service
 
     # Initialize child viewmodels
     self._settings_viewmodel = SettingsViewModel()
@@ -54,9 +59,11 @@ class MainWindowViewModel(QObject):
       self._category_service,
       self._config
     )
+    self._projects_viewmodel = ProjectsViewModel(self._project_service) if self._project_service else None
+    self._project_page_viewmodel = ProjectPageViewModel(self._project_service) if self._project_service else None
 
     # Initialize properties
-    self._pages = ["home", "categories", "settings"]
+    self._pages = ["home", "categories", "projects", "project_page", "settings"]
     self._current_page_index = self.page_index("home")
     self._window_title = "focuswatch"
     self._window_size = (1600, 900)
@@ -117,6 +124,25 @@ class MainWindowViewModel(QObject):
   def home_viewmodel(self) -> HomeViewModel:
     """ ViewModel for the home page. """
     return self._home_viewmodel
+
+  @Property(QObject, constant=True)
+  def projects_viewmodel(self) -> ProjectsViewModel:
+    """ ViewModel for the projects page. """
+    return self._projects_viewmodel
+
+  @Property(QObject, constant=True)
+  def project_page_viewmodel(self) -> ProjectPageViewModel:
+    """ ViewModel for a single project's page. """
+    return self._project_page_viewmodel
+
+  def open_project(self, project_id: int) -> None:
+    if not self._project_page_viewmodel:
+      return
+    self._project_page_viewmodel.load_project(project_id)
+    self.current_page_index = self.page_index("project_page")
+
+  def go_to_projects(self) -> None:
+    self.current_page_index = self.page_index("projects")
 
   def exit_application(self) -> None:
     """Exit the application."""

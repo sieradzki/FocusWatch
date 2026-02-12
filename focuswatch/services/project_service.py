@@ -38,7 +38,7 @@ class ProjectService:
           Project.name == project.name).first()
         if existing_project:
           logger.warning(f"Project with name '{project.name}' already exists.")
-          return existing_project.id
+          return None
         session.add(project)
         session.commit()
         logger.info(f"Created new project: {project.name}")

@@ -17,6 +17,7 @@ from focuswatch.services.activity_service import ActivityService
 from focuswatch.services.category_service import CategoryService
 from focuswatch.services.classifier_service import ClassifierService
 from focuswatch.services.keyword_service import KeywordService
+from focuswatch.services.project_service import ProjectService
 from focuswatch.services.watcher_service import WatcherService
 from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.viewmodels.main_viewmodel import MainViewModel
@@ -97,6 +98,7 @@ def main():
   category_service = CategoryService()
   keyword_service = KeywordService()
   classifier_service = ClassifierService(category_service, keyword_service)
+  project_service = ProjectService()
 
   watcher_service = WatcherService(
     activity_service,
@@ -109,7 +111,7 @@ def main():
     watcher_service, activity_service, category_service, keyword_service)
 
   mainwindow_viewmodel = MainWindowViewModel(
-      main_viewmodel, activity_service, category_service, keyword_service, classifier_service)
+      main_viewmodel, activity_service, category_service, keyword_service, classifier_service, project_service)
   main_window = MainWindowView(mainwindow_viewmodel)
 
   # Add actions to the menu

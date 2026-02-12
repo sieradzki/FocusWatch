@@ -88,7 +88,12 @@ class ProjectsViewModel(QObject):
       project.name = name
       project.color = color
       project.description = description
-      self._project_service.update_project(project)
-      self._load_projects()
+      success = self._project_service.update_project(project)
+      if success:
+        self._load_projects()
+      else:
+        logging.warning(f"Failed to update project {project_id}. Duplicate name may exist.")
+      return success
     else:
       logging.warning(f"Project with ID {project_id} not found for updating.")
+      return False

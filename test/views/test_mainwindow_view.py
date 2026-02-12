@@ -30,6 +30,8 @@ class TestMainWindowView:
     mock_keyword_service = MagicMock()
     mock_main_viewmodel = MagicMock()
     mock_classifier_service = MagicMock()
+    mock_project_service = MagicMock()
+    mock_project_service.get_all_projects.return_value = []
 
     return MainWindowViewModel(
         main_viewmodel=mock_main_viewmodel,
@@ -37,6 +39,7 @@ class TestMainWindowView:
         category_service=mock_category_service,
         keyword_service=mock_keyword_service,
         classifier_service=mock_classifier_service,
+      project_service=mock_project_service,
     )
 
   @pytest.fixture
@@ -52,6 +55,7 @@ class TestMainWindowView:
     assert window.stacked_widget.currentIndex() == 0  # home page
     assert window.sidebar_button_home.isChecked()
     assert not window.sidebar_button_categories.isChecked()
+    assert not window.sidebar_button_projects.isChecked()
     assert not window.sidebar_button_settings.isChecked()
 
   def test_switch_page(self, window):
@@ -67,7 +71,7 @@ class TestMainWindowView:
     """ Test that ViewModel property changes are reflected in the UI. """
     viewmodel.current_page_index = viewmodel.page_index("settings")
     QApplication.processEvents()  # Process events to ensure UI updates
-    assert window.stacked_widget.currentIndex() == 2  # settings page
+    assert window.stacked_widget.currentIndex() == viewmodel.page_index("settings")
     assert not window.sidebar_button_home.isChecked()
     assert not window.sidebar_button_categories.isChecked()
     assert window.sidebar_button_settings.isChecked()

@@ -1,0 +1,159 @@
+QLabel {
+    color: #F9F9F9;
+}
+
+QToolTip {
+    background-color: #1b1c1e;
+    color: #F9F9F9;
+    border: 1px solid #363739;
+    padding: 5px;
+    border-radius: 4px;
+    font-family: Arial;
+    font-size: 12px;
+}
+
+QScrollArea#scroll_area {
+    background-color: #1e1e1e;
+    border: none;
+}
+
+QWidget#scroll_area_widget {
+    background-color: #1e1e1e;
+}
+
+QFrame#top_bar,
+QFrame#bottom_bar {
+    background-color: #1e1e1e;
+    border: none;
+}
+
+QFrame#line_divider {
+    background-color: #363739;
+    height: 1px;
+}
+
+QLineEdit#filter_input {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    font-size: 14px;
+    color: #F9F9F9;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+QPushButton {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    border-radius: 4px;
+    color: #F9F9F9;
+    font-family: Arial;
+    font-size: 14px;
+    padding: 6px 12px;
+    margin: 2px;
+}
+
+QPushButton:hover {
+    background-color: #2b2c2e;
+    border: 1px solid #505052;
+}
+
+QPushButton:pressed {
+    background-color: #363739;
+}
+
+QWidget#project_row_widget {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    border-radius: 4px;
+    margin: 2px 0px;
+}
+
+QWidget#project_row_widget:hover {
+    background-color: #252525;
+    border: 1px solid #505052;
+}
+
+QFrame#projects_header {
+    background-color: #1e1e1e;
+    border: none;
+}
+
+QLabel#projects_header_label {
+    color: #B0B0B0;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+QPushButton#project_name_button {
+    color: #F9F9F9;
+}
+
+QPushButton#project_name_button:hover {
+    text-decoration: underline;
+}
+
+QLabel#project_name_label {
+    color: #F9F9F9;
+    font-weight: bold;
+}
+
+QLabel#description_label {
+    color: #B0B0B0;
+    font-size: 11px;
+}
+
+QLabel#status_label {
+    font-weight: bold;
+    margin: 0px 5px;
+}
+
+QPushButton#button_edit,
+QPushButton#button_archive,
+QPushButton#button_activate,
+QPushButton#button_add_project {
+    min-width: 60px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+QPushButton#button_edit:hover,
+QPushButton#button_archive:hover,
+QPushButton#button_activate:hover,
+QPushButton#button_add_project:hover {
+    background-color: #2b2c2e;
+    border: 1px solid #505052;
+}
+
+QDialog {
+    background-color: #1e1e1e;
+}
+
+QDialog QLabel {
+    color: #F9F9F9;
+}
+
+QDialog QLineEdit {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    color: #F9F9F9;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+QDialog QLineEdit:focus {
+    border: 1px solid #505052;
+}
+
+QMessageBox {
+    background-color: #1e1e1e;
+}
+
+QMessageBox QLabel {
+    color: #F9F9F9;
+}
+
+QMessageBox QPushButton {
+    min-width: 60px;
+    padding: 4px 8px;
+}

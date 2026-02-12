@@ -11,6 +11,8 @@ from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QMainWindow,
 from focuswatch.utils.resource_utils import apply_stylesheet, load_icon
 from focuswatch.views.categories_view import CategoriesView
 from focuswatch.views.home_view import HomeView
+from focuswatch.views.project_page_view import ProjectPageView
+from focuswatch.views.projects_view import ProjectsView
 from focuswatch.views.settings_view import SettingsView
 
 if TYPE_CHECKING:
@@ -108,11 +110,17 @@ class MainWindowView(QMainWindow):
     self.page_home = HomeView(self._viewmodel.home_viewmodel)
     self.page_categories = CategoriesView(
       self._viewmodel.categories_viewmodel)
+    self.page_projects = ProjectsView(
+      self._viewmodel.projects_viewmodel)
+    self.page_project_page = ProjectPageView(
+      self._viewmodel.project_page_viewmodel)
     self.page_settings = SettingsView(self._viewmodel.settings_viewmodel)
 
     # Add pages to the stacked widget
     self.stacked_widget.addWidget(self.page_home)
     self.stacked_widget.addWidget(self.page_categories)
+    self.stacked_widget.addWidget(self.page_projects)
+    self.stacked_widget.addWidget(self.page_project_page)
     self.stacked_widget.addWidget(self.page_settings)
 
     # Set the central widget
@@ -127,8 +135,8 @@ class MainWindowView(QMainWindow):
       QCoreApplication.translate("MainWindow", "Home", None))
     self.sidebar_button_categories.setText(
       QCoreApplication.translate("MainWindow", "Categories", None))
-    # self.sidebar_button_help.setText(
-    # QCoreApplication.translate("MainWindow", "Help", None))
+    self.sidebar_button_projects.setText(
+      QCoreApplication.translate("MainWindow", "Projects", None))
     self.sidebar_button_settings.setText(
       QCoreApplication.translate("MainWindow", "Settings", None))
 
@@ -181,8 +189,14 @@ class MainWindowView(QMainWindow):
         lambda: self._switch_page("home"))
     self.sidebar_button_categories.clicked.connect(
         lambda: self._switch_page("categories"))
+    self.sidebar_button_projects.clicked.connect(
+        lambda: self._switch_page("projects"))
     self.sidebar_button_settings.clicked.connect(
         lambda: self._switch_page("settings"))
+
+    # Cross-page navigation
+    self.page_projects.project_open_requested.connect(self._viewmodel.open_project)
+    self.page_project_page.back_requested.connect(self._viewmodel.go_to_projects)
 
   def _switch_page(self, name: str):
     """ Switch the page in the stacked widget. """

@@ -8,7 +8,7 @@ from focuswatch.viewmodels.home_viewmodel import HomeViewModel
 
 class TestMainWindowViewModel(unittest.TestCase):
   """ Test the MainWindowViewModel. """
-  PAGES = ["home", "categories", "settings"]
+  PAGES = ["home", "categories", "projects", "project_page", "settings"]
 
   def setUp(self) -> None:
     self.mock_activity_service = MagicMock()
@@ -16,13 +16,16 @@ class TestMainWindowViewModel(unittest.TestCase):
     self.mock_keyword_service = MagicMock()
     self.mock_main_viewmodel = MagicMock()
     self.mock_classifier_service = MagicMock()
+    self.mock_project_service = MagicMock()
+    self.mock_project_service.get_all_projects.return_value = []
 
     self.viewmodel = MainWindowViewModel(
         main_viewmodel=self.mock_main_viewmodel,
         activity_service=self.mock_activity_service,
         category_service=self.mock_category_service,
         keyword_service=self.mock_keyword_service,
-        classifier_service=self.mock_classifier_service
+      classifier_service=self.mock_classifier_service,
+      project_service=self.mock_project_service,
     )
 
   def test_initialization(self) -> None:
