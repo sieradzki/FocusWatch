@@ -18,6 +18,7 @@ PySide6 desktop time tracking app for Linux systems with xorg and Windows.
   - [4. Installation and Setup](#4-installation-and-setup)
     - [4.1 Development Setup](#41-development-setup)
     - [4.2 Using the Latest Release](#42-using-the-latest-release)
+    - [4.3 Building the Executable (PyInstaller)](#43-building-the-executable-pyinstaller)
 
 ---
 
@@ -97,5 +98,24 @@ Follow these steps to set up the project for development:
 
 3. **No Installation Required:**
    The application runs standalone; dependencies are bundled with the executable.
+
+---
+
+### 4.3 Building the Executable (PyInstaller)
+This project uses PyInstaller with the provided `focuswatch.spec`.
+
+1. **Install PyInstaller (if needed):**
+   ```bash
+   pip install pyinstaller
+   ```
+
+2. **Build using the spec file:**
+   ```bash
+   pyinstaller focuswatch.spec
+   ```
+
+3. **Find the output:**
+   - The executable will be in `dist/focuswatch/` (Linux) or `dist/focuswatch.exe` (Windows).
+   - Temporary build files go to `build/`.
 
 ---
