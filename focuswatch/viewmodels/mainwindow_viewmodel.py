@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, List, Tuple
 from PySide6.QtCore import Property, QObject, Signal
 
 from focuswatch.config import Config
+from focuswatch.services.task_service import TaskService
 from focuswatch.viewmodels.categories_viewmodel import CategoriesViewModel
 from focuswatch.viewmodels.home_viewmodel import HomeViewModel
 from focuswatch.viewmodels.project_page_viewmodel import ProjectPageViewModel
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
   from focuswatch.services.classifier_service import ClassifierService
   from focuswatch.services.keyword_service import KeywordService
   from focuswatch.services.project_service import ProjectService
+  from focuswatch.services.task_service import TaskService
   from focuswatch.viewmodels.main_viewmodel import MainViewModel
 
 logger = logging.getLogger(__name__)
@@ -34,7 +36,8 @@ class MainWindowViewModel(QObject):
                category_service: "CategoryService",
                keyword_service: "KeywordService",
                classifier_service: "ClassifierService",
-               project_service: "ProjectService" = None):
+               project_service: "ProjectService" = None,
+               task_service: "TaskService" = None):
     super().__init__()
     self._main_viewmodel = main_viewmodel
     self._config = Config()
@@ -45,6 +48,7 @@ class MainWindowViewModel(QObject):
     self._keyword_service = keyword_service
     self._classifier_service = classifier_service
     self._project_service = project_service
+    self._task_service = task_service or (TaskService() if project_service else None)
 
     # Initialize child viewmodels
     self._settings_viewmodel = SettingsViewModel()
@@ -60,7 +64,11 @@ class MainWindowViewModel(QObject):
       self._config
     )
     self._projects_viewmodel = ProjectsViewModel(self._project_service) if self._project_service else None
-    self._project_page_viewmodel = ProjectPageViewModel(self._project_service) if self._project_service else None
+    self._project_page_viewmodel = (
+      ProjectPageViewModel(self._project_service, self._task_service)
+      if self._project_service and self._task_service
+      else None
+    )
 
     # Initialize properties
     self._pages = ["home", "categories", "projects", "project_page", "settings"]

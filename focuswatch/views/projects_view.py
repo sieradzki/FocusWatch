@@ -6,7 +6,7 @@ from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (QFrame, QHBoxLayout, QLabel, QLineEdit,
                                QMessageBox, QPushButton, QScrollArea,
                                QSizePolicy, QSpacerItem, QVBoxLayout, QWidget,
-                               QColorDialog, QDialog, QDialogButtonBox)
+                               QColorDialog, QDialog, QDialogButtonBox, QTextEdit)
 
 from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.database.models.project import ProjectStatus
@@ -288,17 +288,32 @@ class ProjectsView(QWidget):
     """ Show a dialog to add a new project. """
     dialog = QDialog(self)
     dialog.setWindowTitle("Add New Project")
+    dialog.setObjectName("project_form_dialog")
     dialog.setModal(True)
+    dialog.resize(560, 0)
     
     layout = QVBoxLayout(dialog)
+    layout.setContentsMargins(16, 16, 16, 12)
+    layout.setSpacing(10)
+
+    title = QLabel("Create Project")
+    title.setObjectName("dialog_title")
+    subtitle = QLabel("Start with a name, optional description, and color.")
+    subtitle.setObjectName("dialog_subtitle")
+    layout.addWidget(title)
+    layout.addWidget(subtitle)
     
     name_label = QLabel("Project Name:")
     name_input = QLineEdit()
+    name_input.setPlaceholderText("e.g. Client Dashboard")
+    name_input.setClearButtonEnabled(True)
     layout.addWidget(name_label)
     layout.addWidget(name_input)
     
     description_label = QLabel("Description (optional):")
-    description_input = QLineEdit()
+    description_input = QTextEdit()
+    description_input.setPlaceholderText("Add a short project summary")
+    description_input.setFixedHeight(84)
     layout.addWidget(description_label)
     layout.addWidget(description_input)
 
@@ -309,9 +324,11 @@ class ProjectsView(QWidget):
 
     color_label = QLabel("Color (optional):")
     color_preview = QLabel()
-    color_preview.setFixedSize(18, 18)
+    color_preview.setFixedSize(20, 20)
     color_preview.setObjectName("color_preview")
-    color_preview.setStyleSheet("background-color: #A0A0A0; border-radius: 9px;")
+    color_preview.setStyleSheet(
+      "background-color: #A0A0A0; border-radius: 10px; border: 1px solid #4b4d50;"
+    )
 
     selected_color: str = ""
 
@@ -320,13 +337,15 @@ class ProjectsView(QWidget):
       selected_color = hex_color
       if selected_color:
         color_preview.setStyleSheet(
-          f"background-color: {selected_color}; border-radius: 9px;"
+          f"background-color: {selected_color}; border-radius: 10px; border: 1px solid #4b4d50;"
         )
       else:
-        color_preview.setStyleSheet("background-color: #A0A0A0; border-radius: 9px;")
+        color_preview.setStyleSheet(
+          "background-color: #A0A0A0; border-radius: 10px; border: 1px solid #4b4d50;"
+        )
 
-    button_pick = QPushButton("Pick")
-    button_clear = QPushButton("Clear")
+    button_pick = QPushButton("Pick Color")
+    button_clear = QPushButton("Reset")
     button_pick.clicked.connect(
       lambda: (
         lambda c: set_preview(c.name())
@@ -346,13 +365,19 @@ class ProjectsView(QWidget):
     
     button_box = QDialogButtonBox(
         QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+    ok_button = button_box.button(QDialogButtonBox.Ok)
+    cancel_button = button_box.button(QDialogButtonBox.Cancel)
+    if ok_button:
+      ok_button.setText("Create Project")
+    if cancel_button:
+      cancel_button.setText("Cancel")
     button_box.accepted.connect(dialog.accept)
     button_box.rejected.connect(dialog.reject)
     layout.addWidget(button_box)
     
     if dialog.exec_() == QDialog.Accepted:
       project_name = name_input.text().strip()
-      description = description_input.text().strip()
+      description = description_input.toPlainText().strip()
       
       if project_name:
         result = self._viewmodel.add_project(project_name, selected_color, description)
@@ -378,19 +403,34 @@ class ProjectsView(QWidget):
 
     dialog = QDialog(self)
     dialog.setWindowTitle("Edit Project")
+    dialog.setObjectName("project_form_dialog")
     dialog.setModal(True)
+    dialog.resize(560, 0)
     
     layout = QVBoxLayout(dialog)
+    layout.setContentsMargins(16, 16, 16, 12)
+    layout.setSpacing(10)
+
+    title = QLabel("Edit Project")
+    title.setObjectName("dialog_title")
+    subtitle = QLabel("Update project details and visual color.")
+    subtitle.setObjectName("dialog_subtitle")
+    layout.addWidget(title)
+    layout.addWidget(subtitle)
     
     name_label = QLabel("Project Name:")
     name_input = QLineEdit()
     name_input.setText(project.name)
+    name_input.setPlaceholderText("e.g. Client Dashboard")
+    name_input.setClearButtonEnabled(True)
     layout.addWidget(name_label)
     layout.addWidget(name_input)
     
     description_label = QLabel("Description (optional):")
-    description_input = QLineEdit()
-    description_input.setText(project.description or "")
+    description_input = QTextEdit()
+    description_input.setFixedHeight(84)
+    description_input.setPlaceholderText("Add a short project summary")
+    description_input.setPlainText(project.description or "")
     layout.addWidget(description_label)
     layout.addWidget(description_input)
 
@@ -401,7 +441,7 @@ class ProjectsView(QWidget):
 
     color_label = QLabel("Color (optional):")
     color_preview = QLabel()
-    color_preview.setFixedSize(18, 18)
+    color_preview.setFixedSize(20, 20)
     color_preview.setObjectName("color_preview")
 
     selected_color: str = project.color or ""
@@ -411,15 +451,17 @@ class ProjectsView(QWidget):
       selected_color = hex_color
       if selected_color:
         color_preview.setStyleSheet(
-          f"background-color: {selected_color}; border-radius: 9px;"
+          f"background-color: {selected_color}; border-radius: 10px; border: 1px solid #4b4d50;"
         )
       else:
-        color_preview.setStyleSheet("background-color: #A0A0A0; border-radius: 9px;")
+        color_preview.setStyleSheet(
+          "background-color: #A0A0A0; border-radius: 10px; border: 1px solid #4b4d50;"
+        )
 
     set_preview(selected_color)
 
-    button_pick = QPushButton("Pick")
-    button_clear = QPushButton("Clear")
+    button_pick = QPushButton("Pick Color")
+    button_clear = QPushButton("Reset")
     button_pick.clicked.connect(
       lambda: (
         lambda c: set_preview(c.name())
@@ -439,13 +481,19 @@ class ProjectsView(QWidget):
     
     button_box = QDialogButtonBox(
         QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+    ok_button = button_box.button(QDialogButtonBox.Ok)
+    cancel_button = button_box.button(QDialogButtonBox.Cancel)
+    if ok_button:
+      ok_button.setText("Save Changes")
+    if cancel_button:
+      cancel_button.setText("Cancel")
     button_box.accepted.connect(dialog.accept)
     button_box.rejected.connect(dialog.reject)
     layout.addWidget(button_box)
     
     if dialog.exec_() == QDialog.Accepted:
       new_name = name_input.text().strip()
-      new_description = description_input.text().strip()
+      new_description = description_input.toPlainText().strip()
       
       if new_name:
         success = self._viewmodel.update_project(

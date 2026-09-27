@@ -6,7 +6,8 @@ import shutil
 import sys
 import threading
 
-from PySide6.QtGui import QAction, QIcon
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction, QColor, QIcon, QPalette
 from PySide6.QtWidgets import QApplication, QMenu, QMessageBox, QSystemTrayIcon
 
 from focuswatch.arguments import parse_arguments
@@ -18,6 +19,7 @@ from focuswatch.services.category_service import CategoryService
 from focuswatch.services.classifier_service import ClassifierService
 from focuswatch.services.keyword_service import KeywordService
 from focuswatch.services.project_service import ProjectService
+from focuswatch.services.task_service import TaskService
 from focuswatch.services.watcher_service import WatcherService
 from focuswatch.utils.resource_utils import apply_stylesheet
 from focuswatch.viewmodels.main_viewmodel import MainViewModel
@@ -67,6 +69,28 @@ def main():
   logger.info("Creating QApplication")
   app = QApplication([])
 
+  # Set a dark palette so internal Qt widgets (like combo popup containers)
+  # that fall back to palette instead of QSS don't show white artifacts.
+  dark_palette = QPalette()
+  dark_palette.setColor(QPalette.ColorRole.Window, QColor("#1b1c1e"))
+  dark_palette.setColor(QPalette.ColorRole.WindowText, QColor("#F9F9F9"))
+  dark_palette.setColor(QPalette.ColorRole.Base, QColor("#1b1c1e"))
+  dark_palette.setColor(QPalette.ColorRole.AlternateBase, QColor("#1b1c1e"))
+  dark_palette.setColor(QPalette.ColorRole.ToolTipBase, QColor("#1b1c1e"))
+  dark_palette.setColor(QPalette.ColorRole.ToolTipText, QColor("#F9F9F9"))
+  dark_palette.setColor(QPalette.ColorRole.Text, QColor("#F9F9F9"))
+  dark_palette.setColor(QPalette.ColorRole.Button, QColor("#1b1c1e"))
+  dark_palette.setColor(QPalette.ColorRole.ButtonText, QColor("#F9F9F9"))
+  dark_palette.setColor(QPalette.ColorRole.BrightText, QColor("#F9F9F9"))
+  dark_palette.setColor(QPalette.ColorRole.Highlight, QColor("#334a7a"))
+  dark_palette.setColor(QPalette.ColorRole.HighlightedText, QColor("#F9F9F9"))
+  dark_palette.setColor(QPalette.ColorRole.Light, QColor("#2a2c2f"))
+  dark_palette.setColor(QPalette.ColorRole.Midlight, QColor("#232527"))
+  dark_palette.setColor(QPalette.ColorRole.Dark, QColor("#111213"))
+  dark_palette.setColor(QPalette.ColorRole.Mid, QColor("#1b1c1e"))
+  dark_palette.setColor(QPalette.ColorRole.Shadow, QColor("#000000"))
+  app.setPalette(dark_palette)
+
   # TODO theme.qss ?
   apply_stylesheet(app, "mainwindow.qss")
 
@@ -99,6 +123,7 @@ def main():
   keyword_service = KeywordService()
   classifier_service = ClassifierService(category_service, keyword_service)
   project_service = ProjectService()
+  task_service = TaskService()
 
   watcher_service = WatcherService(
     activity_service,
@@ -111,7 +136,7 @@ def main():
     watcher_service, activity_service, category_service, keyword_service)
 
   mainwindow_viewmodel = MainWindowViewModel(
-      main_viewmodel, activity_service, category_service, keyword_service, classifier_service, project_service)
+      main_viewmodel, activity_service, category_service, keyword_service, classifier_service, project_service, task_service)
   main_window = MainWindowView(mainwindow_viewmodel)
 
   # Add actions to the menu

@@ -125,24 +125,372 @@ QPushButton#button_add_project:hover {
 }
 
 QDialog {
-    background-color: #1e1e1e;
+    background-color: #1c1d20;
+    border: 1px solid #34363a;
+    border-radius: 10px;
+}
+
+QDialog#project_form_dialog,
+QDialog#task_form_dialog {
+    min-width: 540px;
+}
+
+QFrame#task_dialog_left_panel,
+QFrame#task_dialog_right_panel {
+    background-color: #17191d;
+    border: 1px solid #2f343d;
+    border-radius: 8px;
 }
 
 QDialog QLabel {
+    color: #E7E9ED;
+}
+
+QLabel#dialog_title {
+    font-size: 17px;
+    font-weight: bold;
     color: #F9F9F9;
 }
 
-QDialog QLineEdit {
-    background-color: #1b1c1e;
-    border: 1px solid #363739;
-    color: #F9F9F9;
-    padding: 5px 10px;
-    border-radius: 4px;
+QLabel#dialog_subtitle {
+    font-size: 12px;
+    color: #A8ADB6;
+    margin-bottom: 4px;
+}
+
+QDialog QLineEdit,
+QDialog QTextEdit,
+QDialog QComboBox,
+QDialog QDateTimeEdit,
+QDialog QListWidget {
+    background-color: #17181b;
+    border: 1px solid #3b3d42;
+    color: #F2F3F5;
+    padding: 6px 10px;
+    border-radius: 7px;
     font-size: 12px;
 }
 
-QDialog QLineEdit:focus {
-    border: 1px solid #505052;
+QDialog QComboBox {
+    padding-right: 30px;
+}
+
+QDialog QComboBox::drop-down,
+QDialog QDateTimeEdit::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 24px;
+    border-left: 1px solid #3b3d42;
+    background-color: #1e2127;
+    border-top-right-radius: 7px;
+    border-bottom-right-radius: 7px;
+}
+
+QDialog QComboBox::down-arrow,
+QDialog QDateTimeEdit::down-arrow {
+    image: url(../icons/arrow_drop_down.png);
+    width: 14px;
+    height: 14px;
+}
+
+QDialog QComboBox QAbstractItemView {
+    background-color: #17181b;
+    border: 1px solid #3b3d42;
+    color: #F2F3F5;
+    selection-background-color: #334a7a;
+    selection-color: #F9F9F9;
+    outline: 0;
+    padding: 0px;
+    margin: 0px;
+    alternate-background-color: #17181b;
+}
+
+QDialog QComboBox QAbstractItemView::viewport {
+    background-color: #17181b;
+    border: none;
+}
+
+QDialog QComboBox QAbstractItemView::item {
+    background-color: #17181b;
+    color: #F2F3F5;
+    margin: 0px;
+    padding: 4px 8px;
+}
+
+QDialog QComboBox QAbstractItemView::item:hover {
+    background-color: #26344f;
+    color: #F9F9F9;
+}
+
+QDialog QComboBox QAbstractItemView::item:selected {
+    background-color: #334a7a;
+    color: #F9F9F9;
+}
+
+QCalendarWidget#dates_popup_calendar {
+    background-color: #1c1d20;
+    border: none;
+    border-radius: 8px;
+}
+
+QCalendarWidget#dates_popup_calendar QWidget {
+    background-color: #1c1d20;
+    color: #E7E9ED;
+}
+
+QCalendarWidget#dates_popup_calendar QWidget#qt_calendar_navigationbar {
+    background-color: #1c1d20;
+    border: none;
+    border-bottom: 1px solid #2a2c30;
+    padding: 4px;
+}
+
+QCalendarWidget#dates_popup_calendar QToolButton {
+    background-color: transparent;
+    color: #E7E9ED;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 40px;
+}
+
+QCalendarWidget#dates_popup_calendar QToolButton:hover {
+    background-color: #2b2d31;
+    color: #F9F9F9;
+}
+
+QCalendarWidget#dates_popup_calendar QToolButton:pressed {
+    background-color: #363739;
+}
+
+QCalendarWidget#dates_popup_calendar QToolButton#qt_calendar_prevmonth,
+QCalendarWidget#dates_popup_calendar QToolButton#qt_calendar_nextmonth {
+    min-width: 28px;
+    max-width: 28px;
+    padding: 4px;
+    border: none;
+    background-color: transparent;
+    color: #9CA3AF;
+    qproperty-iconSize: 16px 16px;
+}
+
+QCalendarWidget#dates_popup_calendar QToolButton#qt_calendar_prevmonth:hover,
+QCalendarWidget#dates_popup_calendar QToolButton#qt_calendar_nextmonth:hover {
+    background-color: #2b2d31;
+    color: #F9F9F9;
+}
+
+QCalendarWidget#dates_popup_calendar QMenu {
+    background-color: #1c1d20;
+    color: #F2F3F5;
+    border: 1px solid #3b3d42;
+    border-radius: 6px;
+    padding: 4px 0;
+}
+
+QCalendarWidget#dates_popup_calendar QMenu::item {
+    padding: 5px 16px;
+}
+
+QCalendarWidget#dates_popup_calendar QMenu::item:selected {
+    background-color: #334a7a;
+    color: #F9F9F9;
+}
+
+QCalendarWidget#dates_popup_calendar QSpinBox {
+    background-color: #1c1d20;
+    color: #F2F3F5;
+    border: 1px solid #3b3d42;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 13px;
+}
+
+QCalendarWidget#dates_popup_calendar QSpinBox::up-button,
+QCalendarWidget#dates_popup_calendar QSpinBox::down-button {
+    subcontrol-origin: border;
+    width: 18px;
+    border: none;
+    background-color: transparent;
+}
+
+QCalendarWidget#dates_popup_calendar QSpinBox::up-button {
+    subcontrol-position: top right;
+    border-top-right-radius: 4px;
+}
+
+QCalendarWidget#dates_popup_calendar QSpinBox::down-button {
+    subcontrol-position: bottom right;
+    border-bottom-right-radius: 4px;
+}
+
+QCalendarWidget#dates_popup_calendar QSpinBox::up-button:hover,
+QCalendarWidget#dates_popup_calendar QSpinBox::down-button:hover {
+    background-color: #2b2d31;
+}
+
+QCalendarWidget#dates_popup_calendar QSpinBox::up-arrow {
+    image: url(../icons/arrow_drop_up.png);
+    width: 12px;
+    height: 12px;
+}
+
+QCalendarWidget#dates_popup_calendar QSpinBox::down-arrow {
+    image: url(../icons/arrow_drop_down.png);
+    width: 12px;
+    height: 12px;
+}
+
+QCalendarWidget#dates_popup_calendar QTableView#qt_calendar_calendarview {
+    background-color: #1c1d20;
+    color: #D1D5DB;
+    border: none;
+    outline: 0;
+    selection-background-color: #3b5b95;
+    selection-color: #F9F9F9;
+    gridline-color: transparent;
+    alternate-background-color: #1c1d20;
+    font-size: 13px;
+}
+
+QCalendarWidget#dates_popup_calendar QTableView#qt_calendar_calendarview::item {
+    border-radius: 4px;
+    padding: 2px;
+}
+
+QCalendarWidget#dates_popup_calendar QTableView#qt_calendar_calendarview::item:hover {
+    background-color: #2b2d31;
+    color: #F9F9F9;
+}
+
+QCalendarWidget#dates_popup_calendar QHeaderView::section {
+    background-color: #1c1d20;
+    color: #9CA3AF;
+    font-size: 11px;
+    font-weight: bold;
+    border: none;
+    padding: 4px;
+}
+
+/* Date spinbox arrows */
+QDialog QDateTimeEdit::up-button,
+QDialog QDateTimeEdit::down-button {
+    subcontrol-origin: border;
+    width: 20px;
+    border: none;
+    background-color: #1e2127;
+}
+
+QDialog QDateTimeEdit::up-button {
+    subcontrol-position: top right;
+    border-top-right-radius: 7px;
+    border-left: 1px solid #3b3d42;
+}
+
+QDialog QDateTimeEdit::down-button {
+    subcontrol-position: bottom right;
+    border-bottom-right-radius: 7px;
+    border-left: 1px solid #3b3d42;
+}
+
+QDialog QDateTimeEdit::up-button:hover,
+QDialog QDateTimeEdit::down-button:hover {
+    background-color: #2b2d31;
+}
+
+QDialog QDateTimeEdit::up-arrow {
+    image: url(../icons/arrow_drop_up.png);
+    width: 12px;
+    height: 12px;
+}
+
+QDialog QDateTimeEdit::down-arrow {
+    image: url(../icons/arrow_drop_down.png);
+    width: 12px;
+    height: 12px;
+}
+
+QDialog QTextEdit {
+    padding: 8px 10px;
+}
+
+QDialog QLineEdit:focus,
+QDialog QTextEdit:focus,
+QDialog QComboBox:focus,
+QDialog QDateTimeEdit:focus,
+QDialog QListWidget:focus {
+    border: 1px solid #5a86e8;
+}
+
+QDialog QCheckBox {
+    color: #D5D8DE;
+    spacing: 6px;
+}
+
+QDialog QDialogButtonBox {
+    margin-top: 6px;
+}
+
+QDialog QDialogButtonBox QPushButton {
+    min-width: 110px;
+    padding: 6px 12px;
+}
+
+QPushButton#dialog_delete_task {
+    border: 1px solid #6b2f37;
+    color: #ffb4bf;
+}
+
+QPushButton#dialog_delete_task:hover {
+    border: 1px solid #8b3c46;
+    background-color: #2a161a;
+}
+
+QPushButton#popup_close_btn {
+    background-color: transparent;
+    border: 1px solid #3b3d42;
+    border-radius: 6px;
+    color: #9CA3AF;
+    font-size: 14px;
+}
+
+QPushButton#popup_close_btn:hover {
+    background-color: #2b2d31;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+}
+
+QPushButton#checklist_remove_btn {
+    background-color: transparent;
+    border: 1px solid #3b3d42;
+    border-radius: 4px;
+    color: #9CA3AF;
+    padding: 0px;
+}
+
+QPushButton#checklist_remove_btn:hover {
+    background-color: #2b2d31;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+}
+
+QPushButton#task_section_link {
+    background-color: #212225;
+    border: 1px solid #44464a;
+    border-radius: 6px;
+    color: #D1D5DB;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+}
+
+QPushButton#task_section_link:hover {
+    background-color: #2b2d31;
+    border: 1px solid #5a86e8;
+    color: #F9F9F9;
 }
 
 QMessageBox {
@@ -156,4 +504,217 @@ QMessageBox QLabel {
 QMessageBox QPushButton {
     min-width: 60px;
     padding: 4px 8px;
+}
+
+QFrame#kanban_column {
+    background-color: #1b1c1e;
+    border: 1px solid #363739;
+    border-radius: 8px;
+}
+
+QWidget#kanban_board_widget,
+QScrollArea#kanban_board_scroll,
+QScrollArea#kanban_board_scroll > QWidget {
+    background-color: #161616;
+}
+
+QScrollArea#kanban_column_scroll,
+QScrollArea#kanban_column_scroll > QWidget {
+    background-color: transparent;
+    border: none;
+}
+
+QFrame#kanban_drop_area {
+    background-color: transparent;
+    border: none;
+}
+
+QLabel#kanban_column_title {
+    color: #F9F9F9;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+QPushButton#kanban_add_task {
+    padding: 3px 8px;
+    font-size: 11px;
+}
+
+QPushButton#kanban_column_menu_btn {
+    background-color: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    color: #9CA3AF;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 0px;
+}
+
+QPushButton#kanban_column_menu_btn:hover {
+    background-color: #2b2d31;
+    border: 1px solid #505052;
+    color: #F9F9F9;
+}
+
+QMenu#kanban_column_context_menu {
+    background-color: #1b1c1e;
+    border: 1px solid #3b3d42;
+    border-radius: 6px;
+    padding: 4px 0px;
+    color: #F9F9F9;
+    font-size: 13px;
+}
+
+QMenu#kanban_column_context_menu::item {
+    padding: 6px 20px;
+}
+
+QMenu#kanban_column_context_menu::item:selected {
+    background-color: #2b2d31;
+    color: #F9F9F9;
+}
+
+QMenu#kanban_column_context_menu::separator {
+    height: 1px;
+    background: #363739;
+    margin: 4px 8px;
+}
+
+QFrame#kanban_task_card {
+    background-color: #252628;
+    border: none;
+    border-radius: 8px;
+    margin: 2px 0px;
+}
+
+QFrame#kanban_task_card:hover {
+    background-color: #2c2e31;
+    border: 1px solid #505052;
+}
+
+QFrame#kanban_drop_area[drag_over="true"] {
+    border: 1px dashed #60a5fa;
+    border-radius: 6px;
+    background-color: rgba(59, 130, 246, 0.08);
+}
+
+QLabel#kanban_task_name {
+    color: #F9F9F9;
+    font-weight: bold;
+}
+
+QLabel#kanban_task_description {
+    color: #D1D5DB;
+    font-size: 11px;
+}
+
+QLabel#kanban_task_meta,
+QLabel#kanban_task_tags {
+    color: #B0B0B0;
+    font-size: 11px;
+}
+
+QLabel#kanban_task_time,
+QLabel#kanban_task_subtasks {
+    color: #9CA3AF;
+    font-size: 11px;
+}
+
+QLabel#kanban_tag_badge {
+    font-size: 11px;
+    font-weight: bold;
+}
+
+QLabel#kanban_priority_badge {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+QLabel#kanban_task_meta_icon {
+    color: #D1D5DB;
+    font-size: 12px;
+}
+
+QLabel#kanban_task_tracked_time {
+    color: #9CA3AF;
+    font-size: 11px;
+}
+
+QLabel#kanban_task_recurrence {
+    color: #9CA3AF;
+    font-size: 11px;
+    font-style: italic;
+}
+
+QWidget#checklist_item_row {
+    border-radius: 4px;
+    padding: 0px;
+}
+
+QWidget#checklist_item_row:hover {
+    background-color: #2b2d31;
+}
+
+QProgressBar#checklist_progress {
+    background-color: #363739;
+    border: none;
+    border-radius: 4px;
+    text-align: center;
+    color: #FFFFFF;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+QProgressBar#checklist_progress::chunk {
+    background-color: #22c55e;
+    border-radius: 4px;
+}
+
+QPushButton#kanban_task_delete {
+    min-width: 56px;
+    padding: 2px 6px;
+    font-size: 11px;
+}
+
+QListWidget#task_tags_list {
+    background-color: #17181b;
+    border: 1px solid #3b3d42;
+    border-radius: 7px;
+    color: #F9F9F9;
+}
+
+QListWidget#task_tags_list::item {
+    padding: 3px 4px;
+    margin: 1px 2px;
+    border-radius: 6px;
+    background-color: transparent;
+}
+
+QListWidget#task_tags_list::item:hover {
+    background-color: #252830;
+}
+
+QDialog QDateTimeEdit:disabled,
+QDialog QDateTimeEdit:disabled QAbstractSpinBox {
+    background-color: #111214;
+    color: #555860;
+    border: 1px solid #2a2c30;
+}
+
+QFrame#kanban_task_insertion_indicator {
+    background-color: rgba(96, 165, 250, 0.45);
+    border: 1px solid #60a5fa;
+    border-radius: 5px;
+}
+
+QFrame#kanban_column_insertion_indicator {
+    background-color: rgba(96, 165, 250, 0.38);
+    border: 1px solid #60a5fa;
+    border-radius: 4px;
+}
+
+QDialog QDateTimeEdit:disabled {
+    background-color: #111214;
+    color: #555860;
+    border: 1px solid #2a2c30;
 }

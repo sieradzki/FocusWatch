@@ -14,7 +14,6 @@ PySide6 desktop time tracking app for Linux systems with xorg and Windows.
   - [3. Showcase](#3-showcase)
     - [Main dashboard](#main-dashboard)
     - [Categories page](#categories-page)
-  - [](#)
   - [4. Installation and Setup](#4-installation-and-setup)
     - [4.1 Development Setup](#41-development-setup)
     - [4.2 Using the Latest Release](#42-using-the-latest-release)

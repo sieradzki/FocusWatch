@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import sys
 
 from PySide6.QtCore import QDir, QFile
@@ -28,6 +29,33 @@ BASE_STYLES_DIR = os.path.join(BASE_RESOURCES_DIR, "styles")
 BASE_ICONS_DIR = os.path.join(BASE_RESOURCES_DIR, "icons")
 
 
+def _resolve_qss_urls(stylesheet: str, stylesheet_path: str) -> str:
+  """Resolve relative url(...) paths in QSS to absolute paths."""
+  base_dir = os.path.dirname(stylesheet_path)
+
+  def replace_url(match: re.Match) -> str:
+    raw_token = match.group(1).strip()
+    quote = ""
+    if raw_token.startswith(("'", '"')) and raw_token.endswith(("'", '"')) and len(raw_token) >= 2:
+      quote = raw_token[0]
+      raw_path = raw_token[1:-1]
+    else:
+      raw_path = raw_token
+
+    if (
+      raw_path.startswith((":/", "qrc:/", "http://", "https://", "data:"))
+      or os.path.isabs(raw_path)
+    ):
+      return f"url({raw_token})"
+
+    absolute_path = os.path.normpath(os.path.join(base_dir, raw_path)).replace("\\", "/")
+    if quote:
+      return f"url({quote}{absolute_path}{quote})"
+    return f"url({absolute_path})"
+
+  return re.sub(r"url\(([^)]+)\)", replace_url, stylesheet)
+
+
 def apply_stylesheet(target, style_path: str) -> None:
   """
   Loads a QSS stylesheet file and applies it to the specified target widget or QApplication instance.
@@ -44,6 +72,7 @@ def apply_stylesheet(target, style_path: str) -> None:
   file = QFile(stylesheet_path)
   if file.open(QFile.ReadOnly | QFile.Text):
     stylesheet = str(file.readAll(), "utf-8")
+    stylesheet = _resolve_qss_urls(stylesheet, stylesheet_path)
     target.setStyleSheet(stylesheet)
   else:
     logger.error(f"Failed to open stylesheet file: {style_path}")
@@ -81,6 +110,7 @@ def load_stylesheets(stylesheet_paths: list[str]) -> str:
     file = QFile(stylesheet_path)
     if file.open(QFile.ReadOnly | QFile.Text):
       stylesheet = str(file.readAll(), "utf-8")
+      stylesheet = _resolve_qss_urls(stylesheet, stylesheet_path)
       stylesheets.append(stylesheet)
 
   return "\n".join(stylesheets)

@@ -5,6 +5,7 @@ from typing import Optional
 import re
 
 from sqlalchemy import Column, Enum, Integer, String, Text
+from sqlalchemy.orm import relationship
 
 from focuswatch.database.models import Base
 from focuswatch.utils.ui_utils import validate_color_format
@@ -34,6 +35,8 @@ class Project(Base):
     nullable=False,
     default=ProjectStatus.ACTIVE,
   )
+
+  time_logs = relationship("TimeLog", back_populates="project")
 
   def __init__(self,
                name: str = "",
