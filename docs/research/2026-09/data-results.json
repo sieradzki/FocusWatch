@@ -1,0 +1,613 @@
+{
+  "measured_at_utc": "2026-09-27T13:38:11.226180+00:00",
+  "environment": {
+    "platform": "Linux-7.2.7-arch1-1-x86_64-with-glibc2.44",
+    "python": "3.14.7",
+    "sqlite": "3.53.4",
+    "duckdb": "1.5.5",
+    "cpu": "Intel(R) Core(TM) i7-6700HQ CPU @ 2.60GHz",
+    "ram_bytes": 33465491456,
+    "available_ram_before": 14799581184,
+    "load_average_before": [
+      5.46728515625,
+      7.79052734375,
+      7.6240234375
+    ],
+    "duckdb_threads": 2,
+    "duckdb_memory_limit": "512MB",
+    "sqlite_cache": "64MiB",
+    "sqlite_synchronous": "FULL",
+    "load_average_after": [
+      5.33154296875,
+      7.38720703125,
+      7.4990234375
+    ]
+  },
+  "script_sha256": "bd5a837d283e96e7702552a49054528be970b6ecfe76a59937673313218d73ae",
+  "datasets": [
+    {
+      "rows": 1000000,
+      "days": 260.4166666666667,
+      "years_at_3840_events_per_day": 0.7134703196347032,
+      "generate_parquet_seconds": null,
+      "sqlite_load_seconds": null,
+      "sqlite_index_build_seconds": null,
+      "rollup_build_seconds": null,
+      "sqlite_indexed_bytes": 481939456,
+      "sqlite_bytes_per_observation": 481.939456,
+      "parquet_zstd_bytes": 52022006,
+      "parquet_bytes_per_observation": 52.022006,
+      "rollup_additional_bytes": 1191936,
+      "rollup_rows": 33408,
+      "sample_json_escaped_payload_wire_bytes_mean": 518.6646,
+      "sample_json_nested_payload_wire_bytes_mean": 486.6646,
+      "dataset_reused": true,
+      "sqlite_total_file_bytes": 483155968,
+      "query_window": {
+        "day_start_ms": 1600214400000,
+        "day_end_ms": 1600300800000,
+        "day_rows": 3840,
+        "year_start_ms": 1577836800000,
+        "year_end_ms": 1600300800000
+      },
+      "query_timings": {
+        "sqlite": {
+          "day_timeline_page": {
+            "first_ms": 2.976105999550782,
+            "median_ms": 1.6113959991344018,
+            "warm_min_ms": 1.497896999353543,
+            "warm_max_ms": 2.5736280003911816,
+            "samples_ms": [
+              2.976105999550782,
+              2.5736280003911816,
+              1.628682999580633,
+              1.5941089986881707,
+              1.497896999353543,
+              1.5799969987710938,
+              2.136150000296766
+            ],
+            "result_rows": 500,
+            "query_plan": [
+              [
+                5,
+                0,
+                155,
+                "SEARCH observations USING INDEX observation_time (start_ms>? AND start_ms<?)"
+              ],
+              [
+                41,
+                0,
+                0,
+                "USE TEMP B-TREE FOR LAST TERM OF ORDER BY"
+              ]
+            ]
+          },
+          "day_app_totals": {
+            "first_ms": 0.7357829999818932,
+            "median_ms": 1.014810499327723,
+            "warm_min_ms": 0.602569998591207,
+            "warm_max_ms": 1.3159549998817965,
+            "samples_ms": [
+              0.7357829999818932,
+              0.6179500014695805,
+              0.602569998591207,
+              0.916756998776691,
+              1.3159549998817965,
+              1.2020640024275053,
+              1.1128639998787548
+            ],
+            "result_rows": 32,
+            "query_plan": [
+              [
+                7,
+                0,
+                121,
+                "SEARCH observations USING COVERING INDEX observation_source_time (source_id=? AND start_ms>? AND start_ms<?)"
+              ],
+              [
+                17,
+                0,
+                0,
+                "USE TEMP B-TREE FOR GROUP BY"
+              ]
+            ]
+          },
+          "year_app_totals": {
+            "first_ms": 276.0414420008601,
+            "median_ms": 242.31904000225768,
+            "warm_min_ms": 226.75697500017122,
+            "warm_max_ms": 262.590887999977,
+            "samples_ms": [
+              276.0414420008601,
+              242.89253300230484,
+              249.79540200001793,
+              226.75697500017122,
+              262.590887999977,
+              238.8003199994273,
+              241.74554700221051
+            ],
+            "result_rows": 32,
+            "query_plan": [
+              [
+                7,
+                0,
+                198,
+                "SEARCH observations USING COVERING INDEX observation_source_time (source_id=? AND start_ms>? AND start_ms<?)"
+              ],
+              [
+                17,
+                0,
+                0,
+                "USE TEMP B-TREE FOR GROUP BY"
+              ]
+            ]
+          },
+          "history_app_totals": {
+            "first_ms": 256.66943100077333,
+            "median_ms": 243.67110549792415,
+            "warm_min_ms": 229.19931299838936,
+            "warm_max_ms": 258.5743329982506,
+            "samples_ms": [
+              256.66943100077333,
+              248.55588799982797,
+              258.5743329982506,
+              235.58984700139263,
+              229.19931299838936,
+              245.80995899668778,
+              241.5322519991605
+            ],
+            "result_rows": 32,
+            "query_plan": [
+              [
+                7,
+                0,
+                200,
+                "SEARCH observations USING COVERING INDEX observation_source_time (source_id=?)"
+              ],
+              [
+                11,
+                0,
+                0,
+                "USE TEMP B-TREE FOR GROUP BY"
+              ]
+            ]
+          },
+          "date_function_day_count": {
+            "first_ms": 208.13678500053356,
+            "median_ms": 296.56543400051305,
+            "warm_min_ms": 257.72616299946094,
+            "warm_max_ms": 348.19468700152356,
+            "samples_ms": [
+              208.13678500053356,
+              257.72616299946094,
+              310.1601540001866,
+              316.2204189975455,
+              264.3950580022647,
+              282.9707140008395,
+              348.19468700152356
+            ],
+            "result_rows": 1
+          },
+          "range_day_count": {
+            "first_ms": 0.25973400261136703,
+            "median_ms": 0.17201250193465967,
+            "warm_min_ms": 0.1588019986229483,
+            "warm_max_ms": 0.18409300173516385,
+            "samples_ms": [
+              0.25973400261136703,
+              0.1747130008880049,
+              0.1588019986229483,
+              0.16159900042111985,
+              0.18310800078324974,
+              0.18409300173516385,
+              0.16931200298131444
+            ],
+            "result_rows": 1
+          },
+          "year_rollup_app_totals": {
+            "first_ms": 7.771160999254789,
+            "median_ms": 5.622695500278496,
+            "warm_min_ms": 5.143158999999287,
+            "warm_max_ms": 7.827736000763252,
+            "samples_ms": [
+              7.771160999254789,
+              5.210397001064848,
+              5.170841999643017,
+              7.470795000699582,
+              5.143158999999287,
+              6.034993999492144,
+              7.827736000763252
+            ],
+            "result_rows": 32
+          },
+          "history_rollup_app_totals": {
+            "first_ms": 6.321494998701382,
+            "median_ms": 5.67912500082457,
+            "warm_min_ms": 4.721888999483781,
+            "warm_max_ms": 6.176874998345738,
+            "samples_ms": [
+              6.321494998701382,
+              4.806987999472767,
+              5.875938000826864,
+              6.176874998345738,
+              4.721888999483781,
+              5.784544002381153,
+              5.573705999267986
+            ],
+            "result_rows": 32
+          }
+        },
+        "duckdb_parquet": {
+          "day_timeline_page": {
+            "first_ms": 13.018592999287648,
+            "median_ms": 16.465459499158897,
+            "warm_min_ms": 12.927555999340257,
+            "warm_max_ms": 20.220386002620216,
+            "samples_ms": [
+              13.018592999287648,
+              20.220386002620216,
+              12.927555999340257,
+              16.586961999564664,
+              16.34395699875313,
+              17.63205999668571,
+              15.842868000618182
+            ],
+            "result_rows": 500
+          },
+          "day_app_totals": {
+            "first_ms": 5.474148001667345,
+            "median_ms": 5.0825189991883235,
+            "warm_min_ms": 4.077858000528067,
+            "warm_max_ms": 6.020643002557335,
+            "samples_ms": [
+              5.474148001667345,
+              4.500995000853436,
+              5.713440998079022,
+              6.020643002557335,
+              4.178907001914922,
+              4.077858000528067,
+              5.664042997523211
+            ],
+            "result_rows": 32
+          },
+          "year_app_totals": {
+            "first_ms": 28.138536999904318,
+            "median_ms": 24.698337500012713,
+            "warm_min_ms": 21.060933999251574,
+            "warm_max_ms": 26.622814999427646,
+            "samples_ms": [
+              28.138536999904318,
+              24.343970999325393,
+              26.622814999427646,
+              21.060933999251574,
+              22.21967500008759,
+              26.48906800095574,
+              25.052704000700032
+            ],
+            "result_rows": 32
+          },
+          "history_app_totals": {
+            "first_ms": 20.45198199994047,
+            "median_ms": 19.92204049929569,
+            "warm_min_ms": 18.748369002423715,
+            "warm_max_ms": 21.05751599810901,
+            "samples_ms": [
+              20.45198199994047,
+              20.34690799700911,
+              19.49717300158227,
+              18.748369002423715,
+              18.95524399878923,
+              20.602418000635225,
+              21.05751599810901
+            ],
+            "result_rows": 32
+          }
+        }
+      },
+      "correctness": "exact result equality SQLite vs DuckDB and raw vs daily aggregates",
+      "limitations": [
+        "synthetic metadata, no personal data",
+        "warm local disk/cache, no cold-cache control",
+        "fixed 30s spans, no midnight overlaps in performance dataset; semantics tested separately",
+        "totals are source/device exposure, not deduplicated human attention",
+        "load batches 10000, secondary time indexes built afterwards: not production ingestion throughput",
+        "sorted timestamps, fixed spans, correlated categorical fields: compression is not a prediction for real data",
+        "SQLite raw bytes count table+indexes, excluding daily aggregates, catalog and free pages",
+        "no encryption or network costs measured",
+        "no concurrent writer workload in these query timings"
+      ]
+    },
+    {
+      "rows": 10000000,
+      "days": 2604.1666666666665,
+      "years_at_3840_events_per_day": 7.134703196347032,
+      "generate_parquet_seconds": null,
+      "sqlite_load_seconds": null,
+      "sqlite_index_build_seconds": null,
+      "rollup_build_seconds": null,
+      "sqlite_indexed_bytes": 4827115520,
+      "sqlite_bytes_per_observation": 482.711552,
+      "parquet_zstd_bytes": 520267755,
+      "parquet_bytes_per_observation": 52.0267755,
+      "rollup_additional_bytes": 12550144,
+      "rollup_rows": 333404,
+      "sample_json_escaped_payload_wire_bytes_mean": 518.6646,
+      "sample_json_nested_payload_wire_bytes_mean": 486.6646,
+      "dataset_reused": true,
+      "sqlite_total_file_bytes": 4839698432,
+      "query_window": {
+        "day_start_ms": 1802736000000,
+        "day_end_ms": 1802822400000,
+        "day_rows": 3840,
+        "year_start_ms": 1771286400000,
+        "year_end_ms": 1802822400000
+      },
+      "query_timings": {
+        "sqlite": {
+          "day_timeline_page": {
+            "first_ms": 1.9462169984763023,
+            "median_ms": 2.4122189988702303,
+            "warm_min_ms": 1.578076000441797,
+            "warm_max_ms": 3.5068889992544428,
+            "samples_ms": [
+              1.9462169984763023,
+              2.424646998406388,
+              3.5068889992544428,
+              2.6569350011413917,
+              2.2410279998439364,
+              2.3997909993340727,
+              1.578076000441797
+            ],
+            "result_rows": 500,
+            "query_plan": [
+              [
+                5,
+                0,
+                156,
+                "SEARCH observations USING INDEX observation_time (start_ms>? AND start_ms<?)"
+              ],
+              [
+                41,
+                0,
+                0,
+                "USE TEMP B-TREE FOR LAST TERM OF ORDER BY"
+              ]
+            ]
+          },
+          "day_app_totals": {
+            "first_ms": 0.7481989996449556,
+            "median_ms": 1.2616704989341088,
+            "warm_min_ms": 1.212106999446405,
+            "warm_max_ms": 1.628982998227002,
+            "samples_ms": [
+              0.7481989996449556,
+              1.212106999446405,
+              1.2879540008725598,
+              1.4554440022038762,
+              1.2144340034865309,
+              1.2353869969956577,
+              1.628982998227002
+            ],
+            "result_rows": 32,
+            "query_plan": [
+              [
+                7,
+                0,
+                124,
+                "SEARCH observations USING COVERING INDEX observation_source_time (source_id=? AND start_ms>? AND start_ms<?)"
+              ],
+              [
+                17,
+                0,
+                0,
+                "USE TEMP B-TREE FOR GROUP BY"
+              ]
+            ]
+          },
+          "year_app_totals": {
+            "first_ms": 361.10504300086177,
+            "median_ms": 330.2969004998886,
+            "warm_min_ms": 317.65004100088845,
+            "warm_max_ms": 354.64973999842186,
+            "samples_ms": [
+              361.10504300086177,
+              329.0920889994595,
+              336.3185070011241,
+              317.65004100088845,
+              331.50171200031764,
+              354.64973999842186,
+              326.788434998889
+            ],
+            "result_rows": 32,
+            "query_plan": [
+              [
+                7,
+                0,
+                211,
+                "SEARCH observations USING COVERING INDEX observation_source_time (source_id=? AND start_ms>? AND start_ms<?)"
+              ],
+              [
+                17,
+                0,
+                0,
+                "USE TEMP B-TREE FOR GROUP BY"
+              ]
+            ]
+          },
+          "history_app_totals": {
+            "first_ms": 3161.5719239998725,
+            "median_ms": 3282.431084999189,
+            "warm_min_ms": 3108.2595709995076,
+            "warm_max_ms": 3518.788236000546,
+            "samples_ms": [
+              3161.5719239998725,
+              3410.4727470003127,
+              3154.389422998065,
+              3151.761302000523,
+              3518.788236000546,
+              3108.2595709995076,
+              3413.512453000294
+            ],
+            "result_rows": 32,
+            "query_plan": [
+              [
+                7,
+                0,
+                233,
+                "SEARCH observations USING COVERING INDEX observation_source_time (source_id=?)"
+              ],
+              [
+                11,
+                0,
+                0,
+                "USE TEMP B-TREE FOR GROUP BY"
+              ]
+            ]
+          },
+          "date_function_day_count": {
+            "first_ms": 2143.3488499969826,
+            "median_ms": 2189.656833999834,
+            "warm_min_ms": 2156.7254879992106,
+            "warm_max_ms": 2267.610101000173,
+            "samples_ms": [
+              2143.3488499969826,
+              2267.610101000173,
+              2172.6127280016954,
+              2230.8484360000875,
+              2194.211189998896,
+              2156.7254879992106,
+              2185.102478000772
+            ],
+            "result_rows": 1
+          },
+          "range_day_count": {
+            "first_ms": 0.23887000133981928,
+            "median_ms": 0.15853900004003663,
+            "warm_min_ms": 0.1551649984321557,
+            "warm_max_ms": 0.16621000031591393,
+            "samples_ms": [
+              0.23887000133981928,
+              0.16621000031591393,
+              0.15933800023049116,
+              0.1551649984321557,
+              0.15901200094958767,
+              0.1569399973959662,
+              0.15806599913048558
+            ],
+            "result_rows": 1
+          },
+          "year_rollup_app_totals": {
+            "first_ms": 10.154846000659745,
+            "median_ms": 8.687083500262816,
+            "warm_min_ms": 6.961905000935076,
+            "warm_max_ms": 11.27403700229479,
+            "samples_ms": [
+              10.154846000659745,
+              8.991790000436595,
+              11.27403700229479,
+              6.961905000935076,
+              8.006546999240527,
+              8.382377000089036,
+              10.064701997180237
+            ],
+            "result_rows": 32
+          },
+          "history_rollup_app_totals": {
+            "first_ms": 82.32694099933724,
+            "median_ms": 120.73312699976668,
+            "warm_min_ms": 90.3228470015165,
+            "warm_max_ms": 129.2628049995983,
+            "samples_ms": [
+              82.32694099933724,
+              90.3228470015165,
+              96.1192270005995,
+              115.82307999924524,
+              125.9756079998624,
+              125.64317400028813,
+              129.2628049995983
+            ],
+            "result_rows": 32
+          }
+        },
+        "duckdb_parquet": {
+          "day_timeline_page": {
+            "first_ms": 30.190164001396624,
+            "median_ms": 31.625259000065853,
+            "warm_min_ms": 27.037192001444055,
+            "warm_max_ms": 34.924330000649206,
+            "samples_ms": [
+              30.190164001396624,
+              34.924330000649206,
+              29.494271002477035,
+              27.037192001444055,
+              29.807711998728337,
+              33.82206199967186,
+              33.44280600140337
+            ],
+            "result_rows": 500
+          },
+          "day_app_totals": {
+            "first_ms": 7.994468000106281,
+            "median_ms": 8.812899501208449,
+            "warm_min_ms": 7.46444799733581,
+            "warm_max_ms": 11.616022999078268,
+            "samples_ms": [
+              7.994468000106281,
+              11.616022999078268,
+              7.46444799733581,
+              10.893208000197774,
+              9.396884001034778,
+              8.22891500138212,
+              8.182464000128675
+            ],
+            "result_rows": 32
+          },
+          "year_app_totals": {
+            "first_ms": 34.356625998043455,
+            "median_ms": 36.47763549997762,
+            "warm_min_ms": 35.10620000088238,
+            "warm_max_ms": 39.82022800119012,
+            "samples_ms": [
+              34.356625998043455,
+              36.348867000924656,
+              39.82022800119012,
+              35.10620000088238,
+              36.63595400212216,
+              35.36654799972894,
+              36.60640399903059
+            ],
+            "result_rows": 32
+          },
+          "history_app_totals": {
+            "first_ms": 197.2811029991135,
+            "median_ms": 184.18752850084275,
+            "warm_min_ms": 173.0790019973938,
+            "warm_max_ms": 271.06563299821573,
+            "samples_ms": [
+              197.2811029991135,
+              256.5993019998132,
+              271.06563299821573,
+              182.6755330002925,
+              185.699524001393,
+              173.0790019973938,
+              180.89472800056683
+            ],
+            "result_rows": 32
+          }
+        }
+      },
+      "correctness": "exact result equality SQLite vs DuckDB and raw vs daily aggregates",
+      "limitations": [
+        "synthetic metadata, no personal data",
+        "warm local disk/cache, no cold-cache control",
+        "fixed 30s spans, no midnight overlaps in performance dataset; semantics tested separately",
+        "totals are source/device exposure, not deduplicated human attention",
+        "load batches 10000, secondary time indexes built afterwards: not production ingestion throughput",
+        "sorted timestamps, fixed spans, correlated categorical fields: compression is not a prediction for real data",
+        "SQLite raw bytes count table+indexes, excluding daily aggregates, catalog and free pages",
+        "no encryption or network costs measured",
+        "no concurrent writer workload in these query timings"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,887 @@
+{
+  "price_date": "2026-09-27",
+  "users": [
+    1,
+    100,
+    1000,
+    10000
+  ],
+  "fx": {
+    "date": "2026-09-25",
+    "usd_per_eur": 1.1403,
+    "source": "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml",
+    "note": "Reference conversion only; not a supplier EUR price or exchange-rate forecast."
+  },
+  "assumptions": {
+    "month_days": 30,
+    "history_years": 5,
+    "registered_devices": 3,
+    "active_device_equivalents": 2,
+    "active_hours_day": 8,
+    "batch_seconds": 60,
+    "observations_user_day": 3840,
+    "sources_per_active_device": 2,
+    "average_segment_seconds": 30,
+    "payload_bytes_event": 350,
+    "wire_bytes_event": 500,
+    "hot_physical_bytes_event": 700,
+    "archive_bytes_event": 100,
+    "hot_days": 90,
+    "disk_headroom_factor": 1.3,
+    "backup_storage_multiple": 2,
+    "control_db_bytes_user": 1000000,
+    "blind_transient_days": 1,
+    "report_requests_user_day": 20,
+    "report_response_bytes": 100000,
+    "ack_response_bytes": 500,
+    "sync_download_copies": 2,
+    "archive_export_fraction_month": 0.01,
+    "archive_gets_user_month": 10,
+    "cpu_ms_request": 10,
+    "container_memory_gib": 0.5,
+    "target_cpu_utilization": 0.5,
+    "new_connections_per_request": 1,
+    "front_worker_cpu_ms": 1,
+    "cf_sleep_tail_minutes_day": 10,
+    "scaleway_ha_storage_copies": 2,
+    "ops_hours_sensitivity": [
+      0,
+      2,
+      8,
+      20
+    ],
+    "ops_eur_hour": 50,
+    "wall_ms_request": 100,
+    "effective_request_overlap": 4,
+    "download_requests_per_ingest": 2
+  },
+  "assumption_notes": {
+    "event_count": "2 active device equivalents * 8h * 3600 / 30s * 2 sources = 3840. Synthetic reference, not measured typical usage.",
+    "payload": "350B initial logical payload premise; wire includes envelope. No implication 350B PostgreSQL physical row. Payload350B remains a logical mass field, not an independent costdriver; change wire/hot/archive fields together for a larger-event scenario.",
+    "wire": "500B/event rounded reference; synthetic sample486.665B nested JSON and518.665B escaped JSON envelope, not encrypted; wire500 is not a PostgreSQL physical row size.",
+    "hot": "700 B/event cost reference retained with margin. Separate local 1M synthetic PostgreSQL 18.6 benchmark measured 563.716096 B/event including table + 4 indexes (431.77 MB table, 131.95 MB indexes), excluding replica, backup and bloat. SQLite 10M measured 482.7 B/event does not establish PG size. Neither local test establishes cloud DB capacity.",
+    "archive": "100B/event reference; separate10M synthetic ParquetZSTD result52.03B/event. Sensitive tocardinality,stringsandencryption;compressbeforeclientencryption.",
+    "backup": "Retained billed backup data=2xhot footprint as a storage budget, not two independent DR locations nor a promised seven-day PITR policy.",
+    "cpu": "10ms CPU/request,100mswall,4 overlappingrequests are UNMEASURED inputs. Amortizedinstancebilltime=max(wall/overlap,CPU/targetutilization); one-userisolated requestsroundwallto100ms. CPU sensitivity1/10/100ms,wall100/1000ms. This is not a runtimebenchmark nor a capacityforecast.",
+    "archive_age": "Monthly run-rate after five years of history for a constant user population; NOT cumulative five-year bill and not first-month bill.",
+    "blind": "Blind-sync PG contains assumed1MB/user controlmetadata; encrypted recent batches are temporaryobjects1day then compacted client-side daily. Same API and logical raw-sync egress held for conservative comparison; clientcompactionwork notpriced. Alternative blind_sync_pg_staging uses1day of opaque encrypted PG staging plus controlmetadata, withsame hotbytes/event assumption; onlydaily objects reachobjectstore. Server cannot query plaintext in either variant.",
+    "cloudflare_postgres": "Scaleway external PostgreSQL deliberately held equal to Scaleway standalone comparison to isolate compute/storage differences. Not a claim it is the best external PG supplier.",
+    "byte_units": "GCP/AWS storage priced in GiB=2^30 bytes. Scaleway/R2 storage modeled advertised GB=10^9 (interpretation uncertainty up to7.4%; confirm invoices). Hetzner TB decimal. Scaleway Containers RAM conversion follows official FAQ128MB=0.125GB, thus modeled1:1 to configuredGiB.",
+    "HA": "Cloud SQL/RDS commercialprofiles automatic cross-AZ; Scaleway and externalPGprofile sameDC/rackHA only. Hetzner2VMreference is NOT an HA implementation.",
+    "hetzner": "Only currentVM+IPv4+20%rootdiskbackup+object storage+logicalPGbackup priced; data volumes/LB/quorum unpriced. Not directly comparabletotal.",
+    "downloads": "Default2 additional APIrequests per ingestbatch for2 receivingdevices; ratio0 sensitivity means piggyback/directpresignedobjectreads. Wireegresscopies remain2. Retries andmanifestpolling are additional.",
+    "realtime": "Bulk-sync baseline is NOT realtime. 5s batch sensitivity sends scheduled requests even if empty; latency still adds network/processing. Persistent connection floor uses2devices/user*8h/day,1vCPU/0.5GiB instances: Cloud Run instance-based 100/250/1000 connections (latter configuration ceiling, NOT capacity guarantee), Scaleway80 configuration ceiling and200 maxscale. Shared bulk API/free pool once; excludes reconnect/fanout/pubsub, scale-down tails and spare concurrency slots."
+  },
+  "sensitivity": {
+    "observations_user_day": [
+      1000,
+      3840,
+      10000
+    ],
+    "wire_bytes_event": [
+      350,
+      500,
+      1000
+    ],
+    "hot_physical_bytes_event": [
+      350,
+      700,
+      1400
+    ],
+    "archive_bytes_event": [
+      52,
+      100,
+      350
+    ],
+    "hot_days": [
+      30,
+      90,
+      365
+    ],
+    "cpu_ms_request": [
+      1,
+      10,
+      100
+    ],
+    "batch_seconds": [
+      5,
+      30,
+      60,
+      300
+    ],
+    "scaleway_ha_storage_copies": [
+      1,
+      2
+    ],
+    "wall_ms_request": [
+      100,
+      1000
+    ],
+    "effective_request_overlap": [
+      1,
+      4,
+      16
+    ],
+    "download_requests_per_ingest": [
+      0,
+      1,
+      2
+    ]
+  },
+  "prices": {
+    "gcp": {
+      "region": "europe-west1 Belgium",
+      "currency": "USD",
+      "cpu_second": 2.4e-05,
+      "memory_gib_second": 2.5e-06,
+      "requests_million": 0.4,
+      "free_cpu_seconds": 180000,
+      "free_memory_gib_seconds": 360000,
+      "free_requests": 2000000,
+      "dev_db_hour": 0.0105,
+      "dev_db": "db-f1-micro shared0.6GiB (noSLA)",
+      "ha_db_hour": 0.2772,
+      "commercial_db": "Cloud SQL Enterprise2vCPU8GiB,regionalHA",
+      "minimum_disk_gib": 10,
+      "disk_gib_month": 0.17,
+      "ha_disk_gib_month": 0.34,
+      "backup_gib_month": 0.08,
+      "object_gib_month": 0.02,
+      "put_thousand": 0.005,
+      "get_thousand": 0.0004,
+      "egress_tiers_gib": [
+        [
+          1024,
+          0.12
+        ],
+        [
+          10240,
+          0.11
+        ],
+        [
+          null,
+          0.085
+        ]
+      ],
+      "instance_cpu_second": 1.8e-05,
+      "instance_memory_gib_second": 2e-06,
+      "instance_free_cpu_seconds": 240000,
+      "instance_free_memory_gib_seconds": 450000
+    },
+    "scaleway": {
+      "region": "fr-par Paris",
+      "currency": "EUR",
+      "cpu_second": 1e-05,
+      "memory_gb_second": 2e-06,
+      "free_cpu_seconds": 200000,
+      "free_memory_gb_seconds": 400000,
+      "dev_db_hour": 0.0156,
+      "dev_db": "DB-DEV-S2vCPU2GB",
+      "commercial_primary_hour": 0.11,
+      "commercial_standby_hour": 0.0583,
+      "commercial_db": "DB-PRO2-XXS2vCPU8GB+HA standby,sameDC",
+      "minimum_disk_gb": 5,
+      "disk_gb_month": 0.0993,
+      "backup_gb_month": 0.03,
+      "object_gb_month": 0.01606,
+      "free_object_egress_gb": 75,
+      "object_egress_gb": 0.01
+    },
+    "aws": {
+      "region": "eu-west-1 Ireland",
+      "currency": "USD",
+      "cpu_hour": 0.04048,
+      "memory_gib_hour": 0.004445,
+      "alb_hour": 0.0252,
+      "lcu_hour": 0.008,
+      "ipv4_hour": 0.005,
+      "dev_db_hour": 0.017,
+      "dev_db": "RDS PostgreSQL db.t4g.micro single-AZ",
+      "ha_db_hour": 0.352,
+      "commercial_db": "RDS PostgreSQL db.m6g.large2vCPU8GiB Multi-AZ(one standby)",
+      "minimum_disk_gib": 20,
+      "disk_gib_month": 0.127,
+      "ha_disk_gib_month": 0.254,
+      "backup_gib_month": 0.095,
+      "object_storage_tiers_gib": [
+        [
+          51200,
+          0.023
+        ],
+        [
+          512000,
+          0.022
+        ],
+        [
+          null,
+          0.021
+        ]
+      ],
+      "put": 5e-06,
+      "get": 4e-07,
+      "free_egress_gib": 100,
+      "egress_tiers_gib": [
+        [
+          10240,
+          0.09
+        ],
+        [
+          51200,
+          0.085
+        ],
+        [
+          153600,
+          0.07
+        ],
+        [
+          null,
+          0.05
+        ]
+      ]
+    },
+    "cloudflare": {
+      "region": "GlobalWorkers; EUjurisdictionR2; EUContainers egressrate; externalPGParis",
+      "currency": "USD",
+      "base_month": 5,
+      "free_requests": 10000000,
+      "requests_million": 0.3,
+      "free_cpu_ms": 30000000,
+      "cpu_ms_million": 0.02,
+      "r2_free_gb": 10,
+      "r2_gb_month": 0.015,
+      "r2_free_put": 1000000,
+      "r2_put_million": 4.5,
+      "r2_free_get": 10000000,
+      "r2_get_million": 0.36,
+      "container_free_cpu_seconds": 22500,
+      "container_cpu_second": 2e-05,
+      "container_free_memory_gib_seconds": 90000,
+      "container_memory_gib_second": 2.5e-06,
+      "container_free_disk_gb_seconds": 720000,
+      "container_disk_gb_second": 7e-08,
+      "container_free_egress_gb": 1000,
+      "container_egress_gb": 0.025,
+      "do_free_requests": 1000000,
+      "do_requests_million": 0.15,
+      "do_free_gb_seconds": 400000,
+      "do_duration_million_gb_seconds": 12.5
+    },
+    "hetzner": {
+      "region": "Germany/Finland",
+      "currency": "EUR",
+      "dev_vm_month": 5.49,
+      "dev_vm": "CX23 reference",
+      "commercial_vm_month": 42.99,
+      "commercial_vm": "2xCCX13reference,notvalidatedHA",
+      "backup_fraction": 0.2,
+      "ipv4_month": 0.5,
+      "object_base_month": 6.49,
+      "object_included_gb": 1000,
+      "object_extra_tb_hour": 0.0087
+    }
+  },
+  "sources": {
+    "gcp_run": "https://cloud.google.com/run/pricing",
+    "gcp_sql": "https://cloud.google.com/sql/pricing",
+    "gcp_storage": "https://cloud.google.com/storage/pricing",
+    "gcp_network": "https://cloud.google.com/vpc/network-pricing",
+    "scw_compute": "https://www.scaleway.com/en/pricing/serverless/",
+    "scw_db": "https://www.scaleway.com/en/pricing/managed-databases/",
+    "scw_storage": "https://www.scaleway.com/en/pricing/storage/",
+    "scw_ha": "https://www.scaleway.com/en/docs/managed-databases-for-postgresql-and-mysql/faq/",
+    "aws_fargate": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonECS/current/eu-west-1/index.json",
+    "aws_rds": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonRDS/current/eu-west-1/index.json",
+    "aws_s3": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonS3/current/eu-west-1/index.json",
+    "aws_alb": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSELB/current/eu-west-1/index.json",
+    "aws_transfer": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AWSDataTransfer/current/eu-west-1/index.json",
+    "aws_ip": "https://aws.amazon.com/vpc/pricing/",
+    "cf_workers": "https://developers.cloudflare.com/workers/platform/pricing/",
+    "cf_r2": "https://developers.cloudflare.com/r2/pricing/",
+    "cf_containers": "https://developers.cloudflare.com/containers/platform/pricing/",
+    "cf_do": "https://developers.cloudflare.com/durable-objects/platform/pricing/",
+    "cf_hyperdrive": "https://developers.cloudflare.com/hyperdrive/platform/pricing/",
+    "hetzner_vm": "https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/",
+    "hetzner_object": "https://www.hetzner.com/storage/object-storage/",
+    "hetzner_public_prices": "https://website-price-api.hetzner.com/api/v1/products/CLOUD_85",
+    "hetzner_ip": "https://website-price-api.hetzner.com/api/v1/products/CLOUD_21",
+    "scw_containers_faq": "https://www.scaleway.com/en/docs/serverless-containers/faq/",
+    "scw_container_limits": "https://www.scaleway.com/en/docs/serverless-containers/reference-content/containers-limitations/",
+    "gcp_websockets": "https://docs.cloud.google.com/run/docs/triggering/websockets",
+    "hetzner_backups": "https://docs.hetzner.com/cloud/billing/faq/"
+  },
+  "excluded_costs": [
+    "VAT, payment processing,auth/email,domains,customer support",
+    "LLM/GPU/inference,embeddings,contentcapture/screenshots/audio",
+    "Paid support plans,CI/artifactregistry,logs/traces/metrics,scheduler/queue/secretfees",
+    "Archive conversion/reindex/queryjob CPU and retainedderivedaggregate dimensions",
+    "Crosszone/interregionnetwork and unverifiedExternalPGegress",
+    "Disaster-recoveryextraobjectcopy,retainedobjectversions,deletedobjects/softdelete",
+    "RequiredDBcompute/IOPSscalingafterloadtests; fixed2vCPU8GBPG is not capacityassertion",
+    "VPSdatavolumes,LB,quorum,failoverengineering; Hetzner is referenceonly",
+    "Realtime fanout/message traffic, broker/relay coordination, reconnections and scale-down tail; persistent connection floor is separate from bulk API tables"
+  ],
+  "aws_regional_price_evidence": [
+    {
+      "service": "AmazonECS",
+      "sku": "K4EXFQ5YFQCP98EN",
+      "published": "2026-09-11T12:44:25Z",
+      "attributes": {
+        "servicecode": "AmazonECS",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "tenancy": "Shared",
+        "usagetype": "EU-Fargate-vCPU-Hours:perCPU",
+        "operation": "",
+        "cputype": "perCPU",
+        "regionCode": "eu-west-1",
+        "servicename": "Amazon Elastic Container Service"
+      },
+      "prices": [
+        {
+          "rateCode": "K4EXFQ5YFQCP98EN.JRTCKXETXF.6YS6EN2CT7",
+          "description": "AWS Fargate - vCPU  - EU (Ireland)",
+          "beginRange": "0",
+          "endRange": "Inf",
+          "unit": "hours",
+          "pricePerUnit": {
+            "USD": "0.0404800000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AmazonECS",
+      "sku": "UP5ETC3QSW2QZGEY",
+      "published": "2026-09-11T12:44:25Z",
+      "attributes": {
+        "servicecode": "AmazonECS",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "tenancy": "Shared",
+        "usagetype": "EU-Fargate-GB-Hours",
+        "operation": "",
+        "memorytype": "perGB",
+        "regionCode": "eu-west-1",
+        "servicename": "Amazon Elastic Container Service"
+      },
+      "prices": [
+        {
+          "rateCode": "UP5ETC3QSW2QZGEY.JRTCKXETXF.6YS6EN2CT7",
+          "description": "AWS Fargate - Memory  - EU (Ireland)",
+          "beginRange": "0",
+          "endRange": "Inf",
+          "unit": "hours",
+          "pricePerUnit": {
+            "USD": "0.0044450000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AmazonRDS",
+      "sku": "S4E2MMMTRUYQX32A",
+      "published": "2026-09-24T21:10:11Z",
+      "attributes": {
+        "servicecode": "AmazonRDS",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "storageMedia": "AmazonS3",
+        "engineCode": "14",
+        "databaseEngine": "PostgreSQL",
+        "deploymentOption": "Single-AZ",
+        "usagetype": "EU-RDS:ChargedBackupUsage",
+        "operation": "CreateDBInstance:0014",
+        "regionCode": "eu-west-1",
+        "servicename": "Amazon Relational Database Service"
+      },
+      "prices": [
+        {
+          "rateCode": "S4E2MMMTRUYQX32A.JRTCKXETXF.6YS6EN2CT7",
+          "description": "$0.095 per additional GB-month of backup storage exceeding free allocation running PostgreSQL",
+          "beginRange": "0",
+          "endRange": "Inf",
+          "unit": "GB-Mo",
+          "pricePerUnit": {
+            "USD": "0.0950000000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AmazonRDS",
+      "sku": "S32D6FQC3879C222",
+      "published": "2026-09-24T21:10:11Z",
+      "attributes": {
+        "servicecode": "AmazonRDS",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "storageMedia": "SSD",
+        "volumeType": "General Purpose-GP3",
+        "minVolumeSize": "5 GB",
+        "maxVolumeSize": "16 TB",
+        "engineCode": "14",
+        "databaseEngine": "PostgreSQL",
+        "deploymentOption": "Single-AZ",
+        "usagetype": "EU-RDS:GP3-Storage",
+        "operation": "CreateDBInstance:0014",
+        "regionCode": "eu-west-1",
+        "servicename": "Amazon Relational Database Service"
+      },
+      "prices": [
+        {
+          "rateCode": "S32D6FQC3879C222.JRTCKXETXF.6YS6EN2CT7",
+          "description": "$0.127 per GB-month of provisioned GP3 storage running PostgreSQL",
+          "beginRange": "0",
+          "endRange": "Inf",
+          "unit": "GB-Mo",
+          "pricePerUnit": {
+            "USD": "0.1270000000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AmazonRDS",
+      "sku": "EAU4ZF82RTWHAEHF",
+      "published": "2026-09-24T21:10:11Z",
+      "attributes": {
+        "servicecode": "AmazonRDS",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "storageMedia": "SSD",
+        "volumeType": "General Purpose-GP3",
+        "minVolumeSize": "5 GB",
+        "maxVolumeSize": "16 TB",
+        "engineCode": "14",
+        "databaseEngine": "PostgreSQL",
+        "deploymentOption": "Multi-AZ",
+        "usagetype": "EU-RDS:Multi-AZ-GP3-Storage",
+        "operation": "CreateDBInstance:0014",
+        "regionCode": "eu-west-1",
+        "servicename": "Amazon Relational Database Service"
+      },
+      "prices": [
+        {
+          "rateCode": "EAU4ZF82RTWHAEHF.JRTCKXETXF.6YS6EN2CT7",
+          "description": "$0.254 per GB-month of provisioned GP3 storage for Multi-AZ deployments running PostgreSQL",
+          "beginRange": "0",
+          "endRange": "Inf",
+          "unit": "GB-Mo",
+          "pricePerUnit": {
+            "USD": "0.2540000000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AmazonRDS",
+      "sku": "J4W7U8CXJ4JGUZQY",
+      "published": "2026-09-24T21:10:11Z",
+      "attributes": {
+        "servicecode": "AmazonRDS",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "instanceType": "db.t4g.micro",
+        "currentGeneration": "Yes",
+        "instanceFamily": "General purpose",
+        "vcpu": "2",
+        "physicalProcessor": "AWS Graviton2",
+        "memory": "1 GiB",
+        "storage": "EBS Only",
+        "networkPerformance": "Up to 5 Gigabit",
+        "processorArchitecture": "64-bit",
+        "engineCode": "14",
+        "databaseEngine": "PostgreSQL",
+        "licenseModel": "No license required",
+        "deploymentOption": "Multi-AZ",
+        "usagetype": "EU-Multi-AZUsage:db.t4g.micro",
+        "operation": "CreateDBInstance:0014",
+        "instanceTypeFamily": "T4G",
+        "normalizationSizeFactor": "1",
+        "regionCode": "eu-west-1",
+        "servicename": "Amazon Relational Database Service",
+        "unbundledLicensing": "FALSE"
+      },
+      "prices": [
+        {
+          "rateCode": "J4W7U8CXJ4JGUZQY.JRTCKXETXF.6YS6EN2CT7",
+          "description": "$ 0.035 per RDS db.t4g.micro Multi-AZ instance hour (or partial hour) running PostgreSQL",
+          "beginRange": "0",
+          "endRange": "Inf",
+          "unit": "Hrs",
+          "pricePerUnit": {
+            "USD": "0.0350000000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AmazonRDS",
+      "sku": "R4J36KT7UAC4HEEK",
+      "published": "2026-09-24T21:10:11Z",
+      "attributes": {
+        "servicecode": "AmazonRDS",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "instanceType": "db.m6g.large",
+        "currentGeneration": "Yes",
+        "instanceFamily": "General purpose",
+        "vcpu": "2",
+        "physicalProcessor": "AWS Graviton2",
+        "memory": "8 GiB",
+        "storage": "EBS Only",
+        "networkPerformance": "Up to 10 Gigabit",
+        "processorArchitecture": "64-bit",
+        "engineCode": "14",
+        "databaseEngine": "PostgreSQL",
+        "licenseModel": "No license required",
+        "deploymentOption": "Single-AZ",
+        "usagetype": "EU-InstanceUsage:db.m6g.large",
+        "operation": "CreateDBInstance:0014",
+        "instanceTypeFamily": "M6G",
+        "normalizationSizeFactor": "4",
+        "regionCode": "eu-west-1",
+        "servicename": "Amazon Relational Database Service",
+        "unbundledLicensing": "FALSE"
+      },
+      "prices": [
+        {
+          "rateCode": "R4J36KT7UAC4HEEK.JRTCKXETXF.6YS6EN2CT7",
+          "description": "$ 0.176 per RDS db.m6g.large Single-AZ instance hour (or partial hour) running PostgreSQL",
+          "beginRange": "0",
+          "endRange": "Inf",
+          "unit": "Hrs",
+          "pricePerUnit": {
+            "USD": "0.1760000000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AmazonRDS",
+      "sku": "PUGZSVMJGUNPKAB8",
+      "published": "2026-09-24T21:10:11Z",
+      "attributes": {
+        "servicecode": "AmazonRDS",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "instanceType": "db.m6g.large",
+        "currentGeneration": "Yes",
+        "instanceFamily": "General purpose",
+        "vcpu": "2",
+        "physicalProcessor": "AWS Graviton2",
+        "memory": "8 GiB",
+        "storage": "EBS Only",
+        "networkPerformance": "Up to 10 Gigabit",
+        "processorArchitecture": "64-bit",
+        "engineCode": "14",
+        "databaseEngine": "PostgreSQL",
+        "licenseModel": "No license required",
+        "deploymentOption": "Multi-AZ",
+        "usagetype": "EU-Multi-AZUsage:db.m6g.large",
+        "operation": "CreateDBInstance:0014",
+        "instanceTypeFamily": "M6G",
+        "normalizationSizeFactor": "8",
+        "regionCode": "eu-west-1",
+        "servicename": "Amazon Relational Database Service",
+        "unbundledLicensing": "FALSE"
+      },
+      "prices": [
+        {
+          "rateCode": "PUGZSVMJGUNPKAB8.JRTCKXETXF.6YS6EN2CT7",
+          "description": "$ 0.352 per RDS db.m6g.large Multi-AZ instance hour (or partial hour) running PostgreSQL",
+          "beginRange": "0",
+          "endRange": "Inf",
+          "unit": "Hrs",
+          "pricePerUnit": {
+            "USD": "0.3520000000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AmazonRDS",
+      "sku": "M4GMEFVGGWNKH9B6",
+      "published": "2026-09-24T21:10:11Z",
+      "attributes": {
+        "servicecode": "AmazonRDS",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "instanceType": "db.t4g.micro",
+        "currentGeneration": "Yes",
+        "instanceFamily": "General purpose",
+        "vcpu": "2",
+        "physicalProcessor": "AWS Graviton2",
+        "memory": "1 GiB",
+        "storage": "EBS Only",
+        "networkPerformance": "Up to 5 Gigabit",
+        "processorArchitecture": "64-bit",
+        "engineCode": "14",
+        "databaseEngine": "PostgreSQL",
+        "licenseModel": "No license required",
+        "deploymentOption": "Single-AZ",
+        "usagetype": "EU-InstanceUsage:db.t4g.micro",
+        "operation": "CreateDBInstance:0014",
+        "instanceTypeFamily": "T4G",
+        "normalizationSizeFactor": "0.5",
+        "regionCode": "eu-west-1",
+        "servicename": "Amazon Relational Database Service",
+        "unbundledLicensing": "FALSE"
+      },
+      "prices": [
+        {
+          "rateCode": "M4GMEFVGGWNKH9B6.JRTCKXETXF.6YS6EN2CT7",
+          "description": "$ 0.017 per RDS db.t4g.micro Single-AZ instance hour (or partial hour) running PostgreSQL",
+          "beginRange": "0",
+          "endRange": "Inf",
+          "unit": "Hrs",
+          "pricePerUnit": {
+            "USD": "0.0170000000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AmazonS3",
+      "sku": "578M9UJHH6X5PZVC",
+      "published": "2026-09-26T01:55:12Z",
+      "attributes": {
+        "servicecode": "AmazonS3",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "group": "S3-API-Tier1",
+        "groupDescription": "PUT/COPY/POST or LIST requests",
+        "usagetype": "EU-Requests-Tier1",
+        "operation": "",
+        "regionCode": "eu-west-1",
+        "servicename": "Amazon Simple Storage Service"
+      },
+      "prices": [
+        {
+          "rateCode": "578M9UJHH6X5PZVC.JRTCKXETXF.6YS6EN2CT7",
+          "description": "$0.005 per 1,000 PUT, COPY, POST, or LIST requests",
+          "beginRange": "0",
+          "endRange": "Inf",
+          "unit": "Requests",
+          "pricePerUnit": {
+            "USD": "0.0000050000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AmazonS3",
+      "sku": "ZCQD4CM637S7D8U5",
+      "published": "2026-09-26T01:55:12Z",
+      "attributes": {
+        "servicecode": "AmazonS3",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "group": "S3-API-Tier2",
+        "groupDescription": "GET and all other requests",
+        "usagetype": "EU-Requests-Tier2",
+        "operation": "",
+        "regionCode": "eu-west-1",
+        "servicename": "Amazon Simple Storage Service"
+      },
+      "prices": [
+        {
+          "rateCode": "ZCQD4CM637S7D8U5.JRTCKXETXF.6YS6EN2CT7",
+          "description": "$0.004 per 10,000 GET and all other requests",
+          "beginRange": "0",
+          "endRange": "Inf",
+          "unit": "Requests",
+          "pricePerUnit": {
+            "USD": "0.0000004000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AmazonS3",
+      "sku": "4AJHPB29ZPVFADXP",
+      "published": "2026-09-26T01:55:12Z",
+      "attributes": {
+        "servicecode": "AmazonS3",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "availability": "99.99%",
+        "storageClass": "General Purpose",
+        "volumeType": "Standard",
+        "usagetype": "EU-TimedStorage-ByteHrs",
+        "operation": "",
+        "durability": "99.999999999%",
+        "regionCode": "eu-west-1",
+        "servicename": "Amazon Simple Storage Service"
+      },
+      "prices": [
+        {
+          "rateCode": "4AJHPB29ZPVFADXP.JRTCKXETXF.PGHJ3S3EYE",
+          "description": "$0.023 per GB - first 50 TB / month of storage used",
+          "beginRange": "0",
+          "endRange": "51200",
+          "unit": "GB-Mo",
+          "pricePerUnit": {
+            "USD": "0.0230000000"
+          },
+          "appliesTo": []
+        },
+        {
+          "rateCode": "4AJHPB29ZPVFADXP.JRTCKXETXF.D42MF2PVJS",
+          "description": "$0.022 per GB - next 450 TB / month of storage used",
+          "beginRange": "51200",
+          "endRange": "512000",
+          "unit": "GB-Mo",
+          "pricePerUnit": {
+            "USD": "0.0220000000"
+          },
+          "appliesTo": []
+        },
+        {
+          "rateCode": "4AJHPB29ZPVFADXP.JRTCKXETXF.PXJDJ3YRG3",
+          "description": "$0.021 per GB - storage used / month over 500 TB",
+          "beginRange": "512000",
+          "endRange": "Inf",
+          "unit": "GB-Mo",
+          "pricePerUnit": {
+            "USD": "0.0210000000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AWSELB",
+      "sku": "T29JAP5UEZ7HXAM7",
+      "published": "2026-09-11T12:45:44Z",
+      "attributes": {
+        "servicecode": "AWSELB",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "group": "ELB:Balancing",
+        "groupDescription": "LoadBalancer hourly usage by Application Load Balancer",
+        "usagetype": "EU-LoadBalancerUsage",
+        "operation": "LoadBalancing:Application",
+        "regionCode": "eu-west-1",
+        "servicename": "Elastic Load Balancing"
+      },
+      "prices": [
+        {
+          "rateCode": "T29JAP5UEZ7HXAM7.JRTCKXETXF.6YS6EN2CT7",
+          "description": "$0.0252 per Application LoadBalancer-hour (or partial hour)",
+          "beginRange": "0",
+          "endRange": "Inf",
+          "unit": "Hrs",
+          "pricePerUnit": {
+            "USD": "0.0252000000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AWSELB",
+      "sku": "YE8QE7GMG9794PDX",
+      "published": "2026-09-11T12:45:44Z",
+      "attributes": {
+        "servicecode": "AWSELB",
+        "location": "EU (Ireland)",
+        "locationType": "AWS Region",
+        "group": "ELB:Balancing",
+        "groupDescription": "Used Application Load Balancer capacity units-hr",
+        "usagetype": "EU-LCUUsage",
+        "operation": "LoadBalancing:Application",
+        "regionCode": "eu-west-1",
+        "servicename": "Elastic Load Balancing"
+      },
+      "prices": [
+        {
+          "rateCode": "YE8QE7GMG9794PDX.JRTCKXETXF.6YS6EN2CT7",
+          "description": "$0.008 per used Application load balancer capacity unit-hour (or partial hour)",
+          "beginRange": "0",
+          "endRange": "Inf",
+          "unit": "LCU-Hrs",
+          "pricePerUnit": {
+            "USD": "0.0080000000"
+          },
+          "appliesTo": []
+        }
+      ]
+    },
+    {
+      "service": "AWSDataTransfer",
+      "sku": "FSEU4E6BRE95JTX8",
+      "published": "2026-09-16T13:22:08Z",
+      "attributes": {
+        "servicecode": "AWSDataTransfer",
+        "transferType": "AWS Outbound",
+        "fromLocation": "EU (Ireland)",
+        "fromLocationType": "AWS Region",
+        "toLocation": "External",
+        "toLocationType": "Other",
+        "usagetype": "EU-DataTransfer-Out-Bytes",
+        "operation": "",
+        "fromRegionCode": "eu-west-1",
+        "servicename": "AWS Data Transfer",
+        "toRegionCode": ""
+      },
+      "prices": [
+        {
+          "rateCode": "FSEU4E6BRE95JTX8.JRTCKXETXF.Q3Z75P77EN",
+          "description": "$0.090 per GB - first 10 TB / month data transfer out beyond the global free tier",
+          "beginRange": "0",
+          "endRange": "10240",
+          "unit": "GB",
+          "pricePerUnit": {
+            "USD": "0.0900000000"
+          },
+          "appliesTo": []
+        },
+        {
+          "rateCode": "FSEU4E6BRE95JTX8.JRTCKXETXF.VF6T3GAUKQ",
+          "description": "$0.085 per GB - next 40 TB / month data transfer out",
+          "beginRange": "10240",
+          "endRange": "51200",
+          "unit": "GB",
+          "pricePerUnit": {
+            "USD": "0.0850000000"
+          },
+          "appliesTo": []
+        },
+        {
+          "rateCode": "FSEU4E6BRE95JTX8.JRTCKXETXF.N9EW5UVVPA",
+          "description": "$0.070 per GB - next 100 TB / month data transfer out",
+          "beginRange": "51200",
+          "endRange": "153600",
+          "unit": "GB",
+          "pricePerUnit": {
+            "USD": "0.0700000000"
+          },
+          "appliesTo": []
+        },
+        {
+          "rateCode": "FSEU4E6BRE95JTX8.JRTCKXETXF.GPHXDESFBB",
+          "description": "$0.050 per GB - greater than 150 TB / month data transfer out",
+          "beginRange": "153600",
+          "endRange": "Inf",
+          "unit": "GB",
+          "pricePerUnit": {
+            "USD": "0.0500000000"
+          },
+          "appliesTo": []
+        }
+      ]
+    }
+  ]
+}

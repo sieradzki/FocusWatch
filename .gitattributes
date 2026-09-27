@@ -1,2 +1,7 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Preserve byte-level provenance of the historical research snapshot on all OSes.
+scripts/research/** text eol=lf
+docs/research/** text eol=lf
+scripts/verify_handoff.py text eol=lf

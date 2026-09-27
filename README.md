@@ -1,5 +1,13 @@
 # Focuswatch 
 
+## Project restart — September 2026
+
+This repository contains the legacy Python/PySide6 application and a completed architecture research package. The new implementation has **not** started. To continue on another machine without chat history, begin with [the handoff](docs/HANDOFF.md) and [agent instructions](AGENTS.md).
+
+The [product brief](docs/PROJECT_BRIEF.md), [decision status](docs/architecture/DECISIONS.md), [implementation plan](docs/IMPLEMENTATION_PLAN.md), and [research report](docs/research/2026-09/README.md) describe the new direction. Technology recommendations are distinct from user requirements. Run `python3 scripts/verify_handoff.py` with Python 3.10+ to verify the handoff files without installing or starting the application.
+
+The description and setup instructions below refer to the **legacy application**, not the proposed new stack. The transfer branch is `codex/architecture-evaluation`; see the handoff before relying on the default branch.
+
 ### Description:
 PySide6 desktop time tracking app for Linux systems with xorg and Windows.
 

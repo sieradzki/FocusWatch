@@ -1,5 +1,7 @@
 # PR Review: naprawy modeli i migracji Projects
 
+> **Raport historyczny.** Opisuje moment review przed późniejszym lokalnym włączeniem zmian do `main`. Nie jest bieżącą instrukcją scalania ani oceną nowej architektury. Aktualny stan i gałąź przekazania: [HANDOFF.md](HANDOFF.md).
+
 Data: 2026-09-27. Branch: `v0.7-projects`.
 
 Zakres review: naprawy wykonane po pierwszym przeglądzie, względem zastanego

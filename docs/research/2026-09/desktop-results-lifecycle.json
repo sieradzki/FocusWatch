@@ -1,0 +1,24 @@
+{
+  "status": "pass",
+  "checks": {
+    "collects_without_ui": true,
+    "private_socket_mode_0600": true,
+    "ui_crash_does_not_stop_collector": true,
+    "unsupported_message_rejected": true,
+    "snapshot_can_represent_foreground_and_media": true,
+    "collector_restart_advances_sequence": true,
+    "restart_discards_partial_tail_no_duplicate_sequence": true,
+    "native_message_roundtrip": true,
+    "reject_oversized_native_message": true,
+    "reject_truncated_native_message": true
+  },
+  "scope": "Synthetic Rust Unix-socket collector + journal + fake UI clients; no actual capture/browser integration",
+  "limitations": [
+    "No Windows named pipe/permissions test",
+    "No installed autostart or updater",
+    "Single synthetic producer, no DB or durable sync protocol",
+    "Native framing tested in memory, no browser extension installed",
+    "No production IPC security claim; one-read socket parser intentionally rejects partial requests",
+    "Crash test checks sequence consistency, not recording of events during downtime"
+  ]
+}

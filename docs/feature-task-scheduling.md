@@ -1,5 +1,7 @@
 # Task Scheduling & Focused Work — Feature Plan
 
+> **Historical design, not the specification for the new implementation.** This document belongs to the earlier Projects/task scheduling work. Its single-session model, migration requirements and statement that FocusWatch is not a blocker do not constrain the current product. See the [current brief](PROJECT_BRIEF.md), [decision status](architecture/DECISIONS.md) and [handoff](HANDOFF.md).
+
 ## Vision
 
 FocusWatch tracks what users actually spend their time on (applications, window titles, categories). The **Task Scheduling** feature bridges the gap between *what users intend to work on* and *what they actually do*, by letting users schedule focused work sessions on specific tasks — or entire projects — and then comparing planned vs. actual activity.

@@ -1,0 +1,26 @@
+{
+  "measured_at_utc": "2026-09-27T13:24:13.445466+00:00",
+  "tests": [
+    "test_backward_wall_clock_does_not_make_negative_elapsed",
+    "test_concurrent_wal_reader_sees_snapshot_while_writer_commits",
+    "test_deleted_generation_is_not_resurrected_by_offline_queue",
+    "test_local_report_days_can_have_23_or_25_hours",
+    "test_lost_ack_retry_is_idempotent_and_mismatched_duplicate_rejected",
+    "test_midnight_split_without_loss",
+    "test_nested_intervals_and_gaps",
+    "test_out_of_order_delivery_does_not_ack_missing_sequence",
+    "test_parallel_foreground_and_stream_preserve_both_without_double_person_time",
+    "test_process_crash_keeps_observation_and_outbox_atomic"
+  ],
+  "run": 10,
+  "failures": 0,
+  "errors": 0,
+  "script_sha256": "2529bb335a7174c5530334f0b5bddaf73fd2578beec3bb7c4d100d28e3a21830",
+  "limitations": [
+    "architecture experiments, no production transport/authentication",
+    "process crashes, not power failure",
+    "epoch test covers full collection reset only",
+    "serial retry; concurrent requests and deletion races are not exercised",
+    "no AI accuracy, attention or productivity validation"
+  ]
+}
