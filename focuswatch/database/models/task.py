@@ -78,6 +78,7 @@ class Task(Base):
   )
 
   time_logs = relationship("TimeLog", back_populates="task")
+  schedules = relationship("TimeSchedule", back_populates="task")
   tags = relationship("Tag", secondary=task_tags, back_populates="tasks")
   column = relationship("TaskColumn", back_populates="tasks")
 
@@ -95,9 +96,3 @@ class Task(Base):
             f"priority={self.priority.value}, "
             f"status={self.status.value}, "
             f"total_tracked_time={self.total_tracked_time}s)")
-
-
-# Ensure related model is imported so relationship("TimeLog") resolves
-# even when Task is imported before TimeLog.
-from focuswatch.database.models.time_log import TimeLog  # noqa: E402,F401
-from focuswatch.database.models.task_column import TaskColumn  # noqa: E402,F401

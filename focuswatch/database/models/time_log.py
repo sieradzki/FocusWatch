@@ -17,7 +17,7 @@ class TimeLog(Base):
   task = relationship("Task", back_populates="time_logs")
   project = relationship("Project", back_populates="time_logs")
 
-  __table_args__ = (CheckConstraint('task_id IS NULL != project_id IS NULL',
+  __table_args__ = (CheckConstraint('(task_id IS NULL) != (project_id IS NULL)',
                                     name='check_task_or_project'),)
 
   @property

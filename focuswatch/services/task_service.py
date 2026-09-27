@@ -1,18 +1,19 @@
 """ Task Service Module """
 
-import json
 import logging
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import text
+from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import selectinload
 
 from focuswatch.database.database_connection import DatabaseConnection
+from focuswatch.database.models import Base
 from focuswatch.database.models.tag import Tag
-from focuswatch.database.models.task import Task, TaskPriority, TaskRecurrence
+from focuswatch.database.models.task import Task, TaskPriority, TaskRecurrence, TaskStatus
 from focuswatch.database.models.task_column import TaskColumn
+from focuswatch.database.schema_migrations import upgrade_project_schema
 
 logger = logging.getLogger(__name__)
 
@@ -24,46 +25,8 @@ class TaskService:
     self._db_conn = db_conn or DatabaseConnection()
 
     engine = self._db_conn.engine
-    Tag.__table__.create(bind=engine, checkfirst=True)
-    TaskColumn.__table__.create(bind=engine, checkfirst=True)
-    Task.__table__.create(bind=engine, checkfirst=True)
-    Task.task_tags.create(bind=engine, checkfirst=True)
-
-    self._ensure_tag_schema()
-    self._ensure_task_schema()
-
-  def _ensure_tag_schema(self) -> None:
-    try:
-      with self._db_conn.engine.begin() as conn:
-        rows = conn.execute(text("PRAGMA table_info(tags)")).fetchall()
-        cols = {row[1] for row in rows}
-        if "project_id" not in cols:
-          conn.execute(text("ALTER TABLE tags ADD COLUMN project_id INTEGER"))
-        if "color" not in cols:
-          conn.execute(text("ALTER TABLE tags ADD COLUMN color TEXT"))
-    except SQLAlchemyError as e:
-      logger.warning(f"Could not patch tags schema automatically: {e}")
-
-  def _ensure_task_schema(self) -> None:
-    try:
-      with self._db_conn.engine.begin() as conn:
-        rows = conn.execute(text("PRAGMA table_info(tasks)")).fetchall()
-        cols = {row[1] for row in rows}
-
-        if "description" not in cols:
-          conn.execute(text("ALTER TABLE tasks ADD COLUMN description TEXT"))
-        if "parent_task_id" not in cols:
-          conn.execute(text("ALTER TABLE tasks ADD COLUMN parent_task_id INTEGER"))
-        if "column_id" not in cols:
-          conn.execute(text("ALTER TABLE tasks ADD COLUMN column_id INTEGER"))
-        if "order_index" not in cols:
-          conn.execute(text("ALTER TABLE tasks ADD COLUMN order_index INTEGER DEFAULT 0"))
-        if "recurrence" not in cols:
-          conn.execute(text("ALTER TABLE tasks ADD COLUMN recurrence TEXT DEFAULT 'none'"))
-        if "checklist" not in cols:
-          conn.execute(text("ALTER TABLE tasks ADD COLUMN checklist TEXT DEFAULT '[]'"))
-    except SQLAlchemyError as e:
-      logger.warning(f"Could not patch tasks schema automatically: {e}")
+    Base.metadata.create_all(engine)
+    upgrade_project_schema(engine)
 
   @staticmethod
   def _parse_datetime(value: Optional[str]) -> Optional[datetime]:
@@ -300,16 +263,33 @@ class TaskService:
         session.flush()
 
         # Backfill tasks that do not yet have a column assigned.
-        default_column = columns[0]
         orphan_tasks = (
           session.query(Task)
           .filter(Task.project_id == project_id, Task.column_id.is_(None))
           .all()
         )
         if orphan_tasks:
-          for index, task in enumerate(orphan_tasks):
-            task.column_id = default_column.id
-            task.order_index = index
+          # Preserve the pre-board status instead of moving every legacy task
+          # to To Do. Renamed/custom boards fall back to their first column.
+          status_columns = {
+            status: next((column for column in columns if column.name == name), columns[0])
+            for status, name in (
+              (TaskStatus.NOT_STARTED, "To Do"),
+              (TaskStatus.IN_PROGRESS, "In Progress"),
+              (TaskStatus.DONE, "Done"),
+            )
+          }
+          next_orders = {
+            column_id: (last_order or 0) + 1
+            for column_id, last_order in session.query(Task.column_id, func.max(Task.order_index))
+            .filter(Task.project_id == project_id, Task.column_id.is_not(None))
+            .group_by(Task.column_id).all()
+          }
+          for task in orphan_tasks:
+            column_id = status_columns[task.status].id
+            task.column_id = column_id
+            task.order_index = next_orders.get(column_id, 0)
+            next_orders[column_id] = task.order_index + 1
           session.commit()
 
         return (

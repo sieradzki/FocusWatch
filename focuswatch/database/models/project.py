@@ -2,7 +2,6 @@
 
 from enum import Enum as PyEnum
 from typing import Optional
-import re
 
 from sqlalchemy import Column, Enum, Integer, String, Text
 from sqlalchemy.orm import relationship
@@ -37,6 +36,7 @@ class Project(Base):
   )
 
   time_logs = relationship("TimeLog", back_populates="project")
+  schedules = relationship("TimeSchedule", back_populates="project")
 
   def __init__(self,
                name: str = "",

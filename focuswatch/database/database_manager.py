@@ -11,6 +11,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from focuswatch.database.database_connection import DatabaseConnection
 from focuswatch.database.models import Base
 from focuswatch.database.models.metadata import Metadata
+from focuswatch.database.schema_migrations import upgrade_project_schema
 from focuswatch.services.category_service import CategoryService
 from focuswatch.services.keyword_service import KeywordService
 
@@ -50,6 +51,7 @@ class DatabaseManager:
     """ Set up the database by creating tables if they don't exist. """
     try:
       Base.metadata.create_all(self._db_conn.engine)
+      upgrade_project_schema(self._db_conn.engine)
       logger.info("Database tables checked/created successfully.")
     except SQLAlchemyError as e:
       logger.error(f"Error setting up database: {e}")

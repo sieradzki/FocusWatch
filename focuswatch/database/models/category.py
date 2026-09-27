@@ -39,6 +39,8 @@ class Category(Base):
     self.name = name
     self.parent_category_id = parent_category_id
     self.focused = focused
+    if id is not None and parent_category_id == id:
+      raise ValueError("category cannot be its own parent")
     if color is not None:
       if validate_color_format(color):
         self.color = color

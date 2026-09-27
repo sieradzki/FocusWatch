@@ -17,7 +17,7 @@ class TimeSchedule(Base):
   task = relationship("Task", back_populates="schedules")
   project = relationship("Project", back_populates="schedules")
 
-  __table_args__ = (CheckConstraint('task_id IS NULL != project_id IS NULL',
+  __table_args__ = (CheckConstraint('(task_id IS NULL) != (project_id IS NULL)',
                                     name='check_task_or_project'),)
 
   @property
