@@ -1,39 +1,52 @@
 # FocusWatch — brief produktu
 
-Stan przekazania: 27.09.2026. Ten dokument utrwala wymagania i intencje użytkownika; rekomendacje badawcze mają osobny [rejestr statusu](architecture/DECISIONS.md).
+Stan: **03.10.2026**. Dokument utrwala wymagania i intencje użytkownika. Wybory techniczne mają osobny [rejestr statusu](architecture/DECISIONS.md). Nowa implementacja nie powstała.
 
 ## Cel
 
-Osobisty companion do rozumienia aktywności, wspierania celów i korygowania działań. Pierwszy użyteczny rezultat jest dla właściciela projektu, lecz projekt od początku ma podstawy **komercyjnego produktu B2C**. Nie jest to narzędzie nadzoru pracowników.
+Osobisty companion do rozumienia aktywności, wspierania celów i korygowania działań. Pierwszy użyteczny rezultat jest dla właściciela projektu, ale projekt od początku jest **płatnym produktem B2C**, nie narzędziem nadzoru pracowników.
 
-Docelowo system może znać plany, istotne dla użytkownika wartości, cele, preferencje i powtarzające się trudności. Ma pomagać w tworzeniu planów i dobieraniu rekomendacji. Użytkownik nie musi deklarować kierunku życiowego, żeby aplikacja była użyteczna. Sposób budowania profilu osobistego nie jest jeszcze rozstrzygnięty.
+Docelowo system może znać plany, istotne wartości, cele, preferencje i powtarzające się trudności. Ma pomagać w planowaniu i dobieraniu rekomendacji. Użytkownik nie musi deklarować kierunku życiowego, żeby aplikacja była użyteczna. Sposób budowania profilu pozostaje do rozstrzygnięcia.
+
+## Doprecyzowania użytkownika z 03.10.2026
+
+- Produkt ma być z założenia płatny i rozsądnie wyceniony. Nie przyjmujemy freemium ani modelu, w którym mała grupa płacących utrzymuje dużą darmową populację, jako bazowego scenariusza. Cena, sposób płatności, okres próbny i limity urządzeń nie zostały ustalone.
+- Znajomość języka lub wcześniejsze doświadczenie właściciela **nie są kryterium wyboru technologii**. Rozwój ma uwzględniać pracę agentów AI. Nadal oceniamy faktyczny koszt weryfikacji, integracji, wydań i utrzymania produktu.
+- W kosztorysach należy pokazywać koszt całkowity i koszt na płacącego klienta, wraz z zakresem. Rachunek za R2 nie jest pełnym kosztem usługi. Niewielka oszczędność infrastruktury nie uzasadnia automatycznie większej złożoności lub gorszej niezawodności.
+
+Te doprecyzowania nie oznaczają akceptacji E2EE, Cloudflare, subskrypcji ani całego rekomendowanego stosu.
 
 ## Wymagania i kierunek
 
-- **Cross-platform przez companiony i adaptery.** Pierwsze środowiska: Windows 11 i Arch Linux/dwm/X11. Później macOS, wybrane środowiska Wayland oraz osobne aplikacje mobilne; smart glasses są możliwością dalszego rozwoju, nie wybranym dziś SDK.
-- **Historia liczona latami**, z wielu komputerów, przeglądarki i innych urządzeń. Docelowa chmura zbiera/łączy historię; jej dostęp do treści zależy od nierozstrzygniętej decyzji prywatności.
-- **Równoległe źródła.** Edytor na foreground i stream w tle mogą trwać jednocześnie. Rejestrowanie obu nie oznacza podwójnego czasu osoby ani podziału uwagi 50/50. Media mogą mieć różne znaczenie zależnie od kontekstu; nie nadawaj im automatycznie negatywnej oceny.
-- **Wydajne, atrakcyjne raporty** z agregacją, możliwością zejścia do szczegółów oraz korektą błędów. Podstawowa wartość powstaje przez poprawne pomiary, algorytmy i reguły, niezależnie od AI.
-- **Możliwie mało ręcznej obsługi**, z manualnym override. Docelowo sugestie i plany korzystają z bieżącego kontekstu, ale zakres autonomii i uprawnienia działań są osobnymi decyzjami.
-- **Dobrowolne blokowanie niepożądanych aplikacji/działań** należy do docelowego produktu. Wymaga adapterów i uprawnień systemowych; nie obiecujemy identycznych możliwości na wszystkich OS.
-- **Personalizacja:** reguły, kategorie, zakres pomiaru, preferencje, interwencje i korekty. Duży zakres personalizacji nie przesądza o publicznym systemie pluginów w pierwszej wersji.
-- Początkowo **metadane i jawne integracje**; screenshoty, OCR, nagrywanie audio i pełna treść stron nie należą do pierwszego zakresu.
+- **Cross-platform przez companiony i adaptery.** Pierwsze środowiska: Windows 11 i Arch Linux/dwm/X11. Później macOS, wybrane środowiska Wayland i osobne aplikacje mobilne. Smart glasses pozostają możliwością dalszego rozwoju, nie wybranym SDK.
+- **Historia liczona latami**, z wielu komputerów, przeglądarki i innych urządzeń. Chmura docelowo łączy historię; jej dostęp do treści zależy od decyzji prywatności.
+- **Równoległe źródła.** Edytor na foreground i stream w tle mogą trwać jednocześnie. Nie oznacza to podwójnego czasu człowieka ani uwagi 50/50. Media nie otrzymują automatycznie negatywnej oceny.
+- **Raporty i korekty.** Wydajne, atrakcyjne raporty, agregacja, zejście do szczegółów, reguły i manualny override. Podstawowa wartość nie zależy od LLM.
+- **Mało ręcznej obsługi.** Sugestie i plany docelowo korzystają z kontekstu, ale autonomia i uprawnienia działań są osobnymi decyzjami.
+- **Dobrowolne blokowanie** należy do docelowego produktu. Wymaga adapterów i uprawnień; nie obiecujemy identycznych możliwości na każdym OS.
+- **Personalizacja** obejmuje reguły, kategorie, zakres pomiaru, preferencje, interwencje i korekty. Nie wymusza publicznych pluginów w pierwszej wersji.
+- Początkowo zbieramy **metadane i dane jawnych integracji**. Screenshoty, OCR, audio i pełna treść stron nie należą do pierwszego zakresu.
+- Lokalny pomiar i raporty są projektowane do pracy bez sieci. Nie wynika z tego darmowość ani brak potrzeby późniejszego zaprojektowania licencji offline.
 
 ## Założenia, których nie należy dodawać
 
-- Nie ma wymogu zachowania starej aplikacji, jej API, schematu, feature parity ani automatycznej migracji historii. Projekt nie ma obecnie grupy zewnętrznych użytkowników. Pełne przepisanie jest równoprawną drogą, a zachowanie istniejącego kodu musi mieć konkretną wartość.
-- Nie ma obowiązku budowy pełnej aplikacji webowej; desktop/mobile mogą wystarczyć. Portal konta i płatności to osobny zakres.
-- Cloudflare jest przykładem, nie preferowaną chmurą. Rize i ActivityWatch są przykładami do badań, nie zamkniętą listą konkurencji.
-- Większy koszt początkowej implementacji może być uzasadniony niższym kosztem utrzymania. Nie oznacza to deklaracji samodzielnej administracji VPS ani zgody na nieograniczoną złożoność.
-- Rust, Electron, React, GCP i OpenTofu nie zostały narzucone przez użytkownika. Liczby 300 MiB, 1/5 s, 90 dni i 3840 obserwacji/dzień są propozycjami lub parametrami badania, nie uzgodnionym SLA.
+Nie ma wymogu zachowania starego UI, API, schematu, feature parity, Kanbana ani automatycznej migracji historii. Nie ma obecnie grupy zewnętrznych użytkowników. Pełny rewrite jest dopuszczalny; to nie zgoda na usunięcie danych.
 
-## Otwarte kwestie
+Pełna aplikacja webowa nie jest wymagana. Portal konta i płatności to oddzielny zakres. Cloudflare nie jest preferowaną chmurą użytkownika, a Rize i ActivityWatch nie są zamkniętą listą konkurencji.
 
-1. **Prywatność chmury:** E2EE/blind sync, dane czytelne dla serwera lub świadomie wydzielone podsumowania. Konsekwencje obejmują miejsce analityki, klucze, odzyskiwanie i koszt. Ustalić przed przesyłaniem prawdziwej historii; nie blokuje to lokalnego rdzenia.
-2. **AI:** lokalne/chmurowe modele, jakość, opóźnienia i zakres autonomii. Nie zmierzono inferencji ani trafności rekomendacji; wybór powinien wynikać z oceny na wspólnych scenariuszach. Nie blokuje pomiarów, raportów i reguł.
-3. **Budżety i dystrybucja:** docelowy RAM/CPU/bateria, pierwszy wspierany zakres Windows/Linux, podpisy, aktualizacje i zachowanie bez uprawnień. Badany laptop nie jest obowiązkowym profilem każdego użytkownika.
-4. **Pierwszy zakres produktu:** rekomendowany jest mały przekrój pomiar → agregacja → raport → korekta. Cele, profil i blokowanie pozostają w architekturze docelowej, bez obowiązku odtworzenia Kanbana przed tym przekrojem.
+Wyższy koszt początkowy może mieć uzasadnienie utrzymaniowe, ale nie oznacza zgody na samodzielną administrację VPS lub nieograniczoną złożoność. Rust, Electron, React, GCP, Cloudflare i OpenTofu nie są narzuconymi wymaganiami.
 
-## Semantyka, którą trzeba zachować w projekcie
+Liczby 300 MiB, 1/5 s, 90 dni i 3840 obserwacji/dzień są historycznymi propozycjami lub parametrami badań, nie zaakceptowanym SLA. Przykładowe ceny i budżety z rozmowy również nie są cennikiem produktu.
 
-Oddzielaj **obserwacje**, **interpretacje**, **intencje/plany**, **deklaracje i hipotezy profilu**, **korekty/feedback** oraz **politykę działań**. Hipoteza o osobowości nie jest faktem; odtwarzanie nie dowodzi uwagi; współwystępowanie nie dowodzi wpływu na produktywność lub burnout. Ręczna korekta ma jawne pierwszeństwo i nie może znikać po przeliczeniu klasyfikacji.
+## Otwarte kwestie i ich zależności
+
+1. **Prywatność:** E2EE, dane czytelne dla serwera lub wydzielone podsumowania; klucze, odzyskiwanie, retencja, lokalizacja. Rozstrzygnąć przed sync prawdziwej historii, nie przed syntetycznymi testami lokalnego rdzenia.
+2. **AI:** miejsce inferencji, jakość, koszt, opóźnienia i autonomia. Nie zmierzono skuteczności rekomendacji. Nie blokuje pomiarów, raportów i reguł.
+3. **Dystrybucja:** docelowe budżety CPU/RAM/baterii, dokładny zakres wsparcia OS, podpisy, aktualizacje i zachowanie bez uprawnień.
+4. **Sprzedaż:** cena, model rozliczeń, okres próbny, urządzenia i zasady działania po wygaśnięciu uprawnienia. Rozdzielić stan konta, prawo używania produktu i dostęp do własnych danych.
+
+## Semantyka
+
+Oddzielaj obserwacje, interpretacje, intencje/plany, deklaracje i hipotezy profilu, korekty/feedback oraz politykę działań. Hipoteza o osobowości nie jest faktem; odtwarzanie nie dowodzi uwagi; współwystępowanie nie dowodzi przyczynowości. Korekta ma jawne pierwszeństwo i nie znika po przeliczeniu reguł.
+
+**Unia wszystkich obserwacji mierzy pokrycie obserwacjami, nie automatycznie aktywność człowieka.** Miary obecności wymagają określenia źródeł i reguł, a nieznany okres nie jest zerową aktywnością.

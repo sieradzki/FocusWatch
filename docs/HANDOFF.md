@@ -1,72 +1,78 @@
-# Przekazanie FocusWatch na kolejny komputer
+# Przekazanie FocusWatch
 
-Stan: 27.09.2026. Dokument jest punktem startowym dla agenta **bez historii rozmowy**. Ostatnie zlecenie: skonsolidować ustalenia, raporty i repo do dalszej pracy; nie rozpoczynać jeszcze nowej implementacji.
+Stan: **03.10.2026**. Dokument wystarcza do kontynuacji bez historii czatu. Ostatni etap to domknięcie rekomendacji i planu po doprecyzowaniu płatnego modelu oraz kryteriów wyboru technologii. **Nie rozpoczęto nowej implementacji ani płatnego wdrożenia.**
 
-## Co jest w repo
+## Bieżąca gałąź i baza
 
-- `focuswatch/`, `test/`, `requirements.txt`, `focuswatch.spec`: starsza aplikacja Python/PySide6, wraz z naprawami modeli/migracji i modułem Projects. Nie jest to proponowany nowy rdzeń.
-- `docs/research/2026-09/`: zakończone badanie obecnego kodu, 11 produktów, desktopu, adapterów, backendów, danych i chmur; raporty oraz wyniki JSON.
-- `scripts/research/`: źródła eksperymentów, generator danych, kalkulator kosztów oraz lockfile; nie produkcyjny kod aplikacji.
-- [Brief](PROJECT_BRIEF.md), [rejestr decyzji](architecture/DECISIONS.md), [plan](IMPLEMENTATION_PLAN.md): aktualny kontekst pracy. Technologie z raportu są rekomendacjami, nie automatycznie przyjętymi wymaganiami.
+Gałąź tej aktualizacji: **`codex/paid-product-architecture-2026-10-03`**.
 
-**Nie zbudowano** nowego agenta/GUI/API produkcyjnego, synchronizacji ani infrastruktury. Nie przeprowadzono pełnych testów Windows, GPU, podpisanych instalatorów, inferencji i rekomendacji AI. Nie wdrażano usług chmurowych.
+Baza: `codex/architecture-evaluation`, odczytany commit **`cdd122389904f7449814179a989f53f0a176cb49`**. Nowa gałąź dokumentacyjna jest przygotowana do przeglądu; nie oznacza scalenia do bazy ani `main`.
 
-## Stan Git i pobranie
-
-Gałąź przekazania: **`codex/architecture-evaluation`**, repo `https://github.com/sieradzki/FocusWatch`.
-
-Punkt wyjściowy starszego kodu: **`dc251ba1b02e108f61d97e382991e7f7223495aa`**. Obejmuje zachowanie prac Projects (`00101b8`) i naprawy modeli/migracji (`dc251ba`). Lokalny `main` został wcześniej doprowadzony do tego punktu. W chwili przygotowania przekazania `origin/main` był starszy (`09120c1`); **nie zakładaj, że zwykłe pobranie domyślnego brancha zawiera pakiet**. Gałąź przekazania zawiera potrzebną historię i dokumentację. Nie trzeba ponownie scalać Projects, aby kontynuować z tej gałęzi.
-
-Nowy checkout:
+Starszy kod bazował na `dc251ba1b02e108f61d97e382991e7f7223495aa`, obejmującym Projects (`00101b8`) i poprawki modeli/migracji. Nie należy ponownie scalać Projects ani zakładać, że zwykły checkout `main` zawiera pakiet badawczy.
 
 ```sh
-git clone --branch codex/architecture-evaluation https://github.com/sieradzki/FocusWatch.git
+git clone --branch codex/paid-product-architecture-2026-10-03 https://github.com/sieradzki/FocusWatch.git
 cd FocusWatch
 git status --short --branch
 git log -3 --oneline
 python3 scripts/verify_handoff.py
 ```
 
-W istniejącym checkout najpierw sprawdź lokalne zmiany, następnie `git fetch origin` i przełącz się na gałąź przekazania. Jeśli nie ma jeszcze lokalnego brancha: `git switch --track origin/codex/architecture-evaluation`. Nie resetuj ani nie nadpisuj lokalnej pracy. Na Windows użyj dostępnego launchera Python 3.10+ zamiast `python3`, np. `py -3`.
+W istniejącym checkout najpierw sprawdzić lokalne zmiany, następnie fetch i bezpieczne przełączenie. Nie resetować pracy użytkownika. Na Windows użyć dostępnego Python 3.10+, np. `py -3`.
 
-Skrypt weryfikuje spójność pakietu, hashe źródeł pomiarów, zapisane wyniki, lokalne linki i odtwarzalność kalkulatora. Nie instaluje zależności, nie uruchamia watchera ani benchmarków. Jego powodzenie nie oznacza, że nowa aplikacja została zaimplementowana.
+## Co jest w repo
 
-## Kolejność poznania projektu
+- `focuswatch/`, `test/`, `requirements.txt`, `focuswatch.spec`: stara aplikacja Python/PySide6, nie nowy rdzeń.
+- [Badanie 2026-09](research/2026-09/README.md): historyczne raporty oraz JSON pomiarów; nie zostały przeliczone ani zmienione w tym etapie.
+- `scripts/research/`: izolowane eksperymenty, generator i kalkulator; nie produkcyjny kod.
+- [Brief](PROJECT_BRIEF.md), [decyzje](architecture/DECISIONS.md), [plan](IMPLEMENTATION_PLAN.md): aktualny kontekst.
+- [Baseline 03.10](architecture/REBUILD_BASELINE_2026-10-03.md) i [macierz odbioru prototypu](architecture/PROTOTYPE_ACCEPTANCE.md): nowa rekomendacja i konkretna kolejność weryfikacji.
 
-1. Przeczytaj [AGENTS.md](../AGENTS.md) i [PROJECT_BRIEF.md](PROJECT_BRIEF.md). To zabezpiecza przed pomyleniem wymagań z dawnymi założeniami.
-2. Przeczytaj [DECISIONS.md](architecture/DECISIONS.md) i [syntezę badań](research/2026-09/README.md). Szczegółowe raporty otwieraj przy właściwym obszarze pracy.
-3. Sprawdź [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) i bieżące polecenie użytkownika. Przy zleceniu rozpoczęcia implementacji najbliższy zakres to kontrakt danych oraz lokalny przekrój pomiar → agregacja → raport → korekta.
-4. Ustal dostępne środowisko OS/toolchain. Nie zakładaj istnienia lokalnego venv, cache, bazy lub dostępu do chmury z poprzedniej maszyny. Nie odtwarzaj ciężkich pomiarów bez powodu.
+## Najważniejsze doprecyzowania
 
-## Najważniejsze ustalenia do zachowania
+**Wymagania użytkownika:** produkt z założenia płatny, rozsądnie wyceniony; brak premii dla stosu z powodu znajomości właściciela; rozwój uwzględnia agentów AI. Nie ustalono ceny, subskrypcji, trialu ani liczby urządzeń.
 
-- Pełny rewrite jest dopuszczalny i rekomendowany przez badanie. Nie ma wymogu utrzymania starego UI, kompatybilności, migracji ani Kanbana. Nowa implementacja w tym samym Git zachowuje historię bez narzucania starego modelu.
-- Pomiar obejmuje równoległe źródła; czas osoby, czas urządzeń i uwaga to różne pojęcia. Interpretacje i korekty nie są surową obserwacją.
-- Pierwsza użyteczna wersja działa bez AI. Docelowe cele, preferencje, profil i planowanie są częścią wizji, ale onboarding nie wymaga deklaracji kierunku życiowego.
-- E2EE/odczyt chmurowy i wybór inferencji pozostają otwarte. Nie blokują modelu i raportów lokalnych; wpływają na sync, klucze i miejsce analityki.
-- Cloudflare nie jest preferencją użytkownika. Porównanie rynku nie ogranicza się do Rize i ActivityWatch.
+**Rekomendacja inżynierska:** Rust agent + SQLite + Electron/React/TypeScript, niezależnie od UI i sieci. Chmura zależy od prywatności: rekomendowane E2EE z Workers/R2/DO kontra czytelna historia i serwis OCI/PostgreSQL. Nie zapisywać, że użytkownik wybrał E2EE lub Cloudflare.
 
-## Stan dowodów
+Nie optymalizować kilku groszy kosztu kosztem niezawodności. Pokazywać koszt na płacącego i koszt całkowity; R2 jest częścią kosztorysu, nie całym TCO. Płatność, konto, urządzenie, licencja offline i klucze historii mają odrębne znaczenia.
 
-| Obszar | Co wykonano | Czego nie dowodzi |
+Unia wszystkich obserwacji nie oznacza czasu aktywności człowieka. Zachować odrębne źródła, jakość i nieznane okresy. Pomiar, interpretacja, intencja, profil, korekta i polityka są oddzielone. Brak wymogu starego UI, migracji, Kanbana ani feature parity.
+
+## Wykonane sprawdzenia i ograniczenia tego etapu
+
+Odczytano przez GitHub aktualny ref, dokumenty startowe i skrypt weryfikacji. Sprawdzono oficjalne dokumentacje wskazane w baseline. Aktualizacja dotyczy dokumentów; nie zmienia kodu aplikacji, zależności, danych ani źródeł historycznych benchmarków.
+
+Próba:
+
+```sh
+git clone --branch codex/architecture-evaluation --single-branch https://github.com/sieradzki/FocusWatch.git /mnt/data/FocusWatch_work
+```
+
+zakończyła się `Could not resolve host: github.com`. Dostęp connectora GitHub działał, ale nie powstał lokalny checkout. **Nie wykonano w nim `git status` ani `python3 scripts/verify_handoff.py`.** Zdalny odczyt i przegląd dokumentów nie zastępują tych komend. Ścieżka `/mnt/data` opisuje środowisko tej sesji, nie wymóg nowej maszyny.
+
+Nie wykonano nowych pomiarów Windows, GPU, baterii, instalatorów, inferencji, pełnego syncu ani kosztów wdrożenia. Wszystkie scenariusze nowego prototypu są planem, nie zaliczonym testem.
+
+## Historyczny stan dowodów z 27.09
+
+| Obszar | Wykonane w badaniu wrześniowym | Czego nie dowodzi |
 | --- | --- | --- |
-| Starszy kod | Poprzedni review: 68/68 testów w opisanym środowisku, naprawy modeli/migracji | Obecna gotowość produkcyjna, działanie wszystkich trackerów i nowy produkt |
-| Dane | SQLite/DuckDB: 1 mln i 10 mln; PostgreSQL: 1 mln i 200 trwałych batchy po 8 obserwacji | Pojemność chmury wielu kont, przewaga języków API |
-| Semantyka/lifecycle | 10/10 scenariuszy czasu/outbox/retry oraz 10/10 syntetycznych sprawdzeń procesów/framing | Kompletny produkcyjny sync, Windows, utrata zasilania |
-| UI | 18 prób Tauri/Electron/Qt Quick, 1000 i 10000 segmentów | Pełny dashboard, GPU, bateria, instalacja i aktualizacje |
-| Realtime | 250/500/1000 połączeń localhost; poprawne dostarczenie i odrzucanie starych wersji | Autoryzacja, TLS, PostgreSQL fan-out, WAN, cloud capacity |
-| Chmury/rynek | Oficjalne źródła i częściowy kalkulator kosztów; 11 produktów | Pełny TCO, ręczne testy skuteczności wszystkich produktów, skuteczność AI |
+| Stary kod | 68/68 testów w opisanym środowisku | Nowy produkt, gotowość trackerów i dystrybucji |
+| Dane | SQLite/DuckDB 1 mln i 10 mln; PostgreSQL 1 mln i 200 batchy po 8 | Chmura wielu kont, przewaga języków API |
+| Czas/lifecycle | 10/10 scenariuszy czasu/outbox/retry i 10/10 procesów/framing | Produkcyjny sync, Windows, utrata zasilania |
+| UI | 18 prób Tauri/Electron/Qt Quick | Pełny raport, GPU, bateria, instalacja |
+| Realtime | 250/500/1000 połączeń localhost | TLS/auth, WAN, fan-out i pojemność chmury |
+| Koszty/rynek | Dokumentacja i częściowy model; 11 produktów | Pełny TCO, skuteczność produktów i AI |
 
-Źródła, środowiska i ograniczenia są w [raportach](research/2026-09/README.md). Liczby z badania są punktem odniesienia, nie specyfikacją produkcyjną.
+Metody, wersje i granice: [raporty](research/2026-09/README.md). Skrypt `verify_handoff.py` sprawdza spójność tego pakietu, nie nową aplikację.
 
-## Co nie jest wymagane do przeniesienia kontekstu
+## Konkretny następny krok
 
-Osobiste bazy i konfiguracja, wielogigabajtowe dane syntetyczne, `build/research/`, lokalne klastry PostgreSQL, `.venv` oraz cache npm/Cargo/Electron nie należą do pakietu Git. Czytanie raportów i weryfikacja kontekstu nie wymagają tych plików. Dane syntetyczne można wygenerować od nowa według [instrukcji](../scripts/research/README.md).
+Przy zleceniu implementacji rozpocząć **P0: kontrakt i szkielet lokalnego przekroju**, zgodnie z [planem](IMPLEMENTATION_PLAN.md) i [odbiorem](architecture/PROTOTYPE_ACCEPTANCE.md). Najpierw checkout i preflight, następnie testowane reguły czasu/korekt, syntetyczne źródło, tymczasowe SQLite i minimalny klient raportu. Nie otwierać ponownie ogólnego researchu bez nowej przesłanki lub polecenia.
 
-Surowe diagnostyki UI zawierają historyczne ścieżki maszyny pomiarowej; nie są ścieżkami wymaganymi na nowym komputerze. Drobne statystyki odczytane z osobistej starej bazy zostały zachowane wyłącznie lokalnie w ignorowanym `build/research/private`; nie są potrzebne do rekomendacji ani odtworzenia benchmarków.
+Prywatność nie blokuje P0. Przed prawdziwym sync trzeba ją rozstrzygnąć wraz z kluczami, odzyskiwaniem i usuwaniem. Nie tworzyć płatnych zasobów na podstawie samego planu.
 
-Przy dalszych testach starszej aplikacji używaj izolowanej konfiguracji i bazy: program może korzystać z `~/.focuswatch` lub `%LOCALAPPDATA%/FocusWatch`. Dawne README opisuje uruchomienie watchera, a nie bezpieczny preflight repo. Historyczne instrukcje nie są kontraktem nowej aplikacji.
+## Dane i środowisko
 
-## Po kolejnym etapie
+Osobiste bazy/konfiguracja, `build/research/`, venv, cache npm/Cargo i lokalne klastry nie należą do przekazania. Dane syntetyczne można odtworzyć według [instrukcji](../scripts/research/README.md); nie trzeba odtwarzać ciężkich prób dla poznania repo.
 
-Uzupełnij ten dokument o zakres zmian, commit/branch, wykonane sprawdzenia, znane ograniczenia i następny konkretny krok. Statusy techniczne aktualizuj w rejestrze decyzji, a postęp w planie. Nie zapisuj ustaleń wyłącznie w czacie.
+Nie używać prywatnych danych jako domyślnego fixture. Stara aplikacja może sięgać do `~/.focuswatch` lub `%LOCALAPPDATA%/FocusWatch`; jej start może rozpocząć zbieranie. Testy wymagają izolacji. Po następnym etapie uzupełnić gałąź/commit, zakres, wykonane komendy i wyniki, ograniczenia i następną czynność.
