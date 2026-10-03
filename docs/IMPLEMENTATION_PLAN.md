@@ -1,76 +1,86 @@
 # Plan realizacji FocusWatch
 
-Stan: 27.09.2026. Plan dalszej pracy, **nie wykonana implementacja ani zatwierdzenie stosu technologicznego**. Cel i zakres opisuje [PROJECT_BRIEF.md](PROJECT_BRIEF.md), status wyborów [DECISIONS.md](architecture/DECISIONS.md), a uruchomienie pracy na innym komputerze [HANDOFF.md](HANDOFF.md). Uzasadnienia i ograniczenia pomiarów są w [badaniu architektury](research/2026-09/README.md).
+Stan: **03.10.2026**. Plan wykonania, nie ukończona implementacja i nie automatyczne zatwierdzenie stosu przez użytkownika. Kontekst: [brief](PROJECT_BRIEF.md), [decyzje](architecture/DECISIONS.md), [handoff](HANDOFF.md), [architektura referencyjna](architecture/REBUILD_BASELINE_2026-10-03.md).
 
-## Wymagania a propozycje
+## Co zostało domknięte na poziomie dokumentacji
 
-| Status | Co oznacza dla wykonania |
-| --- | --- |
-| Wymagania produktu | Osobisty companion projektowany od początku jako produkt komercyjny; wiele urządzeń i wieloletnia historia; równoległy kontekst zamiast samego foreground; użyteczne raporty, personalizacja, ręczna korekta i kontrola użytkownika; docelowo rekomendacje, plany i blokowanie. Pomiar ma być użyteczny bez LLM i bez deklarowania kierunku życiowego |
-| Kolejność proponowana przez badanie | Najpierw lokalny agent i raporty na Windows oraz Arch/X11, potem pełna synchronizacja, kolejne platformy i inteligentniejsze interwencje. Aplikacja webowa nie jest warunkiem rozpoczęcia |
-| Rekomendacje inżynierskie, wymagające rozstrzygnięcia w rejestrze decyzji | Nowa implementacja w tym samym repo; Rust, Electron/React, SQLite, Axum/PostgreSQL, GCP, OCI/OpenTofu. Dokument rekomendujący rozwiązanie nie oznacza jego akceptacji przez użytkownika. Nie ma obowiązku zachowania starego UI, schematu ani feature parity |
-| Proponowane budżety, nie wymagania użytkownika | p95 dostarczenia zmiany lokalnym regułom <1 s oraz drugiemu aktywnemu urządzeniu <5 s. Wymagają określenia sprzętu, sieci i granic pomiaru. Próba 10 mln obserwacji to punkt odniesienia, nie limit produktu; badanie nie ustanawia zaakceptowanego limitu RAM UI |
+Utrwalono płatny model produktu, wykluczono znajomość technologii przez właściciela jako kryterium, skorygowano ekonomię na koszt per płacący klient i wskazano jeden wariant referencyjny: Rust + SQLite + Electron/React/TypeScript. Prywatność i chmura mają jawne zależności, a nie pozornie zatwierdzony jeden stos.
 
-Decyzję techniczną zapisujemy wraz ze statusem i przesłankami zgodnie z zakresem udzielonej autonomii. Nie przekształcamy samodzielnie rekomendacji badania w wymagania produktu. Poniższe etapy określają zależności; prace niezależne mogą toczyć się równolegle.
+**Nie wykonano nowego agenta, UI, syncu ani wdrożenia.** Historyczne benchmarki pozostają w [badaniu wrześniowym](research/2026-09/README.md).
 
-## 0. Zweryfikować środowisko i wybrać pierwszy przekrój
+## Najbliższy zakres: P0 — kontrakt i szkielet lokalnego przekroju
 
-Przeczytać trzy dokumenty wskazane na początku; sprawdzić bieżący commit, branch, lokalne zmiany i dostępne systemy testowe. Ustalić docelowy proces uruchamiania, wersje narzędzi i sposób odtwarzania zależności. Artefakty `build/research` są lokalne i ignorowane przez Git; nie zakładać, że istnieją na drugim komputerze. Nie powtarzać całego badania tylko po to, aby rozpocząć implementację.
+Przy rozpoczęciu implementacji nie wracać do porównywania całego rynku. Najpierw zweryfikować checkout, środowisko i dostępne OS; następnie zapisać wybory pierwszego przekroju zgodnie z zakresem zlecenia.
 
-**Odbiór:** świeży checkout pozwala odtworzyć minimalny build i uruchomić test bez prywatnych danych, poświadczeń ani chmury; instrukcja zawiera komendy dla wybranego stosu. W rejestrze decyzji zapisano wybory potrzebne dla pierwszego przekroju i to, co pozostaje otwarte. Dostępność Windows/X11 jest jawna — brak testu na jednym z nich nie jest oznaczany jako zaliczenie platformy. Ustalono sposób pomiaru stałego kosztu agenta oddzielnie od otwartego UI.
+Proponowana nowa przestrzeń kodu, bez ruszania starego `focuswatch/`:
 
-## 1. Utrwalić kontrakt danych i czasu
+```text
+crates/focuswatch-domain/       przedziały, reguły, korekty; bez OS/UI/sieci
+crates/focuswatch-agent/        lifecycle, adaptery, SQLite, query API
+apps/desktop/                  Electron + React/TypeScript
+contracts/                     formaty, jednostki, wersje, wspólne przykłady
+```
 
-Zdefiniować obserwację, źródło, urządzenie, zakres czasu, jakość odczytu oraz pochodzenie danych. Oddzielić fakty od interpretacji, intencji, profilu, korekt i polityk działania. Określić stabilną tożsamość zdarzeń, wersjonowanie, luki, zmianę zegara, suspend/resume i kolejność zdarzeń. Zdefiniować granice prywatnych metadanych zbieranych na starcie; zakres nie obejmuje domyślnie treści ekranów ani nagrań audio. Opisać query API dla raportów oraz pierwszeństwo korekt wobec ponownego przeliczenia reguł.
+Nie tworzyć pustych usług, pluginów i mikroserwisów na każdy przyszły moduł. Rozszerzenie przeglądarki dołącza w P1; chmura w P4, po decyzji prywatności.
 
-**Odbiór:** wersjonowane przykłady i testy kontraktu obejmują VSCode oraz grający stream, dwa aktywne urządzenia, idle, brak uprawnień, lukę odczytu, zmianę strefy/czasu, duplikat i spóźnione zdarzenie. Czas osoby jako unia przedziałów i czas poszczególnych źródeł dają celowo różne wyniki. Żaden przykład nie utożsamia foreground z uwagą ani współwystępowania z wpływem przyczynowym. Korekta użytkownika zachowuje pochodzenie i nie znika po przebudowie projekcji.
+**Wynik P0:** odtwarzalny build z zapisanymi wersjami i lockfile, testy domeny na syntetycznych fixtures, tymczasowa baza poza katalogiem danych starego programu, minimalne wersjonowane IPC i raport z syntetycznego wejścia. P0 nie oznacza zaliczenia collectora Windows/X11.
 
-## 2. Zbudować lokalnego agenta i źródła
+Kontrakt obejmuje `[start,end)`, UTC i strefę raportu, jakość/pokrycie odczytu, stabilne źródło i urządzenie, generację/sekwencję, obserwacje oddzielone od interpretacji i korekt. Liczniki 64-bitowe nie przechodzą niejawnie przez JavaScript Number. Otwarty przedział po awarii nie otrzymuje zmyślonej długości.
 
-Wydzielić proces sesji użytkownika, adapter OS, źródło przeglądarkowe oraz trwały zapis z atomowym outbox. Zacząć od Windows i X11, jawnie opisując różnice możliwości. Źródło przeglądarkowe powinno rozróżniać aktywną kartę i dostępne metadane mediów w tle. UI komunikuje się przez ograniczone, wersjonowane IPC; zamknięcie UI lub przeglądarki nie kończy innych źródeł pomiaru. Cały agent nie wymaga uprawnień administratora z powodu przyszłych blokad.
+**Odbiór P0:** scenariusze T01–T10 z [macierzy odbioru](architecture/PROTOTYPE_ACCEPTANCE.md) mają deterministyczne wejście i oczekiwane wyniki. Wykonane testy oraz brakujące platformy są odnotowane osobno. Kod nie czyta prywatnej historii, nie włącza autostartu i nie kontaktuje się z chmurą.
 
-**Odbiór:** pomiar działa bez UI i sieci, a pauza zbierania ma widoczny stan. Zapis i outbox są atomowe; restart odtwarza ostatni trwały stan bez podwójnego zaliczenia czasu. Sprawdzono awarię procesu, suspend/resume, utratę uprawnień, brak miejsca i niedostępne źródło; luki pozostają widoczne. Zmierzono CPU, pamięć i częstotliwość zapisów w zwykłym użytkowaniu. Użytkownik może wyłączyć wybrane źródło i zweryfikować zakres zbierania.
+## P1 — rzeczywisty pomiar i trwały zapis
 
-## 3. Dostarczyć użyteczne raporty i korekty
+Agent działa w sesji użytkownika, niezależnie od GUI i przeglądarki. Adaptery: Windows 11 i Arch/dwm/X11, jawnie różne możliwości. Rozszerzenie rozdziela aktywną kartę i dostępne sygnały mediów w tle. Native messaging host nie staje się głównym daemonem. Cały agent nie wymaga administratora z powodu przyszłych blokad.
 
-Zbudować raport dnia i okresu, widok równoległych źródeł, kategorie/reguły, ręczne korekty oraz eksport. Raport korzysta ze stronicowania, ograniczonego zakresu i odbudowywalnych projekcji; nie ładuje lat obserwacji do UI. Pokazuje pokrycie pomiarem i niepewność. Pierwsza wersja działa bez AI i konta chmurowego.
+Zapis obserwacji i outbox jest atomowy. Wybrane źródła można wyłączyć, pauza ma widoczny stan, brak uprawnień lub miejsca na dysku jest błędem/luką, nie zerową aktywnością. IPC ma ograniczone metody, rozmiar, kolejki i tożsamość klienta; renderer nie dostaje bazy ani dowolnego shell.
 
-**Odbiór:** na znanych scenariuszach sumy odpowiadają kontraktowi, a szczegóły wyjaśniają agregat. Zmiana reguł ma określony zakres przeliczenia; ręczne korekty pozostają zachowane. Eksport obejmuje udokumentowane jednostki, wersję i pochodzenie. Usunięcie lokalnych danych aktualizuje projekcje. Zmierzono czas zapytania oddzielnie od renderowania, responsywność i pamięć przy długiej historii; UI obsługuje klawiaturę, skalowanie oraz stany ładowania i błędów na obu pierwszych platformach.
+**Odbiór:** restart/kill, suspend/resume, lock, restart źródła, utrata uprawnień i dysku; brak podwójnego zaliczania; pomiar po zamknięciu UI i bez sieci. Mierzyć agent oddzielnie od UI: CPU w jednostkach jednego rdzenia, pamięć drzewa procesów, wakeups i zapisy. Każdy OS zaliczamy tylko na podstawie jego testu. Testy T11–T15.
 
-## 4. Przygotować dystrybucję i codzienne używanie
+## P2 — jeden rzeczywisty raport i korekta
 
-Od pierwszego instalowalnego wydania utrzymywać wersje schematu i protokołu, instalację/odinstalowanie, aktualizację agenta i UI oraz diagnostykę bez domyślnego wysyłania historii. Sprawdzić warunki licencji rzeczywistych zależności i dystrybucji. Przygotować procedurę obsługi uszkodzonej bazy, backupu i odtworzenia. Pierwszy użytkownik jest właścicielem projektu, ale ścieżka instalacji ma działać poza maszyną deweloperską.
+Dostarczyć raport dnia i okresu, równoległe źródła, kategorię/regułę, ręczną korektę, eksport i usuwanie. Query API zwraca ograniczone strony/agregaty, nie całe lata do UI. Projekcje są wersjonowane i odbudowywalne, korekty pozostają po przeliczeniu.
 
-**Odbiór:** test czystej instalacji, restartu systemu, aktualizacji z poprzedniej nowej wersji i przerwanej aktualizacji; brak utraty danych lub pozostawienia niezgodnych procesów. Przed dystrybucją zewnętrzną określono podpisywanie i weryfikację pakietów. Diagnostyka ujawnia błędy źródeł i wersje bez niejawnego dodawania prywatnych metadanych. Opisane są eksport, odzyskanie danych i skutki odinstalowania.
+Pierwszy przekrój działa bez AI i serwera. To etap techniczny, nie decyzja o darmowym planie lub publicznym produkcie bez licencji.
 
-## 5. Po rozstrzygnięciu prywatności połączyć dwa urządzenia
+**Odbiór:** filtrowanie, pan/zoom, klawiatura, skalowanie, stany błędów i ładowania na Windows oraz Arch/dwm; poprawne sumy i widoczne pokrycie/niepewność. Czas zapytania oddzielić od czasu renderowania. Zmierzyć start, pamięć, długie idle i interakcje przy ograniczonym widoku oraz historii syntetycznej. Testy T16–T18.
 
-Najpierw wybrać zakres cloud-readable lub E2EE, model kluczy i odzyskiwania, lokalizację danych oraz zasady retencji/usuwania. Dopiero na tej podstawie utrwalić protokół rzeczywistych danych i część serwerową. Historia korzysta z trwałego ACK i idempotentnego ponawiania; bieżący kontekst ma osobny kanał najnowszego stanu, wersje i TTL. Nie traktować minutowej synchronizacji historii jako realtime. Dla wielu instancji serwera zapewnić współdzielony stan i resync po utracie powiadomień.
+Electron jest implementacją referencyjną. Tauri z tym samym frontendem sprawdzać, gdy rzeczywisty koszt UI lub dystrybucja podważą wybór. Qt Quick/Avalonia wracają do oceny przy istotnej przesłance, nie jako równoległe pełne produkty. Nie używać wyniku Canvas/Xvfb jako odbioru P2.
 
-**Odbiór:** dwa rzeczywiste urządzenia poprawnie obsługują offline, retry po utracie ACK, zmianę kolejności, reconnect, restart serwera, odebranie dostępu urządzeniu i odświeżenie kontekstu. Brak dostępu między kontami. Nieaktualny stan staje się nieznany; powiadomienie nie pojawia się równocześnie na obu urządzeniach bez uzgodnionej polityki. Usuwanie propaguje się i nie jest cofane przez stary upload; skutki dla archiwów i backupów są określone. Zmierzono kompletną ścieżkę opóźnienia oraz koszt z TLS, auth, bazą i fan-out. Pojemność lokalnego relay nie zastępuje tego pomiaru.
+## P3 — instalacja, aktualizacje i płatny produkt offline
 
-Wdrożenie wymaga wybranego dostawcy i rozliczalnego zakresu zasobów; kontenery i IaC pozostają propozycjami do zapisania w decyzjach. Sam ten plan nie upoważnia do utworzenia płatnej infrastruktury. Mobilne źródła można dołączać do tego samego kontraktu po osobnej ocenie uprawnień i pracy w tle; nie obiecujemy im możliwości collectora desktopowego.
+Od pierwszego instalowalnego wydania wersjonować schemat, IPC oraz zgodność agent/UI/rozszerzenie. Sprawdzić czystą instalację, restart systemu, aktualizację z poprzedniej nowej wersji, przerwanie aktualizacji, bezpieczny backup i odtworzenie. Nie kopiować samej aktywnej bazy z pominięciem WAL. Przed dystrybucją zewnętrzną rozstrzygnąć podpisy i licencje rzeczywistych zależności.
 
-## 6. Dodać dobrowolne interwencje i blokowanie
+Dodać model konta, urządzenia i uprawnienia do produktu oddzielny od danych obserwacyjnych i kluczy historii. Przy płatnościach cyklicznych lub licencji odnawianej online rozważyć podpisane, czasowe uprawnienie offline; okres ważności nie jest ustalony. Błąd sieci lub webhook płatniczy nie może po cichu usuwać historii. Zasady dalszego zbierania po wygaśnięciu wymagają osobnej decyzji produktu.
 
-Najpierw dostarczyć deterministyczne reguły sugestii, wyciszenie, limity przerwań i manualny override. Blokady implementować przez adaptery platformowe, z osobną granicą uprawnień. Zakres blokady i sposób odwołania mają być zrozumiałe przed włączeniem. System ma wspierać decyzje użytkownika; nie zakładamy kontroli nad administratorem własnego urządzenia.
+**Odbiór:** bez utraty danych i niezgodnych procesów po przerwanej aktualizacji; brak prywatnych tytułów/URL w domyślnych logach; eksport/odzyskanie opisane. Testy stanów licencji: poprawna, wygasła, offline, duplikat i spóźniony webhook. Wybrać konkretnego operatora płatności przed integracją, nie przed testami lokalnego rdzenia. T19–T20.
 
-**Odbiór:** scenariusze włącz/wyłącz/override, restart, utrata sieci i uprawnień oraz nieaktualna polityka nie powodują niejawnego trwałego zablokowania. Zapis wyjaśnia, jaka reguła i dane spowodowały interwencję. Sugestia modelu nie może ominąć uprawnień ani limitów. Lokalne reguły można dostarczyć przed chmurą; blokady nie zależą od powodzenia inferencji.
+## P4 — po decyzji prywatności dwa urządzenia i chmura
 
-## 7. Oceniać AI na wiarygodnych danych
+Przed uploadem prawdziwej historii wybrać granicę odczytu przez serwer, klucze i odzyskiwanie, region, retencję/usuwanie, oczekiwany czas odtworzenia oraz utratę jeszcze niewysłanych danych. Wariant referencyjny E2EE: TypeScript/Workers + R2 + DO. Wariant czytelny: serwis OCI + PostgreSQL + obiekty. Dostawca nie jest bezwarunkowo przyjęty.
 
-Rozszerzać opcjonalne intencje, cele i preferencje oraz potwierdzane hipotezy o wzorcach użytkownika. Porównać deterministyczny punkt odniesienia z kandydatami lokalnymi/chmurowymi na tych samych scenariuszach. Model otrzymuje kontrolowane zapytania i wybrane dane, działa w osobnym workerze oraz proponuje interpretacje lub plan w granicach polityki.
+Historia: trwały ACK dopiero po zapisie i odnajdywalnym zarejestrowaniu paczki; idempotentne retry. Edycje: rewizje i jawne konflikty. Kontekst: aktualny snapshot, wersja, TTL i reconnect, a nie kolejka nieaktualnych interwencji. Limity i deduplikacja powiadomień między urządzeniami należą do polityki.
 
-**Odbiór przed automatycznym zwiększaniem zakresu działania:** określony zbiór scenariuszy i sposób oceny, liczba nietrafionych/przerwanych sugestii, korekt użytkownika, opóźnienie, CPU/RAM oraz koszt. Użytkownik widzi i może poprawić lub usunąć profil oraz wyłączyć AI. Domysł modelu nie staje się faktem o osobowości. Brak potwierdzonej jakości oznacza pozostawienie funkcji jako propozycji, a nie zastąpienie nią reguł pomiaru lub uprawnień.
+Zacząć od prostego uploadu bez dodatkowego trwałego bufora tylko dla oszczędności. Parametr uploadu porównać w 60/300 s, oddzielnie od checkpointu i realtime; nie jest to ustalone SLA. Przed wzrostem archiwum zaprojektować łączenie paczek, manifesty, tombstones, odzyskanie i usuwanie. E2EE nie pozwala kompresować ciphertextu tak jak jawnych danych.
 
-## Decyzje otwarte i ich rzeczywisty wpływ
+**Odbiór:** dwa rzeczywiste urządzenia, offline, retry po utracie ACK, kolejność, odwołanie urządzenia, izolacja kont, restart serwera, wolny odbiorca, odtworzenie nowego urządzenia, stare urządzenie nie przywraca usuniętej historii; zgodność różnych wersji klienta. T21–T24.
 
-| Otwarte zagadnienie | Co blokuje | Co można robić wcześniej |
-| --- | --- | --- |
-| E2EE, dostęp serwera do treści, klucze i odzyskiwanie | Docelowy sync prywatnych danych, analitykę treści w chmurze i obietnice prywatności | Kontrakt danych, lokalny zapis, raporty, reguły, syntetyczne testy transportu |
-| Retencja, szczegóły lokalne a archiwum, usuwanie backupów | Ostateczne polityki magazynowania i koszt produktu | Wersjonowane dane/projekcje, lokalny eksport/usuwanie, pomiary rozmiaru |
-| Stos implementacyjny i dostawca | Kod zależny od konkretnego frameworka, wydania i wdrożenie | Scenariusze kontraktu, granice procesów i API, kryteria odbioru |
-| Jakość AI i wybór modeli | Obietnice trafności oraz autonomię opartą na modelu | Użyteczny pomiar, agregaty, personalizację reguł i dobrowolne interwencje |
-| Zakres mobile/Wayland/przyszłych urządzeń | Deklarację wsparcia konkretnej platformy i blokad | Rozszerzalny kontrakt źródeł oraz pierwszy przekrój Windows/X11 |
+**Koszt:** osobno konta płacące, trial i konta przechowujące archiwum; skale 10/100/1000/10000; normalne i intensywne użycie; koszt całkowity, per konto, API/realtime/storage/odczyty/auth/backup/logi/AI. Opłaty sprzedażowe i obsługa są osobne. Miesięczne scenariusze nie ustanawiają subskrypcji. Brakujące składniki oznaczać jako niepoliczone, nie zero. Sam plan nie upoważnia do płatnego wdrożenia.
 
-Po każdym etapie aktualizować status decyzji, działające komendy i następną konkretną czynność w dokumentacji przekazania. Odbiór opierać na zachowaniu produktu i sprawdzonych ograniczeniach; same mikrobenchmarki ani kompletność tego planu nie oznaczają zakończonego etapu.
+## P5 — interwencje i blokowanie
+
+Najpierw deterministyczne sugestie, limity przerwań, wyciszenie i manualny override. Blokady przez adaptery z minimalnymi uprawnieniami, nie uprzywilejowane całe GUI. Nie zakładać kontroli nad administratorem jego urządzenia.
+
+**Odbiór:** włączenie, wyłączenie, override, restart, offline, utrata uprawnień i przeterminowana polityka; brak niejawnej trwałej blokady. Użytkownik widzi przyczynę interwencji. AI nie przyznaje sobie uprawnień. Lokalne reguły mogą powstać przed chmurą; kolejność etapów określa zależności, nie zabrania niezależnej pracy.
+
+## P6 — profil i AI
+
+Budować widoczne, poprawialne i usuwalne deklaracje oraz hipotezy. Ocenić deterministyczny baseline i modele lokalne/chmurowe na tych samych scenariuszach. Model otrzymuje kontrolowane narzędzia i wybrane dane; tytuły okien/treści integracji nie są instrukcjami systemowymi.
+
+**Odbiór:** trafność i liczba odrzuconych sugestii, koszt przerwania, opóźnienie, CPU/RAM/bateria i koszt per konto; brak niejawnego rozszerzania autonomii. Użytkownik może wyłączyć AI i usunąć profil. Brak wykazanej jakości oznacza funkcję opcjonalną, nie zastąpienie pomiaru domysłem.
+
+## Co nie blokuje P0
+
+Cena detaliczna, ostateczny LLM, mobile, Wayland i smart glasses nie blokują kontraktu i syntetycznego lokalnego przekroju. Prywatność blokuje prawdziwy sync i obietnice chmurowe, ale nie P0/P1/P2. Dostawca chmury nie musi być wybrany, aby sprawdzić niezależny agent i UI.
+
+Po każdym etapie aktualizować HANDOFF i statusy. Test niewykonany oznacza `not_run`, nie zaliczenie. Nie uznawać skompletowania planu za zakończenie etapu produktu.

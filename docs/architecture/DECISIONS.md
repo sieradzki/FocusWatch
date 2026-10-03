@@ -1,27 +1,35 @@
 # Rejestr decyzji architektonicznych
 
-Stan: 27.09.2026. **Badanie zakończono; nowa implementacja nie powstała. Użytkownik zlecił konsolidację i przekazanie repo, nie zatwierdził automatycznie całego proponowanego stosu.**
+Stan: **03.10.2026**. Aktualizacja dokumentacyjna po badaniu i doprecyzowaniu modelu płatnego. **Nowa implementacja nie powstała; rekomendacje nie są automatycznie zatwierdzonym przez użytkownika stosem.**
 
-Statusy: **wymaganie** pochodzi od użytkownika; **rekomendowane** to wybór badania do wykorzystania lub rozstrzygnięcia w implementacji; **otwarte** wymaga dalszego wyboru; **odroczone** ma świadomie późniejszy zakres. Nie podmieniaj statusu na „przyjęte” bez odnotowania podstawy. Kolejne polecenie użytkownika może upoważniać do wyborów w zleconym zakresie bez odrębnej zgody na każdy szczegół.
+Statusy: **wymaganie** pochodzi od użytkownika; **rekomendowane** oznacza wybór inżynierski do pierwszego przekroju; **warunkowe** zależy od wskazanej decyzji; **otwarte** wymaga rozstrzygnięcia; **odroczone** ma późniejszy zakres. Nie przypisuj użytkownikowi wyboru technologii bez podstawy.
 
-| ID | Status | Kierunek i uzasadnienie | Alternatywa / warunek zmiany / dowód |
+Bieżące uzasadnienie: [architektura referencyjna](REBUILD_BASELINE_2026-10-03.md). Wyniki z `2026-09` pozostają historycznymi dowodami, nie nowymi pomiarami.
+
+| ID | Status | Aktualny kierunek | Dowód, ograniczenie lub warunek zmiany |
 | --- | --- | --- | --- |
-| D01 | Wymaganie | Osobisty produkt komercyjny, wieloźródłowy, z historią lat, regułami i override | [Brief](../PROJECT_BRIEF.md); nie jest to produkt kontroli pracowników |
-| D02 | Rekomendowane | Pełna nowa implementacja w tym samym repo; obecny kod jako wiedza | Refaktor/ponowne użycie tylko przy realnej oszczędności bez narzucenia starej semantyki. Brak wymogu kompatybilności i migracji. [Ocena kodu](../research/2026-09/rewrite-assessment.md) |
-| D03 | Rekomendowane | Agent sesji niezależny od GUI; Rust do adapterów i lokalnego rdzenia | Niezależność procesów ma mocniejsze dowody niż język. Python/C++ wykonalne; X11 porównywało strategie w tym samym Pythonie. [Desktop](../research/2026-09/desktop-comparison.md) |
-| D04 | Rekomendowane | Electron + React/TS, UI na żądanie | Qt Quick najlżejszy zmierzony, Tauri wykonalny i lżejszy od Electron. Electron przekroczył propozycję 300 MiB; decyzję może zmienić budżet prawdziwego raportu i test Windows/GPU. [Pomiary](../research/2026-09/desktop-results.md) |
-| D05 | Rekomendowane | SQLite WAL, atomowy outbox, projekcje i ograniczone zapytania | 1 mln/10 mln syntetycznych obserwacji, nie gwarancja każdego obciążenia. DuckDB/Parquet do skanów i archiwum, nie zamiennik każdego małego odczytu. [Dane](../research/2026-09/data-results.md) |
-| D06 | Rekomendowane | Modułowy Axum/SQLx/PostgreSQL przy Rust w rdzeniu | Go/pgx najbliższą alternatywą, Python/TS/.NET także rozpatrzone. Brak benchmarku języków HTTP; shared classifier ma mniejszą wartość przy E2EE. [Backend](../research/2026-09/backend-comparison.md) |
-| D07 | Rekomendowane | Trwała historia w paczkach oraz WebSocket z najnowszym kontekstem | ACK historii osobno; reconnect, staleness i wiele instancji wymagają implementacji. Lokalny relay nie potwierdza cloud capacity. [Realtime](../research/2026-09/realtime-design.md) |
-| D08 | Rekomendowane warunkowo | GCP Cloud Run + Cloud SQL + GCS, Belgia, jako pierwsze wdrożenie serwera | Scaleway konkurentem kosztowym; AWS pełną alternatywą; Cloudflare/DO możliwą optymalizacją. Model jest częściowy, nie ranking pełnego TCO. [Chmury](../research/2026-09/cloud-comparison.md) |
-| D09 | Rekomendowane | OCI + deklaratywne IaC; propozycja OpenTofu | Terraform/Pulumi możliwe. Nie zmierzono przewagi narzędzia IaC; przeniesienie kontenera nie przenosi automatycznie usług i danych |
-| D10 | Otwarte | E2EE kontra odczyt danych przez serwer | Potrzebne przed sync rzeczywistych danych; koszty i miejsce analityki różnią się. [Dane i prywatność](../research/2026-09/data-evaluation.md) |
-| D11 | Otwarte / etap późniejszy | Model profilu, AI, lokalność inferencji, autonomia | Wartość pierwszej wersji bez LLM; późniejszy wspólny zestaw ocen jakości i feedback. Metadane nie dowodzą skuteczności sugestii |
-| D12 | Wymaganie docelowe / etap późniejszy | Dobrowolne blokowanie z polityką działań i override | Osobny helper/adapter OS. Nie przejmować historycznego „not a blocker”. [Platformy](../research/2026-09/desktop-comparison.md) |
-| D13 | Odroczone | Pełny web, pozostałe platformy, smart glasses; Kubernetes/Kafka/ClickHouse | Rozważyć przy konkretnej potrzebie lub pomiarze. Odroczenie nie jest wykluczeniem docelowego produktu |
+| D01 | Wymaganie | Osobisty produkt B2C, wiele źródeł i urządzeń, wieloletnia historia, reguły i override | [Brief](../PROJECT_BRIEF.md); nie nadzór pracowników |
+| D02 | Rekomendowane | Nowa implementacja w tym samym repo, stary kod jako wiedza | Brak obowiązku kompatybilności i migracji. [Ocena rewrite](../research/2026-09/rewrite-assessment.md) |
+| D03 | Rekomendowane | Niezależny agent sesji w Rust, mały czysty rdzeń i adaptery OS | Niezależność procesu ma mocniejsze dowody niż wybór języka. Nie używamy znajomości autora jako argumentu. [Desktop](../research/2026-09/desktop-comparison.md) |
+| D04 | Rekomendowane do prototypu | Electron + React/TypeScript, UI na żądanie, bez kolekcji w rendererze | Tauri to najbliższy challenger dla tego samego frontendu; Qt Quick przy twardym priorytecie zasobów. Nie ma nowego testu Windows/GPU. [Odbiór](PROTOTYPE_ACCEPTANCE.md) |
+| D05 | Rekomendowane | SQLite WAL, kontrolowany writer, atomowy outbox, wersjonowane projekcje; rusqlite jako domyślny dostęp Rust | Testy 1 mln/10 mln nie gwarantują każdego obciążenia. DuckDB/Parquet tylko do konkretnej potrzeby. [Wyniki](../research/2026-09/data-results.md) |
+| D06 | Warunkowe; aktualizacja 03.10 | Przy blind-sync: TypeScript/Workers. Przy serwisie OCI: modułowy Axum/SQLx/PostgreSQL | Rust w collectorze nie wymusza Rust na serwerze. Nie wykazano benchmarkowej przewagi języka HTTP. [Uzasadnienie](REBUILD_BASELINE_2026-10-03.md) |
+| D07 | Rekomendowane | Trwała historia w paczkach, edycje z rewizjami/konfliktami, nietrwały najnowszy kontekst; dwa kanały transportowe | ACK dopiero po trwałym, odnajdywalnym przyjęciu; TTL i resync. Nie dodajemy trwałego bufora tylko dla oszczędności groszy. [Realtime](../research/2026-09/realtime-design.md) |
+| D08 | Warunkowe; aktualizacja 03.10 | Cloudflare Workers/R2/DO to wariant referencyjny wyłącznie dla rekomendowanego blind-sync. GCP Run/SQL/GCS pozostaje kandydatem dla historii czytelnej przez serwer | Dostawca NIE wybrany bezwarunkowo. Płatny model nie rozstrzyga prywatności. Potrzebne region, odzyskanie danych i pełny koszt. [Uzasadnienie](REBUILD_BASELINE_2026-10-03.md) |
+| D09 | Rekomendowane warunkowo | Deklaratywne środowiska i wersjonowana konfiguracja; OCI dla usług kontenerowych | Nie wymuszamy OCI na Workers. OpenTofu/Wrangler i podział odpowiedzialności dobrać do wybranego wdrożenia. Przenośność wymaga eksportu danych i testu wyjścia |
+| D10 | Otwarte; rekomendowane E2EE | Lokalna analityka i zaszyfrowana historia, osobne udostępnienie danych AI | To rekomendacja, nie zgoda użytkownika. Serwer bez kluczy nie analizuje sam pełnej historii, gdy urządzenia są wyłączone |
+| D11 | Otwarte / etap późniejszy | Model profilu, inferencja i autonomia oceniane na wspólnych scenariuszach | Bez LLM w krytycznej ścieżce pomiaru i uprawnień; koszt per konto i jakość, nie dowolnie częste wywołania |
+| D12 | Wymaganie docelowe / etap późniejszy | Dobrowolne blokowanie, polityka i override, osobny ograniczony helper | Różne uprawnienia OS; nie obiecujemy blokady niemożliwej do obejścia. [Platformy](../research/2026-09/desktop-comparison.md) |
+| D13 | Odroczone | Pełny web, dalsze platformy, smart glasses, publiczne pluginy, Kubernetes/Kafka/ClickHouse | Dodawać przy wykazanej potrzebie, nie dla hipotetycznej przyszłości |
+| D14 | Wymaganie; 03.10 | Produkt z założenia płatny, reasonably priced; bazowy koszt na płacącego klienta | Nie oznacza ustalonej subskrypcji, ceny, trialu ani darmowej wersji lokalnej |
+| D15 | Wymaganie; 03.10 | Brak premii za wcześniejszą znajomość technologii przez właściciela; uwzględniamy rozwój agentowy | Automatyczna weryfikacja, diagnostyka, integracje i utrzymanie pozostają kryteriami; nie zakładamy bez dowodu przewagi agentów w danym języku |
+| D16 | Rekomendowane | Oddzielić konto, urządzenie, uprawnienie/licencję i klucze historii | Tryb offline i bezpieczny eksport/usuwanie nie powinny zależeć od chwilowej awarii płatności. Szczegółowe zasady po wygaśnięciu pozostają otwarte |
+| D17 | Rekomendowane | Następny zakres P0: kontrakt, fixtures i szkielet; potem jeden lokalny przekrój, nie równoległy rewrite sześciu stosów | [Plan](../IMPLEMENTATION_PLAN.md), [odbiór](PROTOTYPE_ACCEPTANCE.md). Brak wykonanej implementacji |
 
-## Jak aktualizować
+## Zasady ponownego rozpatrzenia
 
-Dla podjętego wyboru zapisz datę, status, zakres, uzasadnienie/dowód i warunek ponownego rozpatrzenia. Dla większej decyzji dodaj osobny ADR i link z tabeli. Nie ma potrzeby tworzyć nowego benchmarku dla każdej zmiany dokumentacji ani ponownie analizować całego stosu bez nowych przesłanek.
+Nowy wybór opisujemy datą, zakresem, dowodem i warunkiem zmiany. Potwierdzone wymagania i rekomendacje pozostają rozdzielone. Nie wracamy do ogólnego researchu bez nowego problemu, dowodu lub polecenia użytkownika.
 
-**Granice dowodów:** SQL/Parquet nie porównują języków; Xvfb nie testuje Windows/GPU; próba localhost nie dowodzi Internetu/HA; koszt referencyjnego PostgreSQL nie ustala jego pojemności. Parametry cen i wersje są datowane. Nowa implementacja potrzebuje własnych testów i pomiarów.
+Nie podnosimy progu budżetu tylko po to, żeby wybrany framework przeszedł test. Przy niezaliczeniu poprawiamy rzeczywistą przyczynę, a następnie porównujemy najbliższego konkurenta na tym samym przekroju.
+
+**Granice dowodów:** SQL/Parquet nie porównują języków; Xvfb nie testuje Windows/GPU; localhost nie potwierdza Internetu/HA; częściowy cennik nie jest pełnym TCO. Nie utożsamiamy utworzenia tego rejestru z testem produktu.
