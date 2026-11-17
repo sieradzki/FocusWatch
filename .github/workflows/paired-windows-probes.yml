@@ -1,0 +1,148 @@
+name: Synthetic paired Windows probes
+
+on:
+  push:
+    branches: [codex/paired-windows-probes-20261117]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: paired-windows-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+  DOTNET_GENERATE_ASPNET_CERTIFICATE: 'false'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+  DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE: '1'
+  AVALONIA_TELEMETRY_OPTOUT: '1'
+
+jobs:
+  agent:
+    name: Agent Rust and CSharp JIT
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+          architecture: x64
+      - name: Build before measurements
+        shell: pwsh
+        run: |
+          rustc --version
+          $vs = & "${env:ProgramFiles(x86)}/Microsoft Visual Studio/Installer/vswhere.exe" -latest -property installationPath
+          & "$vs/Common7/Tools/Launch-VsDevShell.ps1" -Arch amd64 -HostArch amd64 -SkipAutomaticLocation
+          python ci/evidence.py environment --output "$env:RUNNER_TEMP/evidence-agent"
+          python scripts/research/2026-11-paired/agent/run.py --build --rustc rustc --build-manifest "$env:RUNNER_TEMP/agent-manifest.json"
+      - name: Full readback correctness and five alternating pairs
+        shell: pwsh
+        run: |
+          python scripts/research/2026-11-paired/agent/run.py --smoke --build-manifest "$env:RUNNER_TEMP/agent-manifest.json" --output "$env:RUNNER_TEMP/evidence-agent/results.json.gz"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python scripts/research/2026-11-paired/agent/run.py --measure --build-manifest "$env:RUNNER_TEMP/agent-manifest.json" --output "$env:RUNNER_TEMP/evidence-agent/results.json.gz" --pairs 5
+          exit $LASTEXITCODE
+      - name: Redact portable evidence
+        if: always()
+        shell: pwsh
+        run: python ci/evidence.py redact --root "$env:RUNNER_TEMP/evidence-agent"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: paired-agent-windows
+          path: ${{ runner.temp }}/evidence-agent/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 9
+
+  ui:
+    name: Real Windows Electron and Avalonia
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.x'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+          architecture: x64
+      - name: Build both report applications before measurements
+        shell: pwsh
+        run: |
+          python ci/evidence.py environment --output "$env:RUNNER_TEMP/evidence-ui"
+          ./scripts/research/2026-11-paired/ui/prepare.ps1 -WorkDir "$env:RUNNER_TEMP/paired-ui"
+      - name: Three alternating pairs with own-window evidence
+        shell: pwsh
+        run: |
+          python scripts/research/2026-11-paired/ui/runner.py --work "$env:RUNNER_TEMP/paired-ui" --fixture scripts/research/2026-11-paired/fixture.tsv --output "$env:RUNNER_TEMP/ui-results" --pairs 3 --idle-seconds 11
+          $probeExit = $LASTEXITCODE
+          if (Test-Path "$env:RUNNER_TEMP/ui-results") {
+            Copy-Item "$env:RUNNER_TEMP/ui-results/*" "$env:RUNNER_TEMP/evidence-ui/" -Recurse -Force
+          }
+          exit $probeExit
+      - name: Redact portable evidence
+        if: always()
+        shell: pwsh
+        run: python ci/evidence.py redact --root "$env:RUNNER_TEMP/evidence-ui"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: paired-ui-windows
+          path: ${{ runner.temp }}/evidence-ui/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 9
+
+  egui:
+    name: Egui keyboard and AccessKit semantics
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+          architecture: x64
+      - name: Build and execute headless semantic checks
+        shell: pwsh
+        run: |
+          rustup toolchain install stable --profile minimal --no-self-update
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          rustup default stable
+          $env:CARGO_TARGET_DIR = "$env:RUNNER_TEMP/egui-target"
+          python ci/evidence.py environment --output "$env:RUNNER_TEMP/evidence-egui"
+          $ErrorActionPreference = 'Continue'
+          cargo test --locked --manifest-path scripts/research/2026-11-paired/egui/Cargo.toml -- --nocapture 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP/egui-full.log"
+          $probeExit = $LASTEXITCODE
+          python ci/evidence.py egui --log "$env:RUNNER_TEMP/egui-full.log" --exit-code $probeExit --output "$env:RUNNER_TEMP/evidence-egui"
+          exit $probeExit
+      - name: Redact portable evidence
+        if: always()
+        shell: pwsh
+        run: python ci/evidence.py redact --root "$env:RUNNER_TEMP/evidence-egui"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: egui-semantics-windows
+          path: ${{ runner.temp }}/evidence-egui/
+          if-no-files-found: warn
+          retention-days: 1
+          compression-level: 9

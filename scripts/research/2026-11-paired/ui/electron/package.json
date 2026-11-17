@@ -1,0 +1,8 @@
+{
+  "name": "focuswatch-paired-report-probe",
+  "private": true,
+  "version": "0.0.0",
+  "main": "main.cjs",
+  "scripts": { "build": "node build.cjs" },
+  "dependencies": { "electron": "45.3.4", "esbuild": "0.28.2", "react": "19.3.1", "react-dom": "19.3.1" }
+}

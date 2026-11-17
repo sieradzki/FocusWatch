@@ -1,0 +1,9 @@
+[package]
+name = "focuswatch-egui-kittest-probe"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+egui = "=0.37.0"
+egui_kittest = { version = "=0.37.0", default-features = false }
