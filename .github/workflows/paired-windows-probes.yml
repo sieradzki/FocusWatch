@@ -23,6 +23,8 @@ env:
 jobs:
   agent:
     name: Agent Rust and CSharp JIT
+    # Preserve the first complete paired measurement when only semantic tests change.
+    if: ${{ !contains(github.event.head_commit.message, '[egui-only]') }}
     runs-on: windows-2025
     timeout-minutes: 20
     steps:
@@ -66,6 +68,7 @@ jobs:
 
   ui:
     name: Real Windows Electron and Avalonia
+    if: ${{ !contains(github.event.head_commit.message, '[egui-only]') }}
     runs-on: windows-2025
     timeout-minutes: 20
     steps:

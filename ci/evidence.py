@@ -29,6 +29,8 @@ def sha(path):
 
 def version(command):
     try:
+        if os.name == "nt" and command[0] == "npm":
+            command = ["npm.cmd", *command[1:]]
         result = subprocess.run(command, text=True, capture_output=True, timeout=20)
         return redact_text((result.stdout + result.stderr).strip()) if result.returncode == 0 else "unavailable"
     except (OSError, subprocess.TimeoutExpired):
