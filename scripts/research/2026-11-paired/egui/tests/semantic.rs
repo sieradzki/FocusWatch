@@ -61,8 +61,8 @@ fn exercise(mode: &str) {
     assert_eq!(state.category_seconds("learning"), before_learning + 60);
     assert_eq!(state.category_seconds("unclassified"), before_unclassified - 60);
     harness.get_by_label(SELECTED_TEXT);
-    harness.get_by_label(format!("learning_seconds={}", before_learning + 60));
-    harness.get_by_label(format!("unclassified_seconds={}", before_unclassified - 60));
+    harness.get_by_label(&format!("learning_seconds={}", before_learning + 60));
+    harness.get_by_label(&format!("unclassified_seconds={}", before_unclassified - 60));
     assert_eq!(selected_paint(&harness.output().shapes, state.selected_rect),
         (Color32::from_rgb(0x8b, 0x3f, 0xba), 2.0));
     let painted_segments = harness.output().shapes.iter().filter(|shape|
