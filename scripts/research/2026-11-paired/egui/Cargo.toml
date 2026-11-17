@@ -5,5 +5,5 @@ edition = "2024"
 publish = false
 
 [dependencies]
-egui = "=0.37.0"
+egui = { version = "=0.37.0", features = ["default_fonts"] }
 egui_kittest = { version = "=0.37.0", default-features = false }

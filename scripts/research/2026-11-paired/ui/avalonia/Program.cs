@@ -61,7 +61,7 @@ public sealed class ReportWindow : Window
     private readonly TextBox category = new() { Text = "learning", Width = 200 };
     private readonly TextBlock selected = new(), categories = new();
     private readonly StackPanel table = new() { Spacing = 0 };
-    private readonly Canvas timeline = new() { Width = 980, Height = 130 };
+    private readonly Canvas timeline = new() { Width = 840, Height = 130, HorizontalAlignment = HorizontalAlignment.Left };
     private readonly Button apply = new() { Content = "Apply correction (Ctrl+Enter)", Padding = new Thickness(16, 7) };
     private readonly string fixtureHash;
     private readonly string[] colors = ["#2563eb", "#dc6b2f", "#16836a", "#6b7280"];
@@ -72,7 +72,7 @@ public sealed class ReportWindow : Window
     public ReportWindow()
     {
         Title = "FocusWatch paired report — Avalonia";
-        Width = 1100; Height = 750; CanResize = false; WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        Width = 900; Height = 660; CanResize = false; WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Background = Brushes.White; Foreground = Brush.Parse("#18202c"); FontFamily = new FontFamily("Segoe UI"); FontSize = 14;
         fixtureHash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(Program.Fixture))).ToLowerInvariant();
         rows = File.ReadLines(Program.Fixture).Skip(1).Where(x => !string.IsNullOrWhiteSpace(x)).Select(line =>
@@ -105,7 +105,7 @@ public sealed class ReportWindow : Window
         Opened += (_, _) => RequestAnimationFrame(_ => RequestAnimationFrame(_ =>
         {
             if (ready) return; ready = true;
-            var data = new { runtime = "avalonia", pid = Environment.ProcessId, native_handle = TryGetPlatformHandle()?.Handle.ToInt64().ToString(), avalonia = typeof(Application).Assembly.GetName().Version?.ToString(), dotnet = Environment.Version.ToString(), fixture_sha256 = fixtureHash, rows = rows.Count, client_width = ClientSize.Width, client_height = ClientSize.Height };
+            var data = new { runtime = "avalonia", pid = Environment.ProcessId, native_handle = TryGetPlatformHandle()?.Handle.ToInt64().ToString(), render_scaling = RenderScaling, avalonia = typeof(Application).Assembly.GetName().Version?.ToString(), dotnet = Environment.Version.ToString(), fixture_sha256 = fixtureHash, rows = rows.Count, client_width = ClientSize.Width, client_height = ClientSize.Height };
             Program.Emit("ready", data); Program.Marker("ready", data);
             CaptureSurface("before");
             if (Program.Auto) DispatcherTimer.RunOnce(() => RaiseEvent(new KeyEventArgs { RoutedEvent = KeyDownEvent, Key = Key.Enter, KeyModifiers = KeyModifiers.Control }), TimeSpan.FromMilliseconds(500));
@@ -134,8 +134,8 @@ public sealed class ReportWindow : Window
         foreach (var r in rows.Where(x => x.Start >= 9 * 3600 && x.Start < 10 * 3600))
         {
             int lane = Array.IndexOf(apps, r.App);
-            var rect = new Rectangle { Width = 13, Height = 20, Fill = Brush.Parse(Effective(r) == "learning" ? "#8b3fba" : colors[lane % colors.Length]), Stroke = r.Id == 555 ? Brushes.Black : null, StrokeThickness = r.Id == 555 ? 2 : 0 };
-            Canvas.SetLeft(rect, 100 + (r.Start - 32400) / 60.0 * 14); Canvas.SetTop(rect, 12 + lane * 30); timeline.Children.Add(rect); timelineRects[r.Id] = rect;
+            var rect = new Rectangle { Width = 11, Height = 20, Fill = Brush.Parse(Effective(r) == "learning" ? "#8b3fba" : colors[lane % colors.Length]), Stroke = r.Id == 555 ? Brushes.Black : null, StrokeThickness = r.Id == 555 ? 2 : 0 };
+            Canvas.SetLeft(rect, 100 + (r.Start - 32400) / 60.0 * 12); Canvas.SetTop(rect, 12 + lane * 30); timeline.Children.Add(rect); timelineRects[r.Id] = rect;
         }
         table.Children.Clear();
         foreach (var r in rows.Where(x => x.Id >= 551 && x.Id <= 560))

@@ -14,7 +14,7 @@ function Report({rows,hash,auto}){
   const apply=()=>{pending.current=performance.now();setEdits(old=>({...old,555:category.trim()}));};
   useEffect(()=>{const handler=e=>{if(e.ctrlKey&&e.key==='Enter'){e.preventDefault();button.current.click();}};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);});
   useEffect(()=>{
-    if(initial.current){initial.current=false;twoFrames(()=>{window.probe.ready({rows:rows.length,client_width:innerWidth,client_height:innerHeight});if(auto)setTimeout(()=>window.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',code:'Enter',ctrlKey:true,bubbles:true})),500);});}
+    if(initial.current){initial.current=false;twoFrames(()=>{window.probe.ready({rows:rows.length,client_width:innerWidth,client_height:innerHeight,render_scaling:devicePixelRatio});if(auto)setTimeout(()=>window.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',code:'Enter',ctrlKey:true,bubbles:true})),500);});}
     if(pending.current!==null){const began=pending.current;pending.current=null;twoFrames(()=>window.probe.corrected({row_count:rows.length,selected_id:555,selected_category:edits[555],learning_seconds:learning,unclassified_seconds:unclassified,displayed_text:document.getElementById('selected-result').textContent,activation_mode:auto?'programmatic Ctrl+Enter key event routed within this window':'manual input',edit_to_two_frames_ms:performance.now()-began}));}
   },[edits]);
   return <main>
@@ -23,7 +23,7 @@ function Report({rows,hash,auto}){
     <h2>Timeline 09:00–10:00 · each block = one minute</h2>
     <svg className="timeline" aria-label="Activity timeline 09:00 to 10:00">
       {apps.map((app,i)=><text key={app} x="0" y={29+i*30} fontSize="12">{app}</text>)}
-      {rows.filter(r=>r.start>=32400&&r.start<36000).map(r=><rect key={r.id} x={100+(r.start-32400)/60*14} y={12+apps.indexOf(r.app)*30} width="13" height="20" fill={effective(r)==='learning'?'#8b3fba':colors[apps.indexOf(r.app)%colors.length]} stroke={r.id===555?'black':'none'} strokeWidth={r.id===555?2:0}/>)}</svg>
+      {rows.filter(r=>r.start>=32400&&r.start<36000).map(r=><rect key={r.id} x={100+(r.start-32400)/60*12} y={12+apps.indexOf(r.app)*30} width="11" height="20" fill={effective(r)==='learning'?'#8b3fba':colors[apps.indexOf(r.app)%colors.length]} stroke={r.id===555?'black':'none'} strokeWidth={r.id===555?2:0}/>)}</svg>
     <h2>Detail 09:10–09:20 · selected observation #555</h2>
     <div className="details">{rows.filter(r=>r.id>=551&&r.id<=560).map(r=><div key={r.id} className={'row '+(r.id===555?'chosen':'')}>{`#${r.id}    ${time(r.start)}–${time(r.end)}    ${r.app.padEnd(12)}    ${effective(r)}`}</div>)}</div>
     <div className="result" id="selected-result" role="status">{selectedText}</div>

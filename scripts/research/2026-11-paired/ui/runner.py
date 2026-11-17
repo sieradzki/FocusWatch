@@ -43,6 +43,8 @@ def window_proof(ready,pid):
     U.GetWindowThreadProcessId(handle,C.byref(owner));U.GetClientRect(handle,C.byref(rect))
     proof={'hwnd':str(handle),'is_window':bool(U.IsWindow(handle)),'visible':bool(U.IsWindowVisible(handle)),'owner_pid':int(owner.value),'expected_pid':pid,'client_width':rect.right-rect.left,'client_height':rect.bottom-rect.top}
     assert proof['is_window'] and proof['visible'] and owner.value==pid,proof
+    assert (proof['client_width'],proof['client_height'])==(900,660),proof
+    assert (ready['client_width'],ready['client_height'])==(900,660),ready
     return proof
 
 def process_table():
@@ -181,6 +183,8 @@ def main():
                 return 1
             results.append(result)
             print(json.dumps({key:result.get(key) for key in ['runtime','launch_to_ready_marker_ms','idle_cpu_percent_one_core','idle_median_nonshareable_resident_bytes','exit_code']}),flush=True)
+    assert len({(r['native_window_proof']['client_width'],r['native_window_proof']['client_height']) for r in results})==1
+    assert len({r['ready']['render_scaling'] for r in results})==1
     (args.output/'all-results.json').write_text(json.dumps(results,indent=2),encoding='utf-8')
     return 0
 

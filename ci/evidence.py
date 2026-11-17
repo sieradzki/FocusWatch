@@ -56,7 +56,7 @@ def environment(output):
                       ("npm", ["npm", "--version"]))},
         "fixture_sha256": sha(fixture), "scope": "synthetic CI runner; not owner's hardware, private data or product readiness"
     }
-    (output / "environment.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    (output / "ci-environment.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 def collect_egui(log, code, output):
     output.mkdir(parents=True, exist_ok=True)
@@ -93,7 +93,7 @@ def redact_tree(root):
                 text = stream.read()
             with gzip.open(path, "wt", encoding="utf-8") as stream:
                 stream.write(redact_text(text))
-        elif path.suffix.lower() in (".json", ".txt", ".log", ".xml"):
+        elif path.suffix.lower() in (".json", ".txt", ".log", ".jsonl", ".xml"):
             path.write_text(redact_text(path.read_text(encoding="utf-8-sig", errors="replace")), encoding="utf-8")
     print("Evidence contains only synthetic probe files; operational paths redacted.")
 

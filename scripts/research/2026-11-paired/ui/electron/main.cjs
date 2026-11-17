@@ -19,7 +19,7 @@ ipcMain.on('ready',(_event,data)=>{ const result={runtime:'electron',pid:process
 ipcMain.on('corrected',(_event,data)=>{const result={runtime:'electron',fixture_sha256:hash,...data};emit('corrected',result);marker('corrected',result);captureSurface('after').catch(e=>emit('surface-error',{error:String(e)}));});
 app.whenReady().then(()=>{
   session.defaultSession.webRequest.onBeforeRequest((details,callback)=>callback({cancel: !details.url.startsWith('file:') && !details.url.startsWith('data:')}));
-  win=new BrowserWindow({title:'FocusWatch paired report — Electron',width:1100,height:750,useContentSize:true,resizable:false,autoHideMenuBar:true,backgroundColor:'#ffffff',webPreferences:{preload:path.join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true}});
+  win=new BrowserWindow({title:'FocusWatch paired report — Electron',width:900,height:660,useContentSize:true,resizable:false,autoHideMenuBar:true,backgroundColor:'#ffffff',webPreferences:{preload:path.join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true}});
   win.loadFile(path.join(__dirname,'index.html'));
   const poll=setInterval(()=>{if(fs.existsSync(path.join(output,'close')))win.close();},100);
   win.on('closed',()=>{clearInterval(poll);emit('closed',{});});

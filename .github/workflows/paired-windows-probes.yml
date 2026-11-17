@@ -24,7 +24,7 @@ jobs:
   agent:
     name: Agent Rust and CSharp JIT
     # Preserve the first complete paired measurement when only semantic tests change.
-    if: ${{ !contains(github.event.head_commit.message, '[egui-only]') }}
+    if: ${{ !contains(github.event.head_commit.message, '[egui-only]') && !contains(github.event.head_commit.message, '[ui-only]') && !contains(github.event.head_commit.message, '[no-agent]') }}
     runs-on: windows-2025
     timeout-minutes: 20
     steps:
@@ -95,6 +95,14 @@ jobs:
         run: |
           python scripts/research/2026-11-paired/ui/runner.py --work "$env:RUNNER_TEMP/paired-ui" --fixture scripts/research/2026-11-paired/fixture.tsv --output "$env:RUNNER_TEMP/ui-results" --pairs 3 --idle-seconds 11
           $probeExit = $LASTEXITCODE
+          if ($probeExit -eq 0) {
+            python scripts/research/2026-11-paired/ui/verify-results.py --fixture scripts/research/2026-11-paired/fixture.tsv --results "$env:RUNNER_TEMP/ui-results"
+            $probeExit = $LASTEXITCODE
+          }
+          if ($probeExit -eq 0) {
+            pwsh -NoProfile -File scripts/research/2026-11-paired/ui/verify-surfaces.ps1 -ResultsDir "$env:RUNNER_TEMP/ui-results"
+            $probeExit = $LASTEXITCODE
+          }
           if (Test-Path "$env:RUNNER_TEMP/ui-results") {
             Copy-Item "$env:RUNNER_TEMP/ui-results/*" "$env:RUNNER_TEMP/evidence-ui/" -Recurse -Force
           }
@@ -114,6 +122,7 @@ jobs:
 
   egui:
     name: Egui keyboard and AccessKit semantics
+    if: ${{ !contains(github.event.head_commit.message, '[ui-only]') }}
     runs-on: windows-2025
     timeout-minutes: 20
     steps:
