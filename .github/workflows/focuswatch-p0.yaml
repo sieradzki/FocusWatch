@@ -1,0 +1,51 @@
+name: FocusWatch synthetic P0
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'product/**'
+      - '.github/workflows/focuswatch-p0.yaml'
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2025
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: product
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test portable contracts, time and persistence
+        run: |
+          rustup toolchain install 1.100.0 --profile minimal
+          cargo +1.100.0 test --locked
+      - name: Build agent and exercise the Windows pipe
+        run: |
+          cargo +1.100.0 build --locked --release --bin focuswatch-agent
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tests/process.mjs target/release/focuswatch-agent.exe
+      - name: Build report and run client tests
+        working-directory: product/desktop
+        run: |
+          npm ci
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run runtime
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run build
+      - name: Install private synthetic copy and exercise the native report
+        run: |
+          $package = Join-Path $env:RUNNER_TEMP 'focuswatch-p0-package'
+          $install = Join-Path $env:RUNNER_TEMP 'focuswatch-p0-installed'
+          node scripts/package.mjs target/release/focuswatch-agent.exe $package
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & (Join-Path $package 'Install-P0.ps1') -Destination $install
+          node tests/process.mjs (Join-Path $install 'focuswatch-agent.exe') (Join-Path $install 'report/FocusWatch-Report.exe')

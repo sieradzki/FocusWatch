@@ -1,0 +1,26 @@
+{
+  "name": "focuswatch-report",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local FocusWatch report. The separate agent owns observations and corrections.",
+  "main": "dist/main.cjs",
+  "scripts": {
+    "build": "tsc --noEmit && node scripts/build.mjs",
+    "test": "tsc --noEmit && node scripts/test.mjs",
+    "start": "electron ."
+    ,"package": "node scripts/package.mjs"
+  },
+  "engines": { "node": ">=24 <27" },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "electron": "45.4.1",
+    "esbuild": "0.28.2",
+    "typescript": "7.0.2"
+  }
+}
