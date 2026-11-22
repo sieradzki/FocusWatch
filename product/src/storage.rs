@@ -269,11 +269,15 @@ impl Storage {
     }
 
     pub fn day_report(&mut self, request: &DayRequest, rules: &[CategoryRule]) -> Result<DayReport> {
-        let deadline = Instant::now() + QUERY_TIMEOUT;
+        self.report_with_budget(request, rules, QUERY_VM_STEP_LIMIT, QUERY_TIMEOUT)
+    }
+
+    fn report_with_budget(&mut self, request: &DayRequest, rules: &[CategoryRule], step_limit: usize, timeout: Duration) -> Result<DayReport> {
+        let deadline = Instant::now() + timeout;
         let mut steps = 0usize;
         self.connection.progress_handler(1_000, Some(move || {
             steps += 1_000;
-            steps >= QUERY_VM_STEP_LIMIT || Instant::now() >= deadline
+            steps >= step_limit || Instant::now() >= deadline
         }))?;
         let result = self.report_with_limits(request, rules, MAX_REPORT_OBSERVATIONS, MAX_REPORT_BYTES);
         self.connection.progress_handler(0, None::<fn() -> bool>)?;

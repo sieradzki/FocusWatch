@@ -24,7 +24,8 @@ export function duration(ms: number): string {
 function time(ms: number, zone: string) { return new Intl.DateTimeFormat('en-GB', { timeZone: zone, hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(ms); }
 function localDate(ms: number, zone: string) { return new Intl.DateTimeFormat('en-GB', { timeZone: zone, dateStyle: 'medium', timeStyle: 'short' }).format(ms); }
 function Timeline({ report }: { report: DayReport }) {
-  const sources = [...new Set(report.intervals.map(row => `${row.device_id}/${row.source_id}`))];
+  const sourceKey = (row: ReportInterval) => JSON.stringify([row.device_id, row.source_id, row.session_id, row.generation]);
+  const sources = [...new Set(report.intervals.map(sourceKey))];
   const categories = [...new Set(report.intervals.map(row => row.category))].sort();
   const color = (category: string) => COLORS[categories.indexOf(category) % COLORS.length] ?? COLORS[0];
   return <section className="panel" aria-labelledby="timeline-title">
@@ -33,13 +34,13 @@ function Timeline({ report }: { report: DayReport }) {
     {sources.length ? <svg className="timeline" viewBox={`0 0 1000 ${Math.max(sources.length, 1) * 26}`} preserveAspectRatio="none" aria-hidden="true">
       {sources.map((source, lane) => <g key={source}>
         <rect x="0" y={lane * 26 + 2} width="1000" height="20" fill="#edf0f5" />
-        {report.intervals.filter(row => `${row.device_id}/${row.source_id}` === source).map(row => <rect key={row.id} data-observation={row.id}
+        {report.intervals.filter(row => sourceKey(row) === source).map(row => <rect key={row.id} data-observation={row.id}
           x={(row.start_ms - report.start_ms) / report.day_duration_ms * 1000} y={lane * 26 + 2}
           width={Math.max((row.end_ms - row.start_ms) / report.day_duration_ms * 1000, .3)} height="20" fill={row.quality === 'unknown' ? '#8b98ab' : color(row.category)} />)}
       </g>)}
     </svg> : <p>No exact intervals were received for this day.</p>}
     <div className="axis"><span>{localDate(report.start_ms, report.time_zone)}</span><span>{localDate(report.end_ms, report.time_zone)} (exclusive)</span></div>
-    <div className="legend">{categories.map(category => <span key={category}><svg width="10" height="10" aria-hidden="true"><rect width="10" height="10" fill={color(category)} /></svg>{category}</span>)}</div>
+    <div className="legend">{categories.map(category => <span key={category}><svg width="10" height="10" aria-hidden="true"><rect width="10" height="10" fill={color(category)} /></svg>{category}</span>)}{report.intervals.some(row => row.quality === 'unknown') && <span><svg width="10" height="10" aria-hidden="true"><rect width="10" height="10" fill="#8b98ab" /></svg>Unknown observation</span>}</div>
   </section>;
 }
 
@@ -193,7 +194,7 @@ function App() {
           </section>
         </div>
         <section className="panel" aria-labelledby="source-title"><h2 id="source-title">Source coverage</h2><div className="table-wrap"><table><caption>Independent source durations</caption><thead><tr><th scope="col">Device / source</th><th scope="col">Observed</th><th scope="col">Unknown</th><th scope="col">Reported aggregates</th></tr></thead><tbody>
-          {report.source_totals.map(row => <tr key={`${row.device_id}/${row.source_id}/${row.session_id}/${row.generation}`}><td>{row.device_id}<br />{row.source_id} · {row.source_kind}<br /><span className="muted">{row.session_id} · generation {row.generation}</span></td><td>{duration(row.observed_duration_ms)}</td><td>{duration(row.unknown_duration_ms)}</td><td>{row.aggregate_count} · {duration(row.reported_aggregate_duration_ms)}</td></tr>)}
+          {report.source_totals.map(row => <tr key={JSON.stringify([row.device_id, row.source_id, row.session_id, row.generation])}><td>{row.device_id}<br />{row.source_id} · {row.source_kind}<br /><span className="muted">{row.session_id} · generation {row.generation}</span></td><td>{duration(row.observed_duration_ms)}</td><td>{duration(row.unknown_duration_ms)}</td><td>{row.aggregate_count} · {duration(row.reported_aggregate_duration_ms)}</td></tr>)}
         </tbody></table></div></section>
         <section className="panel" aria-labelledby="aggregate-title"><h2 id="aggregate-title">Aggregates without an exact timeline</h2>
           <p className="muted">These are reported totals within a period. Their overlap with exact intervals is unknown, so they are excluded from the timeline and exact category totals.</p>

@@ -47,7 +47,9 @@ ipcMain.handle('report:read', (event, query: unknown) => call(event, async () =>
   const checked = validateQuery(query);
   const result = validateEnvelope(await requestAgent(options.endpoint, { version: 1, role: 'report', command: 'report', ...checked }));
   if (!result.ok) return result;
-  return { version: 1, ok: true, data: validateReport(result.data, checked) };
+  const report = validateReport(result.data, checked);
+  if (options.smokeOutput && (report.intervals.some(row => row.quality !== 'synthetic') || report.aggregates.some(row => row.quality !== 'synthetic'))) throw new AgentError('smoke_requires_synthetic_data');
+  return { version: 1, ok: true, data: report };
 }));
 ipcMain.handle('report:correct', (event, correction: unknown) => call(event, async () => {
   const checked = validateCorrection(correction);

@@ -80,12 +80,15 @@ fn t08_changed_arrival_or_semantics_is_not_mistaken_for_same_interval_retry() {
     let (_directory, mut storage) = database();
     let original = demo_synthetic_fixture().remove(0);
     storage.insert_observations(std::slice::from_ref(&original)).unwrap();
-    for change in 0..3 {
+    for change in 0..6 {
         let mut observation = original.clone();
         match change {
             0 => observation.received_at_ms += 1,
             1 => observation.category = "different-interpretation".into(),
-            _ => observation.source_id = "another-source".into(),
+            2 => observation.source_id = "another-source".into(),
+            3 => observation.sequence += 1,
+            4 => observation.generation += 1,
+            _ => observation.session_id = "another-session".into(),
         }
         assert!(matches!(storage.insert_observations(&[observation]), Err(StorageError::ObservationConflict { .. })));
     }
@@ -273,4 +276,34 @@ fn invalid_batch_is_rejected_before_any_record_is_written() {
     assert_eq!(count(&storage, "observations"), 0);
     assert_eq!(storage.revision().unwrap(), 0);
     assert_eq!(storage.day_report(&day(), &default_category_rules()).unwrap().intervals.len(), 0);
+}
+
+#[test]
+fn open_point_at_day_start_is_persisted_without_invented_duration() {
+    let (_directory, mut storage) = database();
+    let bounds = day_bounds(DEMO_DATE, DEMO_TIME_ZONE).unwrap();
+    let mut observation = demo_synthetic_fixture().remove(0);
+    observation.id = "open-at-midnight".into();
+    observation.measurement = Measurement::OpenInterval {
+        start_ms: bounds.start_ms, last_observed_ms: bounds.start_ms,
+    };
+    observation.monotonic_end_ms = observation.monotonic_start_ms;
+    storage.insert_observations(std::slice::from_ref(&observation)).unwrap();
+    assert_eq!(raw(&storage, &observation.id), observation);
+    let report = storage.day_report(&day(), &[]).unwrap();
+    assert_eq!(report.intervals.len(), 1);
+    assert!(report.intervals[0].open);
+    assert_eq!(report.intervals[0].duration_ms, 0);
+    assert_eq!(report.observed_coverage_ms, 0);
+    assert_eq!(report.unobserved_ms, report.day_duration_ms);
+}
+
+#[test]
+fn sqlite_work_budget_interrupts_query_and_is_cleared_before_next_command() {
+    let (_directory, mut storage) = database();
+    storage.seed_synthetic_fixture().unwrap();
+    assert!(matches!(storage.report_with_budget(&day(), &[], 1, QUERY_TIMEOUT),
+        Err(StorageError::QueryBudgetExceeded)));
+    storage.apply_correction(&command("after-cancel", "synthetic-555", "learning", 0), 100).unwrap();
+    assert_eq!(storage.day_report(&day(), &[]).unwrap().intervals.len(), 1440);
 }
