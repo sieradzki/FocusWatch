@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '24.22.3'
       - name: Test portable contracts, time and persistence
         run: |
           rustup toolchain install 1.100.0 --profile minimal

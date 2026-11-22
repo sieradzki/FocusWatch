@@ -34,7 +34,10 @@ export function requestAgent(endpoint: string, request: unknown, timeoutMs = REQ
   return new Promise((resolve, reject) => {
     const socket = net.createConnection(endpoint);
     let settled = false;
-    let buffered = Buffer.alloc(0);
+    const header = Buffer.alloc(4);
+    let headerBytes = 0;
+    let body: Buffer | undefined;
+    let bodyBytes = 0;
     let size: number | undefined;
     const timer = setTimeout(() => finish(new AgentError('agent_timeout')), timeoutMs);
     const finish = (error?: Error, value?: unknown) => {
@@ -51,17 +54,25 @@ export function requestAgent(endpoint: string, request: unknown, timeoutMs = REQ
     socket.on('data', chunk => {
       if (typeof chunk === 'string') return finish(new AgentError('invalid_response'));
       if (settled) return;
-      if (buffered.length + chunk.length > MAX_RESPONSE_BYTES + 4) return finish(new AgentError('frame_too_large'));
-      buffered = Buffer.concat([buffered, chunk]);
-      if (size === undefined && buffered.length >= 4) {
-        size = buffered.readUInt32LE(0);
+      let offset = 0;
+      if (headerBytes < 4) {
+        const take = Math.min(4 - headerBytes, chunk.length);
+        chunk.copy(header, headerBytes, 0, take);
+        headerBytes += take;
+        offset += take;
+        if (headerBytes < 4) return;
+        size = header.readUInt32LE(0);
         if (!size || size > MAX_RESPONSE_BYTES) return finish(new AgentError('invalid_frame_length'));
+        body = Buffer.allocUnsafe(size);
       }
-      if (size === undefined || buffered.length < size + 4) return;
-      if (buffered.length !== size + 4) return finish(new AgentError('unexpected_response_bytes'));
+      if (size === undefined || !body) return;
+      if (bodyBytes + chunk.length - offset > size) return finish(new AgentError('unexpected_response_bytes'));
+      chunk.copy(body, bodyBytes, offset);
+      bodyBytes += chunk.length - offset;
+      if (bodyBytes < size) return;
       let value: unknown;
       try {
-        value = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(buffered.subarray(4)));
+        value = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(body));
       } catch { return finish(new AgentError('invalid_response')); }
       finish(undefined, value);
     });

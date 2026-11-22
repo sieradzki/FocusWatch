@@ -4,7 +4,7 @@ A synthetic desktop slice with one local SQLite writer and an independent report
 
 ## Build and verify
 
-From this directory use Rust 1.100.0, a native C toolchain (MSVC x64 and Windows SDK on Windows), Node 24 and npm. Both lockfiles are inputs. Dependency downloads are needed during preparation. The installed app runs offline.
+From this directory use Rust 1.100.0, a native C toolchain (MSVC x64 and Windows SDK on Windows), Node 24.22.3 and its bundled npm. Both lockfiles are inputs. Dependency downloads are needed during preparation. The installed app runs offline.
 
 ~~~sh
 cargo test --locked

@@ -66,6 +66,7 @@ app.whenReady().then(async () => {
   contents.session.webRequest.onBeforeRequest((details, callback) => callback({ cancel: !allowedUrls.has(details.url) }));
   contents.session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
   contents.session.setPermissionCheckHandler(() => false);
+  contents.session.on('will-download', event => event.preventDefault());
   contents.setWindowOpenHandler(() => ({ action: 'deny' }));
   contents.on('will-navigate', event => event.preventDefault());
   contents.on('will-frame-navigate', event => event.preventDefault());

@@ -18,6 +18,8 @@ async function until(window: BrowserWindow, expression: string, description: str
 }
 function key(window: BrowserWindow, keyCode: string, modifiers?: Array<'control' | 'meta' | 'shift'>) {
   window.webContents.sendInputEvent({ type: 'keyDown', keyCode, modifiers });
+  if (keyCode === 'Enter') window.webContents.sendInputEvent({ type: 'char', keyCode: '\r', modifiers });
+  if (keyCode === 'Space') window.webContents.sendInputEvent({ type: 'char', keyCode: ' ', modifiers });
   window.webContents.sendInputEvent({ type: 'keyUp', keyCode, modifiers });
 }
 export async function runSmoke(window: BrowserWindow, options: Options, security: { sandboxed?: boolean; contextIsolated?: boolean }) {
@@ -32,11 +34,12 @@ export async function runSmoke(window: BrowserWindow, options: Options, security
     const globals: unknown = await window.webContents.executeJavaScript(`({node: typeof window.require, process: typeof window.process, api: Object.keys(window.focuswatch).sort()})`);
     assert.deepEqual(globals, { node: 'undefined', process: 'undefined', api: ['correct', 'initialQuery', 'report'] });
     window.show(); window.focus(); window.webContents.focus();
+    await window.webContents.executeJavaScript(`window.__focuswatchSmokeEvents = []; for (const type of ['keydown', 'keypress', 'keyup', 'click', 'focusin']) document.addEventListener(type, event => { if (window.__focuswatchSmokeEvents.length < 40) window.__focuswatchSmokeEvents.push({type, key:event.key, code:event.code, id:event.target?.id, tag:event.target?.tagName, trusted:event.isTrusted}); }, true);`);
     await window.webContents.executeJavaScript(`document.querySelector('#observation-filter').focus()`);
     await window.webContents.insertText(id);
     await until(window, `!!document.querySelector('[data-edit-id="${id}"]')`, 'synthetic interval present');
     await window.webContents.executeJavaScript(`document.querySelector('[data-edit-id="${id}"]').focus()`);
-    key(window, 'Enter');
+    key(window, 'Space');
     await until(window, `document.activeElement?.id === 'category'`, 'keyboard selection focuses category input');
     const read = `({id: document.querySelector('#selected-observation')?.dataset.selectedId, category: document.querySelector('#selected-observation')?.dataset.selectedCategory, revision: Number(document.querySelector('#selected-observation')?.dataset.correctionRevision), selected_text: document.querySelector('#selected-category')?.textContent, coverage_text: document.querySelector('#observed-coverage')?.textContent, range_text: document.querySelector('#displayed-range')?.textContent, totals: [...document.querySelectorAll('#category-totals [data-category]')].map(x => ({category:x.dataset.category, duration_ms:Number(x.dataset.durationMs)})), status: document.querySelector('#report-status')?.textContent, error: document.querySelector('#report-error')?.textContent ?? ''})`;
     const before = await window.webContents.executeJavaScript(read);
@@ -78,6 +81,10 @@ export async function runSmoke(window: BrowserWindow, options: Options, security
     evidence.status = 'pass';
   } catch (error) {
     evidence.status = 'fail'; evidence.failure = error instanceof Error ? error.message : 'unknown_failure';
+    if (!window.isDestroyed()) {
+      evidence.diagnostics = await window.webContents.executeJavaScript(`({active: {id: document.activeElement?.id, tag: document.activeElement?.tagName, text: document.activeElement?.textContent?.slice(0, 180)}, selected: document.querySelector('#selected-observation')?.dataset.selectedId ?? null, category_input: !!document.querySelector('#category'), report_error: document.querySelector('#report-error')?.textContent ?? null, buttons: [...document.querySelectorAll('[data-edit-id]')].slice(0, 3).map(x => ({id:x.dataset.editId, name:x.getAttribute('aria-label'), disabled:x.disabled})), events:window.__focuswatchSmokeEvents})`).catch(() => ({ unavailable: true }));
+      process.stderr.write(`Synthetic smoke diagnostics: ${JSON.stringify(evidence.diagnostics)}\n`);
+    }
     throw error;
   } finally { await writeFile(path.join(output, 'smoke.json'), JSON.stringify(evidence, null, 2)); }
 }

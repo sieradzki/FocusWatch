@@ -21,6 +21,7 @@ await cp(path.join(desktop,'dist'),path.join(app,'dist'),{recursive:true});
 await writeFile(path.join(app,'package.json'),JSON.stringify({name:'focuswatch-report',main:'dist/main.cjs',version:'0.1.0'}));
 const notices=path.join(app,'licenses');
 await mkdir(notices);
+await copyFile(path.join(root,'LICENSE'),path.join(notices,'FocusWatch-LICENSE'));
 for(const name of ['react','react-dom','scheduler']) {
   await copyFile(path.join(desktop,'node_modules',name,'LICENSE'),path.join(notices,name+'-LICENSE'));
 }

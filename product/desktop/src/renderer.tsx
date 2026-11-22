@@ -24,7 +24,7 @@ export function duration(ms: number): string {
 function time(ms: number, zone: string) { return new Intl.DateTimeFormat('en-GB', { timeZone: zone, hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(ms); }
 function localDate(ms: number, zone: string) { return new Intl.DateTimeFormat('en-GB', { timeZone: zone, dateStyle: 'medium', timeStyle: 'short' }).format(ms); }
 function Timeline({ report }: { report: DayReport }) {
-  const sourceKey = (row: ReportInterval) => JSON.stringify([row.device_id, row.source_id, row.session_id, row.generation]);
+  const sourceKey = (row: ReportInterval) => JSON.stringify([row.device_id, row.source_id, row.session_id, row.generation, row.source_kind]);
   const sources = [...new Set(report.intervals.map(sourceKey))];
   const categories = [...new Set(report.intervals.map(row => row.category))].sort();
   const color = (category: string) => COLORS[categories.indexOf(category) % COLORS.length] ?? COLORS[0];
@@ -58,6 +58,9 @@ function App() {
   const categoryInput = useRef<HTMLInputElement>(null);
   const pendingCommand = useRef<Correction | undefined>(undefined);
   const selected = report?.intervals.find(row => row.id === selectedId);
+  useEffect(() => {
+    if (selectedId) { categoryInput.current?.focus(); categoryInput.current?.select(); }
+  }, [selectedId]);
 
   async function read(next: Query): Promise<DayReport | undefined> {
     const result = await window.focuswatch.report(next);
@@ -95,8 +98,6 @@ function App() {
   function select(row: ReportInterval) {
     setSelectedId(row.id); setCategory(row.category); setFieldError(''); setError(''); setStatus('');
     pendingCommand.current = undefined;
-    // Move to the editor after its native input is rendered, for pointer and keyboard users alike.
-    requestAnimationFrame(() => { categoryInput.current?.focus(); categoryInput.current?.select(); });
   }
   async function correct(event: FormEvent) {
     event.preventDefault();
@@ -186,6 +187,7 @@ function App() {
                 <dt>Provenance</dt><dd>{selected.device_id}<br />{selected.source_id} · {selected.source_kind}<br />{selected.quality}</dd>
                 <dt>Session / generation / sequence</dt><dd>{selected.session_id} / {selected.generation} / {selected.sequence}</dd>
                 <dt>Resolution / time uncertainty</dt><dd>{selected.granularity_ms} ms / ±{selected.time_uncertainty_ms} ms</dd>
+                <dt>Received at</dt><dd>{new Date(selected.received_at_ms).toISOString()}</dd>
                 <dt>Clock / interval state</dt><dd>{selected.clock_discontinuity ?? 'No discontinuity reported'}<br />{selected.open ? 'Open; ends at last confirmed checkpoint.' : 'Closed interval.'}</dd>
                 <dt>Boot / monotonic scope</dt><dd>{selected.boot_id ?? 'Unavailable'}<br />{selected.monotonic_start_ms ?? 'Unknown'}–{selected.monotonic_end_ms ?? 'Unknown'} ms</dd>
                 <dt>Observation ID</dt><dd>{selected.id}</dd><dt>Correction revision</dt><dd>{selected.correction_revision}</dd>
@@ -194,12 +196,12 @@ function App() {
           </section>
         </div>
         <section className="panel" aria-labelledby="source-title"><h2 id="source-title">Source coverage</h2><div className="table-wrap"><table><caption>Independent source durations</caption><thead><tr><th scope="col">Device / source</th><th scope="col">Observed</th><th scope="col">Unknown</th><th scope="col">Reported aggregates</th></tr></thead><tbody>
-          {report.source_totals.map(row => <tr key={JSON.stringify([row.device_id, row.source_id, row.session_id, row.generation])}><td>{row.device_id}<br />{row.source_id} · {row.source_kind}<br /><span className="muted">{row.session_id} · generation {row.generation}</span></td><td>{duration(row.observed_duration_ms)}</td><td>{duration(row.unknown_duration_ms)}</td><td>{row.aggregate_count} · {duration(row.reported_aggregate_duration_ms)}</td></tr>)}
+          {report.source_totals.map(row => <tr key={JSON.stringify([row.device_id, row.source_id, row.session_id, row.generation, row.source_kind])}><td>{row.device_id}<br />{row.source_id} · {row.source_kind}<br /><span className="muted">{row.session_id} · generation {row.generation}</span></td><td>{duration(row.observed_duration_ms)}</td><td>{duration(row.unknown_duration_ms)}</td><td>{row.aggregate_count} · {duration(row.reported_aggregate_duration_ms)}</td></tr>)}
         </tbody></table></div></section>
         <section className="panel" aria-labelledby="aggregate-title"><h2 id="aggregate-title">Aggregates without an exact timeline</h2>
           <p className="muted">These are reported totals within a period. Their overlap with exact intervals is unknown, so they are excluded from the timeline and exact category totals.</p>
           {report.aggregates.length ? <div className="table-wrap"><table><caption>Period totals, shown without proportional splitting</caption><thead><tr><th scope="col">Application / source</th><th scope="col">Period</th><th scope="col">Reported duration</th><th scope="col">Coverage note</th></tr></thead><tbody>
-            {report.aggregates.map(row => <tr key={row.id}><td>{row.app_name}<br />{row.device_id} / {row.source_id}<br />{row.category} · {row.quality}</td><td>{localDate(row.period_start_ms, report.time_zone)}–{localDate(row.period_end_ms, report.time_zone)}</td><td>{duration(row.reported_duration_ms)}</td><td>{row.fully_within_day ? 'Period lies within this day.' : 'Period extends beyond this day; total is not allocated to this day.'}</td></tr>)}
+            {report.aggregates.map(row => <tr key={row.id}><td>{row.app_name}<br />{row.device_id} / {row.source_id}<br />{row.category} · {row.quality}</td><td>{localDate(row.period_start_ms, report.time_zone)}–{localDate(row.period_end_ms, report.time_zone)}<br /><span className="muted">Received {localDate(row.received_at_ms, report.time_zone)}</span></td><td>{duration(row.reported_duration_ms)}</td><td>{row.fully_within_day ? 'Period lies within this day.' : 'Period extends beyond this day; total is not allocated to this day.'}</td></tr>)}
           </tbody></table></div> : <p>No period aggregates were received for this day.</p>}
         </section>
         <footer>Agent owns the local history. Closing this report leaves the agent running. Basic reports and corrections use no cloud or AI.</footer>

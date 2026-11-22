@@ -1,7 +1,7 @@
 use super::{
-    day_bounds, validate_text, AggregateView, CategoryCorrection, CategoryRule, CategoryTotal,
-    DayReport, DayRequest, DomainError, Measurement, Observation, ObservationQuality, ReportInterval,
-    SourceKind, SourceTotal,
+    AggregateView, CategoryCorrection, CategoryRule, CategoryTotal, DayReport, DayRequest,
+    DomainError, Measurement, Observation, ObservationQuality, ReportInterval, SourceKind,
+    SourceTotal, day_bounds, validate_text,
 };
 use std::collections::BTreeMap;
 
@@ -46,14 +46,16 @@ pub fn union_duration_ms(intervals: &[(i64, i64)]) -> Result<i64, DomainError> {
         } else {
             total = add(
                 total,
-                end.checked_sub(start).ok_or(DomainError::DurationOverflow)?,
+                end.checked_sub(start)
+                    .ok_or(DomainError::DurationOverflow)?,
             )?;
             (start, end) = (next_start, next_end);
         }
     }
     add(
         total,
-        end.checked_sub(start).ok_or(DomainError::DurationOverflow)?,
+        end.checked_sub(start)
+            .ok_or(DomainError::DurationOverflow)?,
     )
 }
 
@@ -91,7 +93,9 @@ pub fn build_report(
                 });
             }
         }
-        let latest = correction_map.entry(&correction.observation_id).or_insert(correction);
+        let latest = correction_map
+            .entry(&correction.observation_id)
+            .or_insert(correction);
         if correction.revision > latest.revision {
             *latest = correction;
         }
@@ -142,11 +146,16 @@ pub fn build_report(
         let source = sources.entry(source_key.clone()).or_default();
         match observation.measurement {
             Measurement::Interval { start_ms, end_ms }
-            | Measurement::OpenInterval { start_ms, last_observed_ms: end_ms } => {
+            | Measurement::OpenInterval {
+                start_ms,
+                last_observed_ms: end_ms,
+            } => {
                 let open = matches!(observation.measurement, Measurement::OpenInterval { .. });
                 let start = start_ms.max(bounds.start_ms);
                 let end = end_ms.min(bounds.end_ms);
-                let duration_ms = end.checked_sub(start).ok_or(DomainError::DurationOverflow)?;
+                let duration_ms = end
+                    .checked_sub(start)
+                    .ok_or(DomainError::DurationOverflow)?;
                 all_scoped.push((start, end));
                 if observation.quality == ObservationQuality::Unknown {
                     all_unknown.push((start, end));
@@ -173,6 +182,7 @@ pub fn build_report(
                     monotonic_start_ms: observation.monotonic_start_ms,
                     monotonic_end_ms: observation.monotonic_end_ms,
                     clock_discontinuity: observation.clock_discontinuity.clone(),
+                    received_at_ms: observation.received_at_ms,
                     app_id: observation.app_id.clone(),
                     app_name: observation.app_name.clone(),
                     category,
@@ -209,6 +219,7 @@ pub fn build_report(
                     monotonic_start_ms: observation.monotonic_start_ms,
                     monotonic_end_ms: observation.monotonic_end_ms,
                     clock_discontinuity: observation.clock_discontinuity.clone(),
+                    received_at_ms: observation.received_at_ms,
                     app_id: observation.app_id.clone(),
                     app_name: observation.app_name.clone(),
                     category,
@@ -225,12 +236,20 @@ pub fn build_report(
         }
     }
     intervals.sort_by(|a, b| {
-        (a.start_ms, a.end_ms, &a.device_id, &a.source_id, &a.id)
-            .cmp(&(b.start_ms, b.end_ms, &b.device_id, &b.source_id, &b.id))
+        (a.start_ms, a.end_ms, &a.device_id, &a.source_id, &a.id).cmp(&(
+            b.start_ms,
+            b.end_ms,
+            &b.device_id,
+            &b.source_id,
+            &b.id,
+        ))
     });
     aggregates.sort_by(|a, b| {
-        (a.period_start_ms, a.period_end_ms, &a.id)
-            .cmp(&(b.period_start_ms, b.period_end_ms, &b.id))
+        (a.period_start_ms, a.period_end_ms, &a.id).cmp(&(
+            b.period_start_ms,
+            b.period_end_ms,
+            &b.id,
+        ))
     });
     let mut source_totals = Vec::new();
     let mut summed_source_ms = 0_i64;
@@ -256,7 +275,10 @@ pub fn build_report(
     }
     let category_totals = category_map
         .into_iter()
-        .map(|(category, duration_ms)| CategoryTotal { category, duration_ms })
+        .map(|(category, duration_ms)| CategoryTotal {
+            category,
+            duration_ms,
+        })
         .collect();
     Ok(DayReport {
         revision,

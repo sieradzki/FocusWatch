@@ -1,7 +1,10 @@
 //! Local, single-writer history. Observation payloads are immutable; corrections are
 //! append-only. The host owns the connection and never hands database access to UI.
 
-use std::{path::Path, time::{Duration, Instant}};
+use std::{
+    path::Path,
+    time::{Duration, Instant},
+};
 
 use rusqlite::{Connection, OpenFlags, OptionalExtension, TransactionBehavior, params};
 use serde::Serialize;
@@ -48,8 +51,14 @@ pub enum StorageError {
     ObservationConflict { id: String },
     #[error("correction command ID has a different semantic payload: {command_id}")]
     CommandConflict { command_id: String },
-    #[error("correction revision conflict for {observation_id}: expected {expected}, actual {actual}")]
-    RevisionConflict { observation_id: String, expected: u64, actual: u64 },
+    #[error(
+        "correction revision conflict for {observation_id}: expected {expected}, actual {actual}"
+    )]
+    RevisionConflict {
+        observation_id: String,
+        expected: u64,
+        actual: u64,
+    },
     #[error("observation does not exist: {id}")]
     ObservationNotFound { id: String },
     #[error("invalid storage input: {0}")]
@@ -96,7 +105,9 @@ impl Storage {
     /// directory, legacy import, repair, deletion or fallback is performed.
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
         if !has_wal_reset_fix(rusqlite::version_number()) {
-            return Err(StorageError::IncompatibleEngine { version: rusqlite::version().into() });
+            return Err(StorageError::IncompatibleEngine {
+                version: rusqlite::version().into(),
+            });
         }
         let flags = OpenFlags::SQLITE_OPEN_READ_WRITE
             | OpenFlags::SQLITE_OPEN_CREATE
@@ -106,12 +117,16 @@ impl Storage {
         let schema: i64 = connection.pragma_query_value(None, "user_version", |r| r.get(0))?;
         let app: i64 = connection.pragma_query_value(None, "application_id", |r| r.get(0))?;
         if schema > SCHEMA_VERSION || schema < 0 {
-            return Err(StorageError::UnsupportedSchema { found: schema, supported: SCHEMA_VERSION });
+            return Err(StorageError::UnsupportedSchema {
+                found: schema,
+                supported: SCHEMA_VERSION,
+            });
         }
         if schema == 0 {
             let tables: i64 = connection.query_row(
                 "SELECT count(*) FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%'",
-                [], |row| row.get(0),
+                [],
+                |row| row.get(0),
             )?;
             if app != 0 || tables != 0 {
                 return Err(StorageError::UnrecognizedDatabase);
@@ -121,7 +136,8 @@ impl Storage {
         }
         connection.pragma_update(None, "foreign_keys", "ON")?;
         connection.pragma_update(None, "trusted_schema", "OFF")?;
-        let journal: String = connection.pragma_update_and_check(None, "journal_mode", "WAL", |r| r.get(0))?;
+        let journal: String =
+            connection.pragma_update_and_check(None, "journal_mode", "WAL", |r| r.get(0))?;
         if !journal.eq_ignore_ascii_case("wal") {
             return Err(StorageError::JournalModeRequired { actual: journal });
         }
@@ -130,7 +146,9 @@ impl Storage {
         connection.pragma_update(None, "synchronous", "FULL")?;
         let synchronous: i64 = connection.pragma_query_value(None, "synchronous", |r| r.get(0))?;
         if synchronous != 2 {
-            return Err(StorageError::CorruptData("synchronous=FULL was not applied"));
+            return Err(StorageError::CorruptData(
+                "synchronous=FULL was not applied",
+            ));
         }
         if schema == 0 {
             let tx = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -175,29 +193,40 @@ impl Storage {
     /// Retrying an ID is a no-op only when the complete typed observation agrees.
     pub fn insert_observations(&mut self, observations: &[Observation]) -> Result<InsertSummary> {
         if observations.len() > MAX_INSERT_BATCH {
-            return Err(StorageError::InvalidInput("observation batch exceeds limit"));
+            return Err(StorageError::InvalidInput(
+                "observation batch exceeds limit",
+            ));
         }
         let mut payloads = Vec::with_capacity(observations.len());
         for observation in observations {
             observation.validate()?;
             let payload = serde_json::to_string(observation)?;
             if payload.len() > MAX_OBSERVATION_BYTES {
-                return Err(StorageError::InvalidInput("observation payload exceeds limit"));
+                return Err(StorageError::InvalidInput(
+                    "observation payload exceeds limit",
+                ));
             }
             payloads.push(payload);
         }
-        let tx = self.connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let mut inserted = 0;
         let mut duplicates = 0;
         for (observation, payload) in observations.iter().zip(payloads) {
-            let existing: Option<(i64, String)> = tx.query_row(
-                "SELECT record_version, payload FROM observations WHERE id = ?1",
-                [&observation.id], |r| Ok((r.get(0)?, r.get(1)?)),
-            ).optional()?;
+            let existing: Option<(i64, String)> = tx
+                .query_row(
+                    "SELECT record_version, payload FROM observations WHERE id = ?1",
+                    [&observation.id],
+                    |r| Ok((r.get(0)?, r.get(1)?)),
+                )
+                .optional()?;
             if let Some((version, previous)) = existing {
                 let previous = decode_observation(version, &previous)?;
                 if previous != *observation {
-                    return Err(StorageError::ObservationConflict { id: observation.id.clone() });
+                    return Err(StorageError::ObservationConflict {
+                        id: observation.id.clone(),
+                    });
                 }
                 duplicates += 1;
             } else {
@@ -210,14 +239,28 @@ impl Storage {
                 inserted += 1;
             }
         }
-        let report_revision = if inserted != 0 { bump_revision(&tx)? } else { read_revision(&tx)? };
+        let report_revision = if inserted != 0 {
+            bump_revision(&tx)?
+        } else {
+            read_revision(&tx)?
+        };
         tx.commit()?;
-        Ok(InsertSummary { inserted, duplicates, report_revision })
+        Ok(InsertSummary {
+            inserted,
+            duplicates,
+            report_revision,
+        })
     }
 
-    pub fn apply_correction(&mut self, request: &CorrectionRequest, created_at_ms: i64) -> Result<CorrectionResult> {
+    pub fn apply_correction(
+        &mut self,
+        request: &CorrectionRequest,
+        created_at_ms: i64,
+    ) -> Result<CorrectionResult> {
         request.validate()?;
-        let tx = self.connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let tx = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let previous = tx.query_row(
             "SELECT id,observation_id,category,revision,created_at_ms FROM category_corrections WHERE id = ?1",
             [&request.command_id], correction_from_row,
@@ -229,67 +272,116 @@ impl Storage {
                 || previous.category != request.category
                 || previous.revision.checked_sub(1) != Some(request.expected_revision)
             {
-                return Err(StorageError::CommandConflict { command_id: request.command_id.clone() });
+                return Err(StorageError::CommandConflict {
+                    command_id: request.command_id.clone(),
+                });
             }
             let report_revision = read_revision(&tx)?;
             tx.commit()?;
-            return Ok(CorrectionResult { correction: previous, report_revision, replayed: true });
+            return Ok(CorrectionResult {
+                correction: previous,
+                report_revision,
+                replayed: true,
+            });
         }
         let exists: bool = tx.query_row(
             "SELECT EXISTS(SELECT 1 FROM observations WHERE id = ?1)",
-            [&request.observation_id], |r| r.get(0),
+            [&request.observation_id],
+            |r| r.get(0),
         )?;
         if !exists {
-            return Err(StorageError::ObservationNotFound { id: request.observation_id.clone() });
+            return Err(StorageError::ObservationNotFound {
+                id: request.observation_id.clone(),
+            });
         }
         let actual: i64 = tx.query_row(
             "SELECT COALESCE(MAX(revision),0) FROM category_corrections WHERE observation_id = ?1",
-            [&request.observation_id], |r| r.get(0),
+            [&request.observation_id],
+            |r| r.get(0),
         )?;
-        let actual = u64::try_from(actual).map_err(|_| StorageError::CorruptData("negative correction revision"))?;
+        let actual = u64::try_from(actual)
+            .map_err(|_| StorageError::CorruptData("negative correction revision"))?;
         if actual != request.expected_revision {
             return Err(StorageError::RevisionConflict {
-                observation_id: request.observation_id.clone(), expected: request.expected_revision, actual,
+                observation_id: request.observation_id.clone(),
+                expected: request.expected_revision,
+                actual,
             });
         }
         let revision = next_revision(actual)?;
         let correction = CategoryCorrection {
-            id: request.command_id.clone(), observation_id: request.observation_id.clone(),
-            category: request.category.clone(), revision, created_at_ms,
+            id: request.command_id.clone(),
+            observation_id: request.observation_id.clone(),
+            category: request.category.clone(),
+            revision,
+            created_at_ms,
         };
         correction.validate()?;
         tx.execute(
             "INSERT INTO category_corrections (id,observation_id,category,revision,created_at_ms)
              VALUES (?1,?2,?3,?4,?5)",
-            params![correction.id,correction.observation_id,correction.category,sqlite_revision(correction.revision)?,correction.created_at_ms],
+            params![
+                correction.id,
+                correction.observation_id,
+                correction.category,
+                sqlite_revision(correction.revision)?,
+                correction.created_at_ms
+            ],
         )?;
         let report_revision = bump_revision(&tx)?;
         tx.commit()?;
-        Ok(CorrectionResult { correction, report_revision, replayed: false })
+        Ok(CorrectionResult {
+            correction,
+            report_revision,
+            replayed: false,
+        })
     }
 
-    pub fn day_report(&mut self, request: &DayRequest, rules: &[CategoryRule]) -> Result<DayReport> {
+    pub fn day_report(
+        &mut self,
+        request: &DayRequest,
+        rules: &[CategoryRule],
+    ) -> Result<DayReport> {
         self.report_with_budget(request, rules, QUERY_VM_STEP_LIMIT, QUERY_TIMEOUT)
     }
 
-    fn report_with_budget(&mut self, request: &DayRequest, rules: &[CategoryRule], step_limit: usize, timeout: Duration) -> Result<DayReport> {
+    fn report_with_budget(
+        &mut self,
+        request: &DayRequest,
+        rules: &[CategoryRule],
+        step_limit: usize,
+        timeout: Duration,
+    ) -> Result<DayReport> {
         let deadline = Instant::now() + timeout;
         let mut steps = 0usize;
-        self.connection.progress_handler(1_000, Some(move || {
-            steps += 1_000;
-            steps >= step_limit || Instant::now() >= deadline
-        }))?;
-        let result = self.report_with_limits(request, rules, MAX_REPORT_OBSERVATIONS, MAX_REPORT_BYTES);
+        self.connection.progress_handler(
+            1_000,
+            Some(move || {
+                steps += 1_000;
+                steps >= step_limit || Instant::now() >= deadline
+            }),
+        )?;
+        let result =
+            self.report_with_limits(request, rules, MAX_REPORT_OBSERVATIONS, MAX_REPORT_BYTES);
         self.connection.progress_handler(0, None::<fn() -> bool>)?;
         match result {
             Err(StorageError::Sqlite(rusqlite::Error::SqliteFailure(error, _)))
-                if error.code == rusqlite::ErrorCode::OperationInterrupted => Err(StorageError::QueryBudgetExceeded),
+                if error.code == rusqlite::ErrorCode::OperationInterrupted =>
+            {
+                Err(StorageError::QueryBudgetExceeded)
+            }
             Ok(_) if Instant::now() >= deadline => Err(StorageError::QueryBudgetExceeded),
             other => other,
         }
     }
 
-    fn report_with_limits(&mut self, request: &DayRequest, rules: &[CategoryRule], limit: usize, byte_limit: usize) -> Result<DayReport> {
+    fn report_with_limits(
+        &mut self,
+        request: &DayRequest,
+        rules: &[CategoryRule],
+        limit: usize,
+        byte_limit: usize,
+    ) -> Result<DayReport> {
         let bounds = day_bounds(&request.date, &request.time_zone)?;
         // The initial metadata read fixes this transaction's snapshot before any
         // observation/correction reads. No UI gets a mixed-generation report.
@@ -302,14 +394,17 @@ impl Storage {
                  WHERE scope_start_ms < ?1 AND (scope_end_ms > ?2 OR (scope_end_ms = scope_start_ms AND scope_start_ms >= ?2))
                  ORDER BY scope_start_ms,id LIMIT ?3",
             )?;
-            let mut rows = stmt.query(params![bounds.end_ms,bounds.start_ms,(limit + 1) as i64])?;
+            let mut rows =
+                stmt.query(params![bounds.end_ms, bounds.start_ms, (limit + 1) as i64])?;
             let mut payload_bytes = 0usize;
             while let Some(row) = rows.next()? {
                 if observations.len() == limit {
                     return Err(StorageError::ReportTooLarge { limit });
                 }
                 let payload: String = row.get(4)?;
-                payload_bytes = payload_bytes.checked_add(payload.len()).ok_or(StorageError::ReportTooLarge { limit: byte_limit })?;
+                payload_bytes = payload_bytes
+                    .checked_add(payload.len())
+                    .ok_or(StorageError::ReportTooLarge { limit: byte_limit })?;
                 if payload_bytes > byte_limit {
                     return Err(StorageError::ReportTooLarge { limit: byte_limit });
                 }
@@ -317,7 +412,9 @@ impl Storage {
                 let id: String = row.get(0)?;
                 let bounds: (i64, i64) = (row.get(2)?, row.get(3)?);
                 if observation.id != id || observation.bounds() != bounds {
-                    return Err(StorageError::CorruptData("observation index disagrees with immutable payload"));
+                    return Err(StorageError::CorruptData(
+                        "observation index disagrees with immutable payload",
+                    ));
                 }
                 observations.push(observation);
             }
@@ -330,8 +427,11 @@ impl Storage {
                    AND c.revision = (SELECT MAX(latest.revision) FROM category_corrections latest WHERE latest.observation_id = c.observation_id)
                  ORDER BY c.observation_id LIMIT ?3",
             )?;
-            stmt.query_map(params![bounds.end_ms,bounds.start_ms,(limit + 1) as i64], correction_from_row)?
-                .collect::<std::result::Result<Vec<_>, _>>()?
+            stmt.query_map(
+                params![bounds.end_ms, bounds.start_ms, (limit + 1) as i64],
+                correction_from_row,
+            )?
+            .collect::<std::result::Result<Vec<_>, _>>()?
         };
         if corrections.len() > limit {
             return Err(StorageError::ReportTooLarge { limit });
@@ -349,13 +449,23 @@ impl Storage {
     }
 
     pub fn diagnostics(&self) -> Result<StorageDiagnostics> {
-        let pragma = |name| self.connection.pragma_query_value(None, name, |r| r.get::<_, i64>(0));
+        let pragma = |name| {
+            self.connection
+                .pragma_query_value(None, name, |r| r.get::<_, i64>(0))
+        };
         Ok(StorageDiagnostics {
-            schema_version: pragma("user_version")?, record_version: RECORD_VERSION,
-            application_id: pragma("application_id")?, sqlite_version: rusqlite::version().into(),
-            sqlite_source_id: self.connection.query_row("SELECT sqlite_source_id()", [], |r| r.get(0))?,
-            journal_mode: self.connection.pragma_query_value(None, "journal_mode", |r| r.get(0))?,
-            synchronous: pragma("synchronous")?, foreign_keys: pragma("foreign_keys")? == 1,
+            schema_version: pragma("user_version")?,
+            record_version: RECORD_VERSION,
+            application_id: pragma("application_id")?,
+            sqlite_version: rusqlite::version().into(),
+            sqlite_source_id: self
+                .connection
+                .query_row("SELECT sqlite_source_id()", [], |r| r.get(0))?,
+            journal_mode: self
+                .connection
+                .pragma_query_value(None, "journal_mode", |r| r.get(0))?,
+            synchronous: pragma("synchronous")?,
+            foreign_keys: pragma("foreign_keys")? == 1,
             report_revision: self.revision()?,
         })
     }
@@ -363,10 +473,14 @@ impl Storage {
 
 fn decode_observation(version: i64, payload: &str) -> Result<Observation> {
     if version != RECORD_VERSION {
-        return Err(StorageError::CorruptData("unsupported observation record version"));
+        return Err(StorageError::CorruptData(
+            "unsupported observation record version",
+        ));
     }
     if payload.len() > MAX_OBSERVATION_BYTES {
-        return Err(StorageError::CorruptData("observation payload exceeds limit"));
+        return Err(StorageError::CorruptData(
+            "observation payload exceeds limit",
+        ));
     }
     let observation: Observation = serde_json::from_str(payload)?;
     observation.validate()?;
@@ -376,16 +490,27 @@ fn decode_observation(version: i64, payload: &str) -> Result<Observation> {
 fn correction_from_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<CategoryCorrection> {
     let revision: i64 = row.get(3)?;
     let revision = u64::try_from(revision).map_err(|error| {
-        rusqlite::Error::FromSqlConversionFailure(3, rusqlite::types::Type::Integer, Box::new(error))
+        rusqlite::Error::FromSqlConversionFailure(
+            3,
+            rusqlite::types::Type::Integer,
+            Box::new(error),
+        )
     })?;
     Ok(CategoryCorrection {
-        id: row.get(0)?, observation_id: row.get(1)?, category: row.get(2)?,
-        revision, created_at_ms: row.get(4)?,
+        id: row.get(0)?,
+        observation_id: row.get(1)?,
+        category: row.get(2)?,
+        revision,
+        created_at_ms: row.get(4)?,
     })
 }
 
 fn read_revision(connection: &Connection) -> Result<u64> {
-    let revision: i64 = connection.query_row("SELECT report_revision FROM storage_metadata WHERE singleton = 1", [], |r| r.get(0))?;
+    let revision: i64 = connection.query_row(
+        "SELECT report_revision FROM storage_metadata WHERE singleton = 1",
+        [],
+        |r| r.get(0),
+    )?;
     u64::try_from(revision).map_err(|_| StorageError::CorruptData("negative report revision"))
 }
 
@@ -394,12 +519,19 @@ fn sqlite_revision(revision: u64) -> Result<i64> {
 }
 
 fn next_revision(current: u64) -> Result<u64> {
-    current.checked_add(1).filter(|next| *next <= i64::MAX as u64).ok_or(StorageError::RevisionExhausted)
+    current
+        .checked_add(1)
+        .filter(|next| *next <= i64::MAX as u64)
+        .ok_or(StorageError::RevisionExhausted)
 }
 
 fn bump_revision(connection: &Connection) -> Result<u64> {
     let next = next_revision(read_revision(connection)?)?;
-    if connection.execute("UPDATE storage_metadata SET report_revision = ?1 WHERE singleton = 1", [sqlite_revision(next)?])? != 1 {
+    if connection.execute(
+        "UPDATE storage_metadata SET report_revision = ?1 WHERE singleton = 1",
+        [sqlite_revision(next)?],
+    )? != 1
+    {
         return Err(StorageError::CorruptData("missing generation counter"));
     }
     Ok(next)

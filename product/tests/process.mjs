@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {once} from 'node:events';
-import {mkdtemp, rm} from 'node:fs/promises';
+import {mkdtemp, readFile, rm} from 'node:fs/promises';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -62,7 +62,10 @@ async function guiRun(extra) {
   const {proc,exit}=start(gui,['--endpoint',endpoint,'--date','2026-11-17','--zone','UTC','--profile',profile,'--smoke-output',output,...extra]);
   proc.stdout.on('data',chunk=>process.stdout.write(chunk));
   const [code]=await Promise.race([exit,sleep(90000,undefined,{ref:false}).then(()=>{throw Error('GUI timeout');})]);
+  const evidence = await readFile(path.join(output,'smoke.json'),'utf8').then(JSON.parse).catch(()=>null);
+  console.log('Synthetic GUI check:', JSON.stringify({status:evidence?.status,mode:evidence?.mode,failure:evidence?.failure}));
   assert.equal(code,0,'GUI smoke failed');
+  assert.equal(evidence?.status,'pass');
 }
 try {
   let stop=await agent();

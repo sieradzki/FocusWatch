@@ -7,11 +7,16 @@ const HOUR: i64 = 60 * MINUTE;
 const DAY: i64 = 24 * HOUR;
 
 fn utc(text: &str) -> i64 {
-    DateTime::parse_from_rfc3339(text).unwrap().timestamp_millis()
+    DateTime::parse_from_rfc3339(text)
+        .unwrap()
+        .timestamp_millis()
 }
 
 fn request() -> DayRequest {
-    DayRequest { date: DEMO_DATE.into(), time_zone: "UTC".into() }
+    DayRequest {
+        date: DEMO_DATE.into(),
+        time_zone: "UTC".into(),
+    }
 }
 
 fn observation(id: &str, device: &str, source: &str, start: i64, end: i64) -> Observation {
@@ -34,7 +39,10 @@ fn observation(id: &str, device: &str, source: &str, start: i64, end: i64) -> Ob
         category: "unclassified".into(),
         quality: ObservationQuality::Synthetic,
         received_at_ms: end,
-        measurement: Measurement::Interval { start_ms: start, end_ms: end },
+        measurement: Measurement::Interval {
+            start_ms: start,
+            end_ms: end,
+        },
     }
 }
 
@@ -45,12 +53,19 @@ fn report(observations: &[Observation]) -> DayReport {
 #[test]
 fn t01_parallel_sources_keep_independent_durations_without_splitting_attention() {
     let t = utc("2026-11-17T10:00:00Z");
-    let rows = [observation("a", "pc", "foreground", t, t + HOUR), observation("b", "pc", "independent", t, t + HOUR)];
+    let rows = [
+        observation("a", "pc", "foreground", t, t + HOUR),
+        observation("b", "pc", "independent", t, t + HOUR),
+    ];
     let day = report(&rows);
     assert_eq!(day.intervals.len(), 2);
     assert_eq!(day.summed_source_ms, 2 * HOUR);
     assert_eq!(day.observed_coverage_ms, HOUR);
-    assert!(day.source_totals.iter().all(|source| source.observed_duration_ms == HOUR));
+    assert!(
+        day.source_totals
+            .iter()
+            .all(|source| source.observed_duration_ms == HOUR)
+    );
     let encoded = serde_json::to_value(day).unwrap();
     assert!(encoded.get("attention_ms").is_none());
     assert!(encoded.get("working_time_ms").is_none());
@@ -65,13 +80,112 @@ fn t02_presence_and_longer_independent_signal_remain_separate() {
     let day = report(&[presence, other]);
     assert_eq!(day.observed_coverage_ms, 2 * HOUR);
     assert_eq!(day.summed_source_ms, 3 * HOUR);
-    assert_eq!(day.source_totals.iter().find(|s| s.source_kind == SourceKind::Input).unwrap().observed_duration_ms, HOUR);
+    let policy = SourceOverlapPolicy {
+        device_id: "pc".into(),
+        left_source_id: "input".into(),
+        right_source_id: "source-b".into(),
+    };
+    assert_eq!(policy.evaluate_ms(&day).unwrap(), HOUR);
+    assert_eq!(
+        day.source_totals
+            .iter()
+            .find(|s| s.source_kind == SourceKind::Input)
+            .unwrap()
+            .observed_duration_ms,
+        HOUR
+    );
+    assert_eq!(
+        day.source_totals
+            .iter()
+            .find(|source| source.source_id == "source-b")
+            .unwrap()
+            .observed_duration_ms,
+        2 * HOUR
+    );
+    let encoded = serde_json::to_value(day).unwrap();
+    assert!(encoded.get("attention_ms").is_none());
+    assert!(encoded.get("working_time_ms").is_none());
+}
+
+#[test]
+fn t02_explicit_presence_overlap_handles_shifted_and_disjoint_windows() {
+    let t = utc("2026-11-17T10:00:00Z");
+    let policy = SourceOverlapPolicy {
+        device_id: "pc".into(),
+        left_source_id: "input".into(),
+        right_source_id: "source-b".into(),
+    };
+    for (presence_start, expected) in [(t + 90 * MINUTE, 30 * MINUTE), (t + 2 * HOUR, 0)] {
+        let mut presence = observation(
+            "presence",
+            "pc",
+            "input",
+            presence_start,
+            presence_start + HOUR,
+        );
+        presence.source_kind = SourceKind::Input;
+        let other = observation("other", "pc", "source-b", t, t + 2 * HOUR);
+        let day = report(&[presence, other]);
+        assert_eq!(policy.evaluate_ms(&day).unwrap(), expected);
+        assert_eq!(
+            day.source_totals
+                .iter()
+                .find(|source| source.source_id == "source-b")
+                .unwrap()
+                .observed_duration_ms,
+            2 * HOUR
+        );
+    }
+}
+
+#[test]
+fn explicit_overlap_filters_device_unknown_and_aggregate_and_unions_restarted_windows() {
+    let t = utc("2026-11-17T10:00:00Z");
+    let first = observation("first", "pc", "input", t, t + HOUR);
+    let mut restarted = observation("restart", "pc", "input", t + 30 * MINUTE, t + HOUR);
+    restarted.session_id = "session-2".into();
+    restarted.generation = 2;
+    let other = observation("b", "pc", "source-b", t, t + 2 * HOUR);
+    let other_device = observation("foreign", "phone", "input", t, t + 2 * HOUR);
+    let mut unknown = observation("unknown", "pc", "input", t + HOUR, t + 2 * HOUR);
+    unknown.quality = ObservationQuality::Unknown;
+    let mut aggregate = observation("aggregate", "pc", "input", t, t + 2 * HOUR);
+    aggregate.measurement = Measurement::Aggregate {
+        period_start_ms: t,
+        period_end_ms: t + 2 * HOUR,
+        duration_ms: HOUR,
+    };
+    let day = report(&[first, restarted, other, other_device, unknown, aggregate]);
+    let policy = SourceOverlapPolicy {
+        device_id: "pc".into(),
+        left_source_id: "input".into(),
+        right_source_id: "source-b".into(),
+    };
+    assert_eq!(policy.evaluate_ms(&day).unwrap(), HOUR);
+    let missing = SourceOverlapPolicy {
+        device_id: "missing-device".into(),
+        ..policy.clone()
+    };
+    assert_eq!(missing.evaluate_ms(&day).unwrap(), 0);
+    let missing_source = SourceOverlapPolicy {
+        left_source_id: "missing-source".into(),
+        ..policy.clone()
+    };
+    assert_eq!(missing_source.evaluate_ms(&day).unwrap(), 0);
+    let invalid = SourceOverlapPolicy {
+        device_id: " ".into(),
+        ..policy
+    };
+    assert!(invalid.evaluate_ms(&day).is_err());
 }
 
 #[test]
 fn t03_two_devices_exact_scopes_union_to_three_hours() {
     let t = utc("2026-11-17T10:00:00Z");
-    let rows = [observation("pc", "pc", "foreground", t, t + 2 * HOUR), observation("phone", "phone", "foreground", t + HOUR, t + 3 * HOUR)];
+    let rows = [
+        observation("pc", "pc", "foreground", t, t + 2 * HOUR),
+        observation("phone", "phone", "foreground", t + HOUR, t + 3 * HOUR),
+    ];
     let day = report(&rows);
     assert_eq!(day.source_totals.len(), 2);
     assert_eq!(day.summed_source_ms, 4 * HOUR);
@@ -81,9 +195,25 @@ fn t03_two_devices_exact_scopes_union_to_three_hours() {
 #[test]
 fn t03_delayed_day_aggregate_does_not_acquire_an_invented_timeline() {
     let day_start = utc("2026-11-17T00:00:00Z");
-    let pc = observation("pc", "pc", "foreground", day_start + 9 * HOUR, day_start + 9 * HOUR + 30 * MINUTE);
-    let mut phone = observation("phone", "phone", "usage-aggregate", day_start, day_start + DAY);
-    phone.measurement = Measurement::Aggregate { period_start_ms: day_start, period_end_ms: day_start + DAY, duration_ms: 20 * MINUTE };
+    let pc = observation(
+        "pc",
+        "pc",
+        "foreground",
+        day_start + 9 * HOUR,
+        day_start + 9 * HOUR + 30 * MINUTE,
+    );
+    let mut phone = observation(
+        "phone",
+        "phone",
+        "usage-aggregate",
+        day_start,
+        day_start + DAY,
+    );
+    phone.measurement = Measurement::Aggregate {
+        period_start_ms: day_start,
+        period_end_ms: day_start + DAY,
+        duration_ms: 20 * MINUTE,
+    };
     phone.received_at_ms = day_start + 2 * DAY;
     phone.granularity_ms = DAY as u64;
     phone.time_uncertainty_ms = 5 * MINUTE as u64;
@@ -97,7 +227,11 @@ fn t03_delayed_day_aggregate_does_not_acquire_an_invented_timeline() {
     assert_eq!(day.aggregates[0].reported_duration_ms, 20 * MINUTE);
     assert!(day.aggregates[0].fully_within_day);
     assert_eq!(day.aggregates[0].period_start_ms, original.bounds().0);
-    assert_eq!(day.aggregates[0].time_uncertainty_ms, original.time_uncertainty_ms);
+    assert_eq!(day.aggregates[0].received_at_ms, original.received_at_ms);
+    assert_eq!(
+        day.aggregates[0].time_uncertainty_ms,
+        original.time_uncertainty_ms
+    );
     assert_eq!(day.aggregates[0].app_id, "android:synthetic.application");
 }
 
@@ -105,7 +239,11 @@ fn t03_delayed_day_aggregate_does_not_acquire_an_invented_timeline() {
 fn aggregate_spanning_multiple_days_is_not_prorated_or_included_in_exact_totals() {
     let t = utc("2026-11-17T00:00:00Z");
     let mut row = observation("aggregate", "phone", "coarse", t - DAY, t + DAY);
-    row.measurement = Measurement::Aggregate { period_start_ms: t - DAY, period_end_ms: t + DAY, duration_ms: HOUR };
+    row.measurement = Measurement::Aggregate {
+        period_start_ms: t - DAY,
+        period_end_ms: t + DAY,
+        duration_ms: HOUR,
+    };
     let day = report(&[row]);
     assert_eq!(day.aggregates[0].reported_duration_ms, HOUR);
     assert!(!day.aggregates[0].fully_within_day);
@@ -117,8 +255,14 @@ fn aggregate_spanning_multiple_days_is_not_prorated_or_included_in_exact_totals(
 
 #[test]
 fn t04_half_open_adjacency_and_duplicate_intervals_have_no_double_boundary() {
-    assert_eq!(union_duration_ms(&[(0, HOUR), (HOUR, 2 * HOUR)]).unwrap(), 2 * HOUR);
-    assert_eq!(union_duration_ms(&[(0, HOUR), (0, HOUR), (HOUR, HOUR)]).unwrap(), HOUR);
+    assert_eq!(
+        union_duration_ms(&[(0, HOUR), (HOUR, 2 * HOUR)]).unwrap(),
+        2 * HOUR
+    );
+    assert_eq!(
+        union_duration_ms(&[(0, HOUR), (0, HOUR), (HOUR, HOUR)]).unwrap(),
+        HOUR
+    );
     assert_eq!(union_duration_ms(&[]).unwrap(), 0);
 }
 
@@ -128,11 +272,34 @@ fn t05_midnight_clipping_conserves_the_original_duration() {
     let end = utc("2026-11-18T00:30:00Z");
     let row = observation("cross-midnight", "pc", "fg", start, end);
     let original = row.clone();
-    let first = build_report(&DayRequest { date: "2026-11-17".into(), time_zone: "Europe/Warsaw".into() }, std::slice::from_ref(&row), &[], &[], 0).unwrap();
-    let second = build_report(&DayRequest { date: "2026-11-18".into(), time_zone: "Europe/Warsaw".into() }, std::slice::from_ref(&row), &[], &[], 0).unwrap();
+    let first = build_report(
+        &DayRequest {
+            date: "2026-11-17".into(),
+            time_zone: "Europe/Warsaw".into(),
+        },
+        std::slice::from_ref(&row),
+        &[],
+        &[],
+        0,
+    )
+    .unwrap();
+    let second = build_report(
+        &DayRequest {
+            date: "2026-11-18".into(),
+            time_zone: "Europe/Warsaw".into(),
+        },
+        std::slice::from_ref(&row),
+        &[],
+        &[],
+        0,
+    )
+    .unwrap();
     assert_eq!(first.observed_coverage_ms, 30 * MINUTE);
     assert_eq!(second.observed_coverage_ms, 90 * MINUTE);
-    assert_eq!(first.observed_coverage_ms + second.observed_coverage_ms, end - start);
+    assert_eq!(
+        first.observed_coverage_ms + second.observed_coverage_ms,
+        end - start
+    );
     assert_eq!(row, original);
 }
 
@@ -148,12 +315,22 @@ struct CivilCase {
 
 #[test]
 fn t06_local_day_uses_independent_committed_23_24_25_hour_vectors() {
-    let vectors: Vec<CivilCase> = serde_json::from_str(include_str!("../fixtures/civil-days.json")).unwrap();
+    let vectors: Vec<CivilCase> =
+        serde_json::from_str(include_str!("../fixtures/civil-days.json")).unwrap();
     for case in vectors {
         let day = day_bounds(&case.date, &case.time_zone).unwrap();
-        assert_eq!(day.start_ms, utc(&case.expected_start), "{} start", case.case);
+        assert_eq!(
+            day.start_ms,
+            utc(&case.expected_start),
+            "{} start",
+            case.case
+        );
         assert_eq!(day.end_ms, utc(&case.expected_end), "{} end", case.case);
-        assert_eq!(day.duration_ms, case.expected_duration_ms, "{} duration", case.case);
+        assert_eq!(
+            day.duration_ms, case.expected_duration_ms,
+            "{} duration",
+            case.case
+        );
     }
 }
 
@@ -180,15 +357,25 @@ fn t07_reversed_wall_clock_is_not_repaired_using_a_different_boot_monotonic_cloc
     assert_eq!(restarted.start_ms, t + 30 * MINUTE);
     assert_eq!(restarted.generation, 2);
     assert_eq!(restarted.sequence, 0);
-    assert_eq!(restarted.clock_discontinuity, Some(ClockDiscontinuity::WallClockReversed));
-    assert!(observation("negative", "pc", "fg", t + HOUR, t).validate().is_err());
+    assert_eq!(
+        restarted.clock_discontinuity,
+        Some(ClockDiscontinuity::WallClockReversed)
+    );
+    assert!(
+        observation("negative", "pc", "fg", t + HOUR, t)
+            .validate()
+            .is_err()
+    );
 }
 
 #[test]
 fn t07_crashed_open_interval_stops_at_last_confirmed_checkpoint_not_now_or_day_end() {
     let t = utc("2026-11-17T09:00:00Z");
     let mut open = observation("open", "pc", "fg", t, t + 10 * MINUTE);
-    open.measurement = Measurement::OpenInterval { start_ms: t, last_observed_ms: t + 10 * MINUTE };
+    open.measurement = Measurement::OpenInterval {
+        start_ms: t,
+        last_observed_ms: t + 10 * MINUTE,
+    };
     open.clock_discontinuity = Some(ClockDiscontinuity::SourceRestart);
     let day = report(&[open]);
     assert_eq!(day.intervals[0].end_ms, t + 10 * MINUTE);
@@ -201,7 +388,10 @@ fn t07_crashed_open_interval_stops_at_last_confirmed_checkpoint_not_now_or_day_e
 fn open_point_at_exact_day_start_is_visible_but_contributes_zero_duration() {
     let t = utc("2026-11-17T00:00:00Z");
     let mut row = observation("open-point", "pc", "fg", t, t);
-    row.measurement = Measurement::OpenInterval { start_ms: t, last_observed_ms: t };
+    row.measurement = Measurement::OpenInterval {
+        start_ms: t,
+        last_observed_ms: t,
+    };
     let day = report(&[row]);
     assert_eq!(day.intervals.len(), 1);
     assert!(day.intervals[0].open);
@@ -219,13 +409,73 @@ fn t25_report_zone_changes_clipping_not_source_time_or_provenance() {
     row.sequence = 44;
     let original = row.clone();
     let utc_day = report(std::slice::from_ref(&row));
-    let warsaw = build_report(&DayRequest { date: DEMO_DATE.into(), time_zone: "Europe/Warsaw".into() }, std::slice::from_ref(&row), &[], &[], 0).unwrap();
+    let warsaw = build_report(
+        &DayRequest {
+            date: DEMO_DATE.into(),
+            time_zone: "Europe/Warsaw".into(),
+        },
+        std::slice::from_ref(&row),
+        &[],
+        &[],
+        0,
+    )
+    .unwrap();
     assert_eq!(utc_day.observed_coverage_ms, 90 * MINUTE);
     assert_eq!(warsaw.observed_coverage_ms, 30 * MINUTE);
     assert_eq!(warsaw.intervals[0].granularity_ms, 60_000);
     assert_eq!(warsaw.intervals[0].time_uncertainty_ms, 15_000);
     assert_eq!(warsaw.intervals[0].sequence, 44);
     assert_eq!(row, original);
+}
+
+#[test]
+fn t25_incompatible_device_clocks_preserve_scopes_and_uncertainty_without_inventing_order() {
+    let t = utc("2026-11-17T09:00:00Z");
+    let mut pc = observation("pc-clock", "pc", "fg", t, t + 30 * MINUTE);
+    pc.boot_id = Some("pc-boot".into());
+    pc.monotonic_start_ms = Some(50_000);
+    pc.monotonic_end_ms = Some(50_000 + 30 * MINUTE as u64);
+    pc.sequence = 900;
+    pc.received_at_ms = t + 2 * HOUR;
+    let mut phone = observation(
+        "phone-clock",
+        "phone",
+        "fg",
+        t - 10 * MINUTE,
+        t + 20 * MINUTE,
+    );
+    phone.boot_id = Some("phone-boot".into());
+    phone.monotonic_start_ms = Some(50_000);
+    phone.monotonic_end_ms = Some(50_000 + 30 * MINUTE as u64);
+    phone.sequence = 1;
+    phone.time_uncertainty_ms = 20 * MINUTE as u64;
+    phone.clock_discontinuity = Some(ClockDiscontinuity::WallClockReversed);
+    phone.received_at_ms = t + HOUR;
+    let rows = [pc, phone];
+    let originals = rows.clone();
+    let day = report(&rows);
+    assert_eq!(day.summed_source_ms, HOUR);
+    assert_eq!(day.observed_coverage_ms, 40 * MINUTE);
+    let pc_view = day
+        .intervals
+        .iter()
+        .find(|row| row.device_id == "pc")
+        .unwrap();
+    let phone_view = day
+        .intervals
+        .iter()
+        .find(|row| row.device_id == "phone")
+        .unwrap();
+    assert_eq!(pc_view.start_ms, t);
+    assert_eq!(phone_view.start_ms, t - 10 * MINUTE);
+    assert_eq!(phone_view.time_uncertainty_ms, 20 * MINUTE as u64);
+    assert_eq!(
+        phone_view.clock_discontinuity,
+        Some(ClockDiscontinuity::WallClockReversed)
+    );
+    assert_eq!(pc_view.monotonic_start_ms, phone_view.monotonic_start_ms);
+    assert_ne!(pc_view.boot_id, phone_view.boot_id);
+    assert_eq!(rows, originals);
 }
 
 #[test]
@@ -248,8 +498,15 @@ fn unknown_source_coverage_and_no_data_do_not_turn_into_idle_or_work() {
 fn fixture_is_synthetic_complete_and_stable_for_the_desktop_correction_demo() {
     let observations = demo_synthetic_fixture();
     assert_eq!(observations.len(), 1440);
-    assert!(observations.iter().all(|r| r.quality == ObservationQuality::Synthetic && r.validate().is_ok()));
-    let row = observations.iter().find(|r| r.id == "synthetic-555").unwrap();
+    assert!(
+        observations
+            .iter()
+            .all(|r| r.quality == ObservationQuality::Synthetic && r.validate().is_ok())
+    );
+    let row = observations
+        .iter()
+        .find(|r| r.id == "synthetic-555")
+        .unwrap();
     assert_eq!(row.app_id, "synthetic:browser");
     assert_eq!(row.category, "unclassified");
     assert_eq!(row.sequence, 555);
@@ -261,15 +518,28 @@ fn fixture_is_synthetic_complete_and_stable_for_the_desktop_correction_demo() {
 
 #[test]
 fn invalid_dates_zones_measurements_and_clock_provenance_return_typed_errors() {
-    assert!(matches!(day_bounds("2026-1-1", "UTC"), Err(DomainError::InvalidDate(_))));
+    assert!(matches!(
+        day_bounds("2026-1-1", "UTC"),
+        Err(DomainError::InvalidDate(_))
+    ));
     assert!(day_bounds("2026-02-30", "UTC").is_err());
-    assert!(matches!(day_bounds(DEMO_DATE, "Invalid/TimeZone"), Err(DomainError::InvalidTimeZone(_))));
+    assert!(matches!(
+        day_bounds(DEMO_DATE, "Invalid/TimeZone"),
+        Err(DomainError::InvalidTimeZone(_))
+    ));
     assert!(day_bounds("2011-12-30", "Pacific/Apia").is_err());
     let t = utc("2026-11-17T10:00:00Z");
     let mut row = observation("x", "pc", "fg", t, t + HOUR);
-    row.measurement = Measurement::Aggregate { period_start_ms: t, period_end_ms: t + HOUR, duration_ms: HOUR + 1 };
+    row.measurement = Measurement::Aggregate {
+        period_start_ms: t,
+        period_end_ms: t + HOUR,
+        duration_ms: HOUR + 1,
+    };
     assert!(row.validate().is_err());
-    row.measurement = Measurement::Interval { start_ms: t, end_ms: t + HOUR };
+    row.measurement = Measurement::Interval {
+        start_ms: t,
+        end_ms: t + HOUR,
+    };
     row.granularity_ms = 0;
     assert!(row.validate().is_err());
     row.granularity_ms = 1;
@@ -279,5 +549,8 @@ fn invalid_dates_zones_measurements_and_clock_provenance_return_typed_errors() {
     row.monotonic_end_ms = Some(3);
     row.boot_id = None;
     assert!(row.validate().is_err());
-    assert!(matches!(union_duration_ms(&[(i64::MIN, i64::MAX)]), Err(DomainError::DurationOverflow)));
+    assert!(matches!(
+        union_duration_ms(&[(i64::MIN, i64::MAX)]),
+        Err(DomainError::DurationOverflow)
+    ));
 }

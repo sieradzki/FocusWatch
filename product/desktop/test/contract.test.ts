@@ -6,7 +6,7 @@ import { validateCorrection, validateEnvelope, validateReport, type DayReport } 
 const start = Date.parse('2026-11-17T00:00:00Z');
 const endpoint = process.platform === 'win32' ? '\\\\.\\pipe\\focuswatch-contract-test' : '/tmp/private/report.sock';
 const provenance = { id: 'synthetic-555', device_id: 'device-pc', source_id: 'source-foreground', source_kind: 'foreground',
-  app_id: 'synthetic:browser', app_name: 'browser', category: 'unclassified', quality: 'synthetic', corrected: false, correction_revision: 0,
+  app_id: 'synthetic:browser', app_name: 'browser', category: 'unclassified', quality: 'synthetic', corrected: false, correction_revision: 0, received_at_ms: start + 33300000,
   session_id: 'session-fixture', generation: 1, sequence: 555, granularity_ms: 60000, time_uncertainty_ms: 0, boot_id: 'boot-fixture',
   monotonic_start_ms: 33240000, monotonic_end_ms: 33300000, clock_discontinuity: null };
 function fixture(): DayReport {
@@ -38,6 +38,7 @@ test('report rejects duplicate IDs, stale range, invalid intervals, unsafe revis
   assert.throws(() => validateReport({ ...report, intervals: [report.intervals[0], report.intervals[0]] }));
   assert.throws(() => validateReport({ ...report, end_ms: start }));
   assert.throws(() => validateReport({ ...report, revision: Number.MAX_SAFE_INTEGER + 1 }));
+  assert.throws(() => validateReport({ ...report, start_ms: 8700000000000000, end_ms: 8700000086400000 }));
   assert.throws(() => validateReport({ ...report, observed_coverage_ms: 86400001 }));
   assert.throws(() => validateReport(report, { date: report.date, zone: 'Europe/Warsaw' }));
   assert.throws(() => validateReport({ ...report, intervals: [{ ...report.intervals[0], duration_ms: -1 }] }));

@@ -1,11 +1,13 @@
 //! Portable observation semantics. No OS, database, network or wall-clock reads.
 //! Exact coverage is not a claim about a person's attention or working time.
 
+mod policy;
 mod report;
 mod time;
 
+pub use policy::SourceOverlapPolicy;
 pub use report::{build_report, union_duration_ms};
-pub use time::{day_bounds, DayBounds};
+pub use time::{DayBounds, day_bounds};
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -63,7 +65,10 @@ impl Measurement {
     pub fn bounds(&self) -> (i64, i64) {
         match *self {
             Self::Interval { start_ms, end_ms } => (start_ms, end_ms),
-            Self::OpenInterval { start_ms, last_observed_ms } => (start_ms, last_observed_ms),
+            Self::OpenInterval {
+                start_ms,
+                last_observed_ms,
+            } => (start_ms, last_observed_ms),
             Self::Aggregate {
                 period_start_ms,
                 period_end_ms,
@@ -135,7 +140,9 @@ impl Observation {
         if let Some(boot) = &self.boot_id {
             validate_text("boot_id", boot, 256)?;
         } else if self.monotonic_start_ms.is_some() || self.monotonic_end_ms.is_some() {
-            return Err(DomainError::InvalidField("boot_id for monotonic timestamps"));
+            return Err(DomainError::InvalidField(
+                "boot_id for monotonic timestamps",
+            ));
         }
         if let (Some(start), Some(end)) = (self.monotonic_start_ms, self.monotonic_end_ms) {
             if end < start {
@@ -215,6 +222,7 @@ pub struct ReportInterval {
     pub monotonic_start_ms: Option<u64>,
     pub monotonic_end_ms: Option<u64>,
     pub clock_discontinuity: Option<ClockDiscontinuity>,
+    pub received_at_ms: i64,
     pub app_id: String,
     pub app_name: String,
     pub category: String,
@@ -242,6 +250,7 @@ pub struct AggregateView {
     pub monotonic_start_ms: Option<u64>,
     pub monotonic_end_ms: Option<u64>,
     pub clock_discontinuity: Option<ClockDiscontinuity>,
+    pub received_at_ms: i64,
     pub app_id: String,
     pub app_name: String,
     pub category: String,
@@ -301,13 +310,19 @@ pub enum DomainError {
     InvalidTimeZone(String),
     UnrepresentableLocalDay(String),
     InvalidTimestamp(i64),
-    InvalidInterval { start_ms: i64, end_ms: i64 },
+    InvalidInterval {
+        start_ms: i64,
+        end_ms: i64,
+    },
     InvalidAggregateDuration(i64),
     InvalidField(&'static str),
     InvalidCorrectionRevision,
     ObservationIdConflict(String),
     RuleConflict(String),
-    CorrectionRevisionConflict { observation_id: String, revision: u64 },
+    CorrectionRevisionConflict {
+        observation_id: String,
+        revision: u64,
+    },
     DurationOverflow,
 }
 
@@ -316,15 +331,31 @@ impl fmt::Display for DomainError {
         match self {
             Self::InvalidDate(date) => write!(f, "invalid ISO date: {date}"),
             Self::InvalidTimeZone(zone) => write!(f, "invalid IANA time zone: {zone}"),
-            Self::UnrepresentableLocalDay(date) => write!(f, "local date has no representable day: {date}"),
-            Self::InvalidTimestamp(value) => write!(f, "timestamp outside supported UTC range: {value}"),
-            Self::InvalidInterval { start_ms, end_ms } => write!(f, "invalid half-open interval [{start_ms}, {end_ms})"),
-            Self::InvalidAggregateDuration(value) => write!(f, "aggregate duration outside its source period: {value}"),
+            Self::UnrepresentableLocalDay(date) => {
+                write!(f, "local date has no representable day: {date}")
+            }
+            Self::InvalidTimestamp(value) => {
+                write!(f, "timestamp outside supported UTC range: {value}")
+            }
+            Self::InvalidInterval { start_ms, end_ms } => {
+                write!(f, "invalid half-open interval [{start_ms}, {end_ms})")
+            }
+            Self::InvalidAggregateDuration(value) => {
+                write!(f, "aggregate duration outside its source period: {value}")
+            }
             Self::InvalidField(field) => write!(f, "invalid or oversized {field}"),
             Self::InvalidCorrectionRevision => f.write_str("correction revision must be positive"),
-            Self::ObservationIdConflict(id) => write!(f, "observation ID has conflicting payloads: {id}"),
+            Self::ObservationIdConflict(id) => {
+                write!(f, "observation ID has conflicting payloads: {id}")
+            }
             Self::RuleConflict(app) => write!(f, "conflicting category rules for {app}"),
-            Self::CorrectionRevisionConflict { observation_id, revision } => write!(f, "conflicting correction for {observation_id} at revision {revision}"),
+            Self::CorrectionRevisionConflict {
+                observation_id,
+                revision,
+            } => write!(
+                f,
+                "conflicting correction for {observation_id} at revision {revision}"
+            ),
             Self::DurationOverflow => f.write_str("duration arithmetic overflow"),
         }
     }
@@ -332,7 +363,11 @@ impl fmt::Display for DomainError {
 
 impl std::error::Error for DomainError {}
 
-pub(crate) fn validate_text(field: &'static str, text: &str, max_bytes: usize) -> Result<(), DomainError> {
+pub(crate) fn validate_text(
+    field: &'static str,
+    text: &str,
+    max_bytes: usize,
+) -> Result<(), DomainError> {
     if text.trim().is_empty() || text.len() > max_bytes || text.contains('\0') {
         Err(DomainError::InvalidField(field))
     } else {
@@ -348,22 +383,32 @@ fn validate_timestamp(value: i64) -> Result<(), DomainError> {
 
 /// Editable initial rules, independent of the immutable synthetic observations.
 pub fn default_category_rules() -> Vec<CategoryRule> {
-    [("synthetic:editor", "work"), ("synthetic:reader", "learning"), ("synthetic:player", "leisure")]
-        .into_iter()
-        .map(|(app_id, category)| CategoryRule { app_id: app_id.into(), category: category.into() })
-        .collect()
+    [
+        ("synthetic:editor", "work"),
+        ("synthetic:reader", "learning"),
+        ("synthetic:player", "leisure"),
+    ]
+    .into_iter()
+    .map(|(app_id, category)| CategoryRule {
+        app_id: app_id.into(),
+        category: category.into(),
+    })
+    .collect()
 }
 
 /// Committed artificial minute-by-minute day. No real tracker or private history.
 pub fn demo_synthetic_fixture() -> Vec<Observation> {
-    let start = day_bounds(DEMO_DATE, DEMO_TIME_ZONE).expect("constant demo date is valid").start_ms;
+    let start = day_bounds(DEMO_DATE, DEMO_TIME_ZONE)
+        .expect("constant demo date is valid")
+        .start_ms;
     include_str!("../fixtures/day-2026-11-17.tsv")
         .lines()
         .skip(1)
         .map(|line| {
             let columns: Vec<&str> = line.split('\t').collect();
             assert_eq!(columns.len(), 5, "committed synthetic fixture columns");
-            let start_ms = start + columns[1].parse::<i64>().expect("synthetic start seconds") * 1_000;
+            let start_ms =
+                start + columns[1].parse::<i64>().expect("synthetic start seconds") * 1_000;
             let end_ms = start + columns[2].parse::<i64>().expect("synthetic end seconds") * 1_000;
             Observation {
                 id: format!("synthetic-{}", columns[0]),

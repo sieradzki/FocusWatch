@@ -4,7 +4,7 @@ import { validateQuery, type Query } from './cli.ts';
 export interface ReportInterval {
   id: string; device_id: string; source_id: string; source_kind: string; app_id: string; app_name: string;
   category: string; start_ms: number; end_ms: number; duration_ms: number; quality: string;
-  corrected: boolean; correction_revision: number;
+  corrected: boolean; correction_revision: number; received_at_ms: number;
   session_id: string; generation: number; sequence: number; granularity_ms: number; time_uncertainty_ms: number;
   boot_id: string | null; monotonic_start_ms: number | null; monotonic_end_ms: number | null; clock_discontinuity: string | null;
   open: boolean;
@@ -12,7 +12,7 @@ export interface ReportInterval {
 export interface AggregateView {
   id: string; device_id: string; source_id: string; source_kind: string; app_id: string; app_name: string;
   category: string; period_start_ms: number; period_end_ms: number; reported_duration_ms: number;
-  quality: string; corrected: boolean; correction_revision: number; fully_within_day: boolean;
+  quality: string; corrected: boolean; correction_revision: number; fully_within_day: boolean; received_at_ms: number;
   session_id: string; generation: number; sequence: number; granularity_ms: number; time_uncertainty_ms: number;
   boot_id: string | null; monotonic_start_ms: number | null; monotonic_end_ms: number | null; clock_discontinuity: string | null;
 }
@@ -62,7 +62,7 @@ function provenance(raw: Record<string, unknown>) {
   if (!SOURCE_KINDS.has(source_kind) || !QUALITIES.has(quality)) throw new AgentError('invalid_response');
   return { id: text(raw.id), device_id: text(raw.device_id), source_id: text(raw.source_id), source_kind,
     app_id: text(raw.app_id, 1024), app_name: text(raw.app_name, 1024), category: text(raw.category, 128), quality,
-    corrected: bool(raw.corrected), correction_revision: integer(raw.correction_revision),
+    corrected: bool(raw.corrected), correction_revision: integer(raw.correction_revision), received_at_ms: integer(raw.received_at_ms, -8640000000000000),
     session_id: text(raw.session_id), generation: integer(raw.generation), sequence: integer(raw.sequence),
     granularity_ms: integer(raw.granularity_ms), time_uncertainty_ms: integer(raw.time_uncertainty_ms),
     boot_id: raw.boot_id == null ? null : text(raw.boot_id),
@@ -77,7 +77,7 @@ export function validateReport(value: unknown, query?: Query): DayReport {
   if (query && (query.date !== date || query.zone !== time_zone)) throw new AgentError('mismatched_report');
   const start_ms = integer(raw.start_ms, -8640000000000000), end_ms = integer(raw.end_ms, -8640000000000000);
   const day_duration_ms = integer(raw.day_duration_ms);
-  if (end_ms <= start_ms || end_ms - start_ms !== day_duration_ms || day_duration_ms > 48 * 3600000) throw new AgentError('invalid_response');
+  if (Math.abs(start_ms) > 8640000000000000 || Math.abs(end_ms) > 8640000000000000 || end_ms <= start_ms || end_ms - start_ms !== day_duration_ms || day_duration_ms > 48 * 3600000) throw new AgentError('invalid_response');
   const intervals = list(raw.intervals, item => {
     const row = object(item), base = provenance(row);
     const start = integer(row.start_ms, -8640000000000000), end = integer(row.end_ms, -8640000000000000), duration = integer(row.duration_ms);
