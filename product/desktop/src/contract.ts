@@ -111,8 +111,8 @@ export function validateReport(value: unknown, query?: Query): DayReport {
 }
 export function validateCorrection(value: unknown): Correction {
   const raw = object(value);
-  const id = text(raw.id, 128), category = text(raw.category, 128), command_id = text(raw.command_id);
-  if (category !== category.trim() || /[\u0000-\u001f\u007f]/.test(category) || new TextEncoder().encode(category).length > 128 || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(command_id)) throw new AgentError('invalid_request');
+  const id = text(raw.id, 256), category = text(raw.category, 128), command_id = text(raw.command_id);
+  if (new TextEncoder().encode(id).length > 256 || category !== category.trim() || /[\u0000-\u001f\u007f]/.test(category) || new TextEncoder().encode(category).length > 128 || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(command_id)) throw new AgentError('invalid_request');
   return { id, category, command_id, expected_revision: integer(raw.expected_revision) };
 }
 export function validateEnvelope(value: unknown): Result<unknown> {

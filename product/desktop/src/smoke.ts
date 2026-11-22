@@ -78,6 +78,7 @@ export async function runSmoke(window: BrowserWindow, options: Options, security
     }
     await writeFile(path.join(output, 'after.png'), (await window.webContents.capturePage()).toPNG());
     evidence.window = { visible: window.isVisible(), client_size: window.getContentSize(), sandbox: security.sandboxed, context_isolation: security.contextIsolated, renderer_node_globals: false };
+    evidence.input_events = await window.webContents.executeJavaScript(`window.__focuswatchSmokeEvents`);
     evidence.status = 'pass';
   } catch (error) {
     evidence.status = 'fail'; evidence.failure = error instanceof Error ? error.message : 'unknown_failure';

@@ -92,7 +92,7 @@ the real UI against the separate real agent:
 
 1. Asserts the sandboxed preload's process state, isolation and absence of Node
    globals in the renderer.
-2. Filters to `synthetic-555`, focuses its native Correct button and sends Enter
+2. Filters to `synthetic-555`, focuses its native Correct button and sends Space
    through **this window's** `webContents.sendInputEvent`. Focus must enter the
    category input.
 3. Sends select-all, text insertion, Tab and Enter to the owned webContents.

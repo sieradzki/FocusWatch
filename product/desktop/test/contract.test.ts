@@ -52,6 +52,9 @@ test('open checkpoint point is valid without fabricating a duration', () => {
 test('correction validates the separate per-observation revision, stable command ID and Unicode category', () => {
   const correction = { id: 'synthetic-555', category: 'nauka · 日本語', expected_revision: 0, command_id: randomUUID() };
   assert.deepEqual(validateCorrection(correction), correction);
+  assert.equal(validateCorrection({ ...correction, id: 'o'.repeat(256) }).id.length, 256);
+  assert.throws(() => validateCorrection({ ...correction, id: 'o'.repeat(257) }));
+  assert.throws(() => validateCorrection({ ...correction, id: '界'.repeat(86) }));
   for (const change of [{ expected_revision: -1 }, { category: '\u0000' }, { category: '界'.repeat(50) }, { command_id: 'not-a-uuid' }]) assert.throws(() => validateCorrection({ ...correction, ...change }));
 });
 test('envelope rejects incompatible versions and does not forward arbitrary backend error text', () => {
